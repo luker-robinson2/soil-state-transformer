@@ -1,0 +1,107 @@
+# Soil State Transformer — Configuration
+# Personal research project. Fill in your own GCP project / bucket, or run
+# fully local (the GCS settings are only used by the cloud-training scripts).
+
+gcp:
+  project_id: 'your-gcp-project'           # your GCP project, or leave for local-only
+  research_bucket: 'your-research-bucket'   # your GCS bucket for data + checkpoints
+  # Auth: Application Default Credentials (`gcloud auth application-default login`)
+
+data:
+  wosis:
+    api_url: 'https://rest.isric.org'
+    properties:
+      - 'SOC'      # Soil Organic Carbon
+      - 'pH'       # pH in H2O
+      - 'clay'     # Clay content %
+      - 'sand'     # Sand content %
+      - 'silt'     # Silt content %
+      - 'N'        # Total nitrogen
+      - 'CEC'      # Cation Exchange Capacity
+      - 'bdod'     # Bulk density
+    depth_range: [0, 200]  # cm
+
+  era5:
+    cds_url: 'https://cds.climate.copernicus.eu/api/v2'
+    variables:
+      - 't2m'      # 2m temperature
+      - 'tp'       # Total precipitation
+      - 'stl1'     # Soil temperature level 1
+      - 'stl2'     # Soil temperature level 2
+      - 'swvl1'    # Volumetric soil water layer 1
+      - 'swvl2'    # Volumetric soil water layer 2
+      - 'ssrd'     # Surface solar radiation downwards
+      - 'ssr'      # Surface net solar radiation
+    temporal_resolution: 'daily'
+    spatial_resolution: 0.25  # degrees
+    temporal_windows:
+      - 30   # days before sampling
+      - 90
+      - 365
+
+  soilgrids:
+    base_url: 'https://files.isric.org/soilgrids/latest/'
+    resolution: '250m'
+    layers:
+      - 'soc'      # Soil organic carbon
+      - 'phh2o'    # pH in H2O
+      - 'clay'     # Clay content
+      - 'sand'     # Sand content
+      - 'silt'     # Silt content
+      - 'bdod'     # Bulk density
+      - 'cfvo'     # Coarse fragments
+      - 'nitrogen' # Total nitrogen
+    depth_intervals:
+      - '0-5cm'
+      - '5-15cm'
+      - '15-30cm'
+      - '30-60cm'
+      - '60-100cm'
+      - '100-200cm'
+
+model:
+  architecture:
+    embedding_dim: 256
+    n_heads: 8
+    n_layers: 6
+    dropout: 0.1
+    ff_dim: 1024
+    max_seq_length: 365
+
+  training:
+    batch_size: 256
+    learning_rate: 1.0e-4
+    epochs: 100
+    warmup_steps: 1000
+    weight_decay: 0.01
+    gradient_clip: 1.0
+
+  lora:
+    rank: 8
+    alpha: 16
+    dropout: 0.05
+    target_modules:
+      - 'query'
+      - 'value'
+
+  pretraining:
+    mask_ratio: 0.15
+    use_temporal_prediction: true
+
+paths:
+  data_dir: 'data/'
+  raw_data_dir: 'data/raw/'
+  processed_data_dir: 'data/processed/'
+  models_dir: 'models/'
+  results_dir: 'results/'
+  experiments_dir: 'experiments/'
+
+compute:
+  use_spot_instances: true
+  gpu_type: 'nvidia-tesla-t4'
+  preemptible: true
+  checkpoint_interval: 30  # minutes
+
+logging:
+  level: 'INFO'
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

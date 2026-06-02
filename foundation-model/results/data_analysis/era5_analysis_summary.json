@@ -1,0 +1,108 @@
+{
+  "data_source": "ERA5 Reanalysis (Copernicus Climate Data Store)",
+  "resolution": "0.25\u00b0 x 0.25\u00b0",
+  "files": [
+    {
+      "filename": "data_stream-oper_stepType-accum.nc",
+      "dimensions": {
+        "valid_time": 2,
+        "latitude": 105,
+        "longitude": 237
+      },
+      "variables": {
+        "tp": {
+          "shape": [
+            2,
+            105,
+            237
+          ],
+          "dtype": "float32",
+          "min": 0.0,
+          "max": 0.005127429962158203,
+          "mean": 2.7139258236275055e-05,
+          "std": 0.00012854627857450396,
+          "units": "m"
+        }
+      },
+      "geographic_extent": {
+        "latitude": [
+          24.0,
+          50.0
+        ],
+        "longitude": [
+          -125.0,
+          -66.0
+        ]
+      },
+      "temporal_extent": {
+        "start": "2024-01-01 12:00:00",
+        "end": "2024-01-15 12:00:00",
+        "n_timesteps": 2
+      }
+    },
+    {
+      "filename": "data_stream-oper_stepType-instant.nc",
+      "dimensions": {
+        "valid_time": 2,
+        "latitude": 105,
+        "longitude": 237
+      },
+      "variables": {
+        "t2m": {
+          "shape": [
+            2,
+            105,
+            237
+          ],
+          "dtype": "float32",
+          "min": 231.226806640625,
+          "max": 299.010009765625,
+          "mean": 273.6397399902344,
+          "std": 14.209124565124512,
+          "units": "K"
+        },
+        "stl1": {
+          "shape": [
+            2,
+            105,
+            237
+          ],
+          "dtype": "float32",
+          "min": 242.88368225097656,
+          "max": 300.7899169921875,
+          "mean": 278.1423645019531,
+          "std": 11.59056282043457,
+          "units": "K"
+        },
+        "swvl1": {
+          "shape": [
+            2,
+            105,
+            237
+          ],
+          "dtype": "float32",
+          "min": -0.000359266996383667,
+          "max": 0.704138994216919,
+          "mean": 0.188789963722229,
+          "std": 0.16360443830490112,
+          "units": "m**3 m**-3"
+        }
+      },
+      "geographic_extent": {
+        "latitude": [
+          24.0,
+          50.0
+        ],
+        "longitude": [
+          -125.0,
+          -66.0
+        ]
+      },
+      "temporal_extent": {
+        "start": "2024-01-01 12:00:00",
+        "end": "2024-01-15 12:00:00",
+        "n_timesteps": 2
+      }
+    }
+  ]
+}

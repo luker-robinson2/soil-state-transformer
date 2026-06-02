@@ -1,0 +1,98 @@
+{
+  "name": "Soil State Transformer (SST)",
+  "version": "0.1.0",
+  "description": "Foundation model for soil property prediction using multi-modal inputs",
+  "modules": {
+    "geographic_embedding": {
+      "type": "FourierFeatures",
+      "input_dim": 2,
+      "num_freqs": 32,
+      "sigma": 10.0,
+      "output_dim": 128
+    },
+    "depth_embedding": {
+      "type": "LearnedDepthEmbedding",
+      "input_features": [
+        "upper_depth",
+        "lower_depth",
+        "thickness",
+        "center_depth"
+      ],
+      "output_dim": 64
+    },
+    "soil_embedding": {
+      "type": "PropertyEmbedding",
+      "properties": [
+        "pH",
+        "clay",
+        "sand",
+        "silt",
+        "CEC",
+        "BD"
+      ],
+      "dim_per_property": 64,
+      "total_output_dim": 384,
+      "missing_value_handling": "learnable_mask"
+    },
+    "temporal_embedding": {
+      "type": "HierarchicalTemporal",
+      "weekly_seq_len": 52,
+      "monthly_seq_len": 12,
+      "features_per_timestep": 8,
+      "output_dim": 160
+    },
+    "transformer_encoder": {
+      "d_model": 512,
+      "n_layers": 6,
+      "n_heads": 8,
+      "d_ff": 2048,
+      "dropout": 0.1,
+      "activation": "gelu",
+      "layer_norm": "pre"
+    },
+    "prediction_heads": {
+      "properties": [
+        "SOC",
+        "pH",
+        "CEC",
+        "N"
+      ],
+      "hidden_dim": 256,
+      "output": "mean_and_uncertainty"
+    }
+  },
+  "training": {
+    "pretraining": {
+      "dataset_size": 228000,
+      "batch_size": 256,
+      "learning_rate": 0.0001,
+      "warmup_steps": 1000,
+      "total_steps": 50000,
+      "objectives": [
+        "masked_property_prediction",
+        "contrastive",
+        "multi_task"
+      ]
+    },
+    "finetuning": {
+      "method": "LoRA",
+      "lora_r": 8,
+      "lora_alpha": 16,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj"
+      ],
+      "local_samples": "100-500",
+      "epochs": 50,
+      "learning_rate": 0.0001
+    }
+  },
+  "estimated_params": {
+    "total": "~30M",
+    "embeddings": "~5M",
+    "transformer": "~20M",
+    "heads": "~5M",
+    "lora_trainable": "~200K"
+  }
+}

@@ -1,0 +1,333 @@
+---
+title: "AlphaEarth/SOC — Follow-on Analysis"
+subtitle: "Multi-target, S2 baseline, KSSL validation"
+author: "Luke Robinson"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, warning = FALSE, message = FALSE,
+  fig.width = 7, fig.height = 4.5, dpi = 300,
+  fig.path = "../figures/", dev = "png"
+)
+set.seed(42)
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(boot)
+  library(ranger)
+  library(car)
+  library(patchwork)
+  library(scales)
+})
+
+dir.create("../figures", showWarnings = FALSE, recursive = TRUE)
+
+ae_cols <- sprintf("A%02d", 0:63)
+
+# Spatial-block CV identical to the original paper.
+make_spatial_folds <- function(df, k = 5, seed = 42) {
+  set.seed(seed)
+  df$block <- paste0(round(df$lon), "_", round(df$lat))
+  ub <- unique(df$block)
+  fa <- sample(seq_len(k), length(ub), replace = TRUE)
+  df$fold <- fa[match(df$block, ub)]
+  df
+}
+
+# Boot-CI helper: mean R^2 across folds.
+boot_mean_r2 <- function(r2_vec, B = 10000) {
+  b <- boot::boot(r2_vec, function(x, idx) mean(x[idx]), R = B)
+  ci <- boot::boot.ci(b, type = "bca")$bca[4:5]
+  list(mean = mean(r2_vec), lo = ci[1], hi = ci[2])
+}
+
+# Single-target spatial-CV RF; returns per-fold R2/RMSE plus oof predictions.
+rf_spatial_cv <- function(df, target, features, num_trees = 500, seed = 42) {
+  form <- as.formula(paste(target, "~", paste(features, collapse = "+")))
+  out <- map_dfr(sort(unique(df$fold)), function(k) {
+    tr <- df %>% filter(fold != k)
+    te <- df %>% filter(fold == k)
+    m  <- ranger(form, data = tr, num.trees = num_trees, seed = seed)
+    pr <- predict(m, data = te)$predictions
+    tibble(fold = k, n = nrow(te),
+           rmse = sqrt(mean((pr - te[[target]])^2)),
+           r2   = cor(pr, te[[target]])^2,
+           pred = list(pr), obs = list(te[[target]]),
+           lon = list(te$lon), lat = list(te$lat))
+  })
+  out
+}
+```
+
+# Phase A — Sanity check
+
+```{r load-unified}
+df <- read.csv("../data/soil_unified.csv")
+cat("rows:", nrow(df), " cols:", ncol(df), "\n")
+df$log_soc <- log1p(df$soc)
+df$ph <- df$ph_x10 / 10
+# Logit transform sand/clay (bounded [0,100])
+logit_pct <- function(x) log((x/100 + 1e-3) / (1 - x/100 + 1e-3))
+df$sand_logit <- logit_pct(df$sand_pct)
+df$clay_logit <- logit_pct(df$clay_pct)
+df$land_cover <- as.character(df$land_cover)
+
+# Pre-flight ranges
+cat("SOC range:", range(df$soc), "\n")
+cat("pH range:",  range(df$ph), "\n")
+cat("sand range:", range(df$sand_pct), "\n")
+cat("clay range:", range(df$clay_pct), "\n")
+cat("BD range:",   range(df$bd), "\n")
+cat("AE range:",   range(unlist(df[, ae_cols])), "\n")
+```
+
+```{r sanity-rf}
+df <- make_spatial_folds(df)
+rf_check <- rf_spatial_cv(df, "log_soc", ae_cols)
+cat("AE -> log-SOC paper-recipe R2 per fold:\n"); print(rf_check %>% select(fold, n, rmse, r2))
+ci <- boot_mean_r2(rf_check$r2)
+cat(sprintf("Mean R2 = %.3f  (BCa 95%% CI: [%.3f, %.3f])\n", ci$mean, ci$lo, ci$hi))
+
+stopifnot(ci$mean >= 0.70, ci$mean <= 0.78)  # sanity gate
+```
+
+# Phase B — Multi-target analysis (Direction 1)
+
+```{r multi-targets}
+targets <- list(
+  log_soc    = list(label = "log(1 + SOC)",       raw = "soc"),
+  ph         = list(label = "pH (H2O)",            raw = "ph"),
+  sand_logit = list(label = "logit(sand %)",       raw = "sand_pct"),
+  clay_logit = list(label = "logit(clay %)",       raw = "clay_pct"),
+  bd         = list(label = "Bulk density (kg/m3)",raw = "bd")
+)
+target_names <- names(targets)
+```
+
+## Distributions and skewness
+
+```{r multi-dist, fig.cap="Distributions of the five soil targets after the chosen transforms."}
+df_long <- df %>%
+  select(log_soc, ph, sand_logit, clay_logit, bd) %>%
+  pivot_longer(everything(), names_to = "target", values_to = "value")
+ggplot(df_long, aes(value)) +
+  geom_histogram(bins = 40, fill = "#5b8def", color = "white") +
+  facet_wrap(~ target, scales = "free", ncol = 3) +
+  theme_minimal()
+```
+
+## Per-target Welch's t (Grasslands vs. Croplands)
+
+```{r ht-multi}
+gg <- df %>% filter(land_cover %in% c("10","12"))
+ht_results <- map_dfr(target_names, function(t) {
+  res <- t.test(reformulate("land_cover", t), data = gg)
+  g1 <- gg[[t]][gg$land_cover == "10"]
+  g2 <- gg[[t]][gg$land_cover == "12"]
+  psd <- sqrt(((length(g1)-1)*var(g1) + (length(g2)-1)*var(g2)) /
+              (length(g1)+length(g2)-2))
+  d   <- (mean(g1) - mean(g2)) / psd
+  tibble(target = t, t_stat = res$statistic, df = res$parameter,
+         p_value = res$p.value, ci_lo = res$conf.int[1], ci_hi = res$conf.int[2],
+         cohens_d = d)
+})
+ht_results
+```
+
+## 5 × 64 univariate correlation barplot
+
+```{r multi-corr-bar, fig.cap="Pearson correlation between each AlphaEarth dimension and each soil target.", fig.height=8}
+corr_long <- map_dfr(target_names, function(t) {
+  rs <- sapply(ae_cols, function(c) cor(df[[c]], df[[t]]))
+  tibble(target = t, dim = ae_cols, r = rs)
+})
+ggplot(corr_long, aes(reorder(dim, r), r, fill = r > 0)) +
+  geom_col() +
+  facet_wrap(~ target, ncol = 1, scales = "free_y") +
+  scale_fill_manual(values = c("#c0392b", "#2980b9"), guide = "none") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 5)) +
+  labs(x = NULL, y = "Pearson r")
+```
+
+## Per-target spatial-CV RF
+
+```{r multi-rfs}
+rf_per_target <- map_dfr(target_names, function(t) {
+  cv <- rf_spatial_cv(df, t, ae_cols)
+  ci <- boot_mean_r2(cv$r2)
+  tibble(target = t, mean_r2 = ci$mean, lo = ci$lo, hi = ci$hi,
+         mean_rmse = mean(cv$rmse))
+})
+rf_per_target
+```
+
+```{r multi-pred-obs, fig.cap="Out-of-fold predicted vs.\\ observed for each target, ordered by mean R^2.", fig.height=6}
+oof_per_target <- map_dfr(target_names, function(t) {
+  cv <- rf_spatial_cv(df, t, ae_cols)
+  tibble(target = t,
+         pred = unlist(cv$pred),
+         obs  = unlist(cv$obs))
+})
+ord <- rf_per_target %>% arrange(desc(mean_r2)) %>% pull(target)
+oof_per_target$target <- factor(oof_per_target$target, levels = ord)
+ggplot(oof_per_target, aes(obs, pred)) +
+  geom_point(alpha = 0.25, size = 0.5, color = "#5b8def") +
+  geom_abline(slope = 1, intercept = 0, color = "#c0392b", linetype = "dashed") +
+  facet_wrap(~ target, scales = "free", ncol = 3) +
+  theme_minimal() +
+  labs(x = "Observed", y = "Predicted")
+```
+
+# Phase C — Sentinel-2 baseline (Direction 2)
+
+```{r load-s2}
+s2 <- read.csv("../data/s2_features.csv")
+df2 <- df %>% inner_join(s2, by = c("lon","lat"))
+s2_features <- setdiff(colnames(s2), c("lon","lat"))
+cat("S2 features:", length(s2_features), "  joined rows:", nrow(df2), "\n")
+
+# Drop rows with any S2 NA (BSC-empty over evergreen forests etc.)
+df2_full <- df2
+df2 <- df2 %>% drop_na(all_of(s2_features))
+cat("after dropping NA:", nrow(df2), " (lost", nrow(df2_full) - nrow(df2), ")\n")
+df2 <- make_spatial_folds(df2)
+```
+
+## Univariate r comparison (top features per source)
+
+```{r s2-corrs}
+ae_r <- sapply(ae_cols, function(c) cor(df2[[c]], df2$log_soc))
+s2_r <- sapply(s2_features, function(c) cor(df2[[c]], df2$log_soc))
+top_compare <- bind_rows(
+  tibble(source = "AE", feature = names(ae_r), r = ae_r),
+  tibble(source = "S2", feature = names(s2_r), r = s2_r)
+) %>% group_by(source) %>% slice_max(abs(r), n = 10) %>% ungroup()
+top_compare
+```
+
+## Three-way RF benchmark
+
+```{r s2-rfs}
+rf_s2   <- rf_spatial_cv(df2, "log_soc", s2_features)
+rf_ae   <- rf_spatial_cv(df2, "log_soc", ae_cols)
+rf_both <- rf_spatial_cv(df2, "log_soc", c(s2_features, ae_cols))
+
+bench <- tibble(
+  model = c("S2 only","AE only","S2 + AE"),
+  r2_mean = c(mean(rf_s2$r2), mean(rf_ae$r2), mean(rf_both$r2)),
+  rmse    = c(mean(rf_s2$rmse), mean(rf_ae$rmse), mean(rf_both$rmse))
+)
+bench
+```
+
+## Paired bootstrap on $\Delta R^2$
+
+```{r s2-paired-boot}
+oof <- tibble(
+  fold = unlist(rf_ae$fold),
+  pred_ae = unlist(rf_ae$pred), pred_s2 = unlist(rf_s2$pred),
+  pred_both = unlist(rf_both$pred), obs = unlist(rf_ae$obs)
+)
+# point-level squared errors
+oof <- oof %>% mutate(
+  se_ae = (pred_ae - obs)^2,
+  se_s2 = (pred_s2 - obs)^2,
+  se_both = (pred_both - obs)^2
+)
+# Per-fold R^2 -> bootstrap on the difference
+fold_r2 <- oof %>% group_by(fold) %>%
+  summarise(r2_ae = cor(pred_ae, obs)^2,
+            r2_s2 = cor(pred_s2, obs)^2,
+            r2_both = cor(pred_both, obs)^2,
+            .groups = "drop")
+
+paired_boot <- function(a, b, B = 10000) {
+  d <- a - b
+  bo <- boot::boot(d, function(x, idx) mean(x[idx]), R = B)
+  ci <- boot::boot.ci(bo, type = "bca")$bca[4:5]
+  list(delta = mean(d), lo = ci[1], hi = ci[2])
+}
+delta_ae_s2   <- paired_boot(fold_r2$r2_ae, fold_r2$r2_s2)
+delta_both_ae <- paired_boot(fold_r2$r2_both, fold_r2$r2_ae)
+delta_ae_s2; delta_both_ae
+```
+
+```{r s2-bar, fig.cap="Random-forest log-SOC R^2 across feature stacks. Error bars from per-fold bootstrap."}
+plot_df <- tibble(
+  model = factor(c("S2 only","AE only","S2 + AE"), levels = c("S2 only","AE only","S2 + AE")),
+  r2 = c(mean(rf_s2$r2), mean(rf_ae$r2), mean(rf_both$r2)),
+  lo = c(boot_mean_r2(rf_s2$r2)$lo, boot_mean_r2(rf_ae$r2)$lo, boot_mean_r2(rf_both$r2)$lo),
+  hi = c(boot_mean_r2(rf_s2$r2)$hi, boot_mean_r2(rf_ae$r2)$hi, boot_mean_r2(rf_both$r2)$hi)
+)
+ggplot(plot_df, aes(model, r2, fill = model)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = lo, ymax = hi), width = 0.2) +
+  scale_fill_manual(values = c("#27ae60","#5b8def","#34495e"), guide = "none") +
+  theme_minimal() +
+  labs(x = NULL, y = expression(R^2), title = "S2 vs. AlphaEarth vs. combined")
+```
+
+# Phase F — KSSL validation (Direction 3)
+
+```{r kssl-load, eval=file.exists("../data/kssl_with_features.csv")}
+kssl <- read.csv("../data/kssl_with_features.csv")
+cat("KSSL rows:", nrow(kssl), "\n")
+kssl$log_soc <- log1p(kssl$soc_pct_0_30 * 10)  # if in %, convert to g/kg-equivalent
+kssl <- make_spatial_folds(kssl)
+
+# OpenLandMap-vs-KSSL agreement
+if ("openlandmap_soc" %in% colnames(kssl)) {
+  agree <- cor(kssl$openlandmap_soc, kssl$soc_pct_0_30)^2
+  cat("OpenLandMap-vs-KSSL R^2:", round(agree, 3), "\n")
+}
+
+rf_ae_kssl   <- rf_spatial_cv(kssl, "log_soc", ae_cols)
+s2_kssl_features <- intersect(colnames(kssl), s2_features)
+rf_s2_kssl   <- rf_spatial_cv(kssl, "log_soc", s2_kssl_features)
+rf_both_kssl <- rf_spatial_cv(kssl, "log_soc", c(s2_kssl_features, ae_cols))
+
+kssl_bench <- tibble(
+  model = c("S2 only","AE only","S2 + AE"),
+  r2 = c(mean(rf_s2_kssl$r2), mean(rf_ae_kssl$r2), mean(rf_both_kssl$r2)),
+  rmse = c(mean(rf_s2_kssl$rmse), mean(rf_ae_kssl$rmse), mean(rf_both_kssl$rmse))
+)
+kssl_bench
+```
+
+## Moran's I on KSSL residuals
+
+```{r morans-i, eval=file.exists("../data/kssl_with_features.csv")}
+suppressPackageStartupMessages(library(spdep))
+oof_resid <- tibble(
+  lon = unlist(rf_ae_kssl$lon),
+  lat = unlist(rf_ae_kssl$lat),
+  resid = unlist(rf_ae_kssl$pred) - unlist(rf_ae_kssl$obs)
+) %>% sample_n(min(2000, n()))  # cap for spdep memory
+
+coords <- as.matrix(oof_resid[, c("lon","lat")])
+nb <- knn2nb(knearneigh(coords, k = 8))
+lw <- nb2listw(nb, style = "W")
+mi <- moran.test(oof_resid$resid, lw, randomisation = TRUE)
+print(mi)
+```
+
+# Headline comparison table
+
+```{r headline}
+headline <- bench %>%
+  rename(`OpenLandMap R2` = r2_mean, `OpenLandMap RMSE` = rmse) %>%
+  mutate(`KSSL R2` = if (exists("kssl_bench")) kssl_bench$r2[match(model, kssl_bench$model)] else NA_real_,
+         `KSSL RMSE` = if (exists("kssl_bench")) kssl_bench$rmse[match(model, kssl_bench$model)] else NA_real_)
+headline
+```
+
+```{r sessioninfo}
+sessionInfo()
+```

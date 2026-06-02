@@ -1,0 +1,11 @@
+{
+  "snapshot": "WoSIS_2023_December",
+  "properties": {},
+  "geographic_coverage": {
+    "lat_min": -77.8486633300781,
+    "lat_max": 82.19999694824219,
+    "lon_min": -172.36333333333334,
+    "lon_max": 179.25,
+    "total_profiles": 228090
+  }
+}

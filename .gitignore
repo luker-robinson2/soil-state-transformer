@@ -1,0 +1,49 @@
+# ---- Secrets / credentials (NEVER commit) ----
+*.json.key
+*-svc-*.json
+*service-account*.json
+.cdsapirc
+.env
+.env.*
+gcloud-*.json
+**/credentials*.json
+
+# ---- Large data & model binaries (regenerate via scripts) ----
+*.zip
+*.nc
+*.parquet
+*.pt
+*.pth
+*.ckpt
+*.sqlite
+foundation-model/data/data/
+foundation-model/data/processed/
+foundation-model/checkpoints/
+alphaearth-soc/future_work/data/kssl_raw/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+venv/
+.venv/
+*.egg-info/
+
+# ---- R / LaTeX build artifacts ----
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.toc
+*.synctex.gz
+.Rhistory
+.RData
+
+# ---- OS / editor ----
+.DS_Store
+.vscode/
+.idea/
+
+# ---- Agent scratch ----
+.chuck/

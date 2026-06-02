@@ -1,0 +1,64 @@
+# SST Foundation Model - TPU Training Container
+#
+# Supports Google Cloud TPU v3/v4 on Vertex AI Training
+#
+# Build:
+#   docker build -f docker/Dockerfile.training-tpu \
+#     -t us-central1-docker.pkg.dev/your-gcp-project/sst/sst-training-tpu:latest .
+#
+# Usage:
+#   Submit via Vertex AI with TPU worker pool configuration
+
+FROM us-docker.pkg.dev/cloud-tpu-images/inference/pytorch-xla:r2.1.0
+
+# Metadata
+LABEL maintainer="Luke Robinson"
+LABEL description="SST Foundation Model TPU Training"
+LABEL version="1.0"
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# XLA-specific environment variables for TPU optimization
+ENV XLA_USE_BF16=1 \
+    XLA_TENSOR_ALLOCATOR_MAXSIZE=100000000 \
+    TPU_NUM_DEVICES=8
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt ./
+
+# Install Python dependencies (some may already be in base image)
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
+        google-cloud-storage>=2.14.0 \
+        google-cloud-aiplatform>=1.38.0 \
+        gcsfs>=2023.12.0 \
+        tensorboard>=2.15.0
+
+# Copy the application code
+COPY . /app/
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# TPU training typically uses different device handling
+# The training script auto-detects TPU via torch_xla
+
+# Default entrypoint for training
+ENTRYPOINT ["python", "-m", "training.pretrain"]
+
+# Default arguments (can be overridden)
+CMD ["--help"]

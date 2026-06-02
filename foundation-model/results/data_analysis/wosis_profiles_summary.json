@@ -1,0 +1,27 @@
+{
+  "snapshot": "WoSIS_2023_December",
+  "total_profiles": 228090,
+  "total_layers": 901099,
+  "geographic_coverage": {
+    "lat_min": -77.8486633300781,
+    "lat_max": 82.19999694824219,
+    "lon_min": -172.36333333333334,
+    "lon_max": 179.25
+  },
+  "top_countries": {
+    "United States of America": 56698,
+    "Australia": 42774,
+    "Chile": 13680,
+    "Mexico": 12599,
+    "Switzerland": 10928,
+    "Canada": 9465,
+    "Brazil": 9346,
+    "Belgium": 7017,
+    "Germany": 4426,
+    "Malawi": 3432
+  },
+  "data_quality": {
+    "profiles_with_coordinates": 228090,
+    "profiles_with_wrb_classification": 39649
+  }
+}

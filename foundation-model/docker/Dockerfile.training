@@ -1,0 +1,68 @@
+# SST Foundation Model - GPU Training Container
+#
+# Supports NVIDIA GPUs (T4, V100, A100) on Vertex AI Training
+#
+# Build:
+#   docker build -f docker/Dockerfile.training \
+#     -t us-central1-docker.pkg.dev/your-gcp-project/sst/sst-training:latest .
+#
+# Usage:
+#   docker run --gpus all sst-training:latest \
+#     --train-path gs://your-research-bucket/data/processed/wosis_train.parquet \
+#     --val-path gs://your-research-bucket/data/processed/wosis_val.parquet \
+#     --use-gcs --gcs-bucket your-research-bucket
+
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+
+# Metadata
+LABEL maintainer="Luke Robinson"
+LABEL description="SST Foundation Model GPU Training"
+LABEL version="1.0"
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
+        google-cloud-storage>=2.14.0 \
+        google-cloud-aiplatform>=1.38.0 \
+        gcsfs>=2023.12.0 \
+        tensorboard>=2.15.0 \
+        pyarrow>=14.0.0
+
+# Copy the application code
+COPY . /app/
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Vertex AI environment detection
+# These environment variables are automatically set by Vertex AI:
+# - AIP_TRAINING_DATA_URI: GCS path to training data
+# - AIP_VALIDATION_DATA_URI: GCS path to validation data
+# - AIP_MODEL_DIR: GCS path to save model outputs
+# - AIP_TENSORBOARD_LOG_DIR: TensorBoard log directory
+# - AIP_CHECKPOINT_DIR: Checkpoint directory
+
+# Default entrypoint for training
+ENTRYPOINT ["python", "-m", "training.pretrain"]
+
+# Default arguments (can be overridden)
+CMD ["--help"]

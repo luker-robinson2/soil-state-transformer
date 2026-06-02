@@ -1,0 +1,261 @@
+%%% SETUP %%%
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.9in]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\setlength{\parskip}{2pt}
+\setlength{\intextsep}{6pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{2pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\title{\textbf{Predicting Soil Organic Carbon from AlphaEarth Foundation
+Embeddings: An Exploratory and Inferential Analysis}}
+\author{Luke Robinson \\ STAT 5000}
+\date{April 24, 2026}
+
+\begin{document}
+\maketitle
+\hrule
+\vspace{0.5em}
+
+\begin{abstract}
+\noindent We assess whether the 64-dimensional geospatial embeddings produced
+by Google DeepMind's AlphaEarth Foundations model carry usable signal for
+predicting Soil Organic Carbon (SOC). Using $n = 3000$ random points in the
+contiguous United States, paired with OpenLandMap SOC and MODIS land-cover
+labels, we apply three techniques from STAT~5000 ---
+\textbf{exploratory data analysis}, \textbf{Welch's two-sample
+hypothesis test}, and \textbf{nonparametric bootstrap confidence
+intervals} --- and find that several embedding dimensions are strongly
+correlated with $\log(1+\mathrm{SOC})$ ($|r|$ up to $0.61$, BCa 95\%
+CI $[-0.628, -0.581]$), and that mean log-SOC differs significantly
+between Croplands and Grasslands. A supplementary spatial-block
+cross-validated Random Forest reaches $R^2 = 0.75$ out-of-fold,
+suggesting the embeddings encode subsurface-relevant signal beyond
+what any single dimension captures.
+\end{abstract}
+
+%%% INTRO AND BACKGROUND %%%
+\section{Introduction and Background}
+\subsection{Research question}
+Soil Organic Carbon (SOC) is one of the largest and most dynamic terrestrial
+carbon pools and is central to both climate-mitigation accounting and
+agricultural productivity \cite{lal2004soc}. Mapping SOC at scale is hard:
+ground samples are expensive, sparse, and biased toward accessible land,
+while traditional satellite-driven approaches require careful preprocessing of
+multi-sensor imagery. Google DeepMind's AlphaEarth Foundations
+\cite{brown2025alphaearth} sidesteps that preprocessing by compressing
+Sentinel-1, Sentinel-2, Landsat, and climate inputs into 64 dense
+unit-norm embedding bands at 10\,m resolution.
+
+This project asks: \emph{do AlphaEarth embeddings carry usable signal for
+SOC, even though they were not trained on any soil targets, and even though
+SOC labels are sparse and indirect?}
+
+\subsection{Background}
+AlphaEarth is published as an annual mosaic in Google Earth Engine
+\cite{gorelick2017gee} and was trained as a self-supervised representation of
+the Earth's surface; the 64 dimensions have no direct physical interpretation.
+For SOC labels we use OpenLandMap \cite{hengl2017openlandmap}, a global,
+gridded SOC product at 250\,m derived by machine learning from a global
+compilation of legacy soil profiles. Because both predictors and labels are
+themselves model outputs, this study is best read as a test of whether the
+\emph{AlphaEarth latent space encodes the same surface signals that drive an
+established SOC model}, not as a ground-truth validation.
+
+\subsection{Data}
+We sampled $n_{0} = 4500$ random points uniformly within a CONUS bounding
+box, dropped points where SOC or any AlphaEarth band was masked, and kept
+the first $n = 3000$ valid records. For each point we extracted:
+\begin{itemize}
+\item AlphaEarth Foundations 2024 annual embedding, 64 bands $A_{00}..A_{63}$.
+\item OpenLandMap SOC at 0\,cm depth (g/kg).
+\item MODIS IGBP land cover \cite{friedl2010modis}, 2022.
+\end{itemize}
+All extraction was performed in Earth Engine with a 250\,m sampling scale to
+match the SOC raster.
+
+%%% METHODS AND RESULTS %%%
+\section{Methods and Results}
+
+\subsection{Method 1 --- Exploratory Data Analysis}
+SOC is heavily right-skewed (skewness $= 2.39$, median $= 3$\,g/kg, max
+$= 41$\,g/kg). The transformation $y = \log(1+\mathrm{SOC})$ is approximately
+symmetric (Figure~\ref{fig:eda1}, left; mean $1.58$, sd $0.63$); subsequent
+analyses use this log-transformed response.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/eda-soc-hist-1.png}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/eda-boxplot-1.png}
+\end{minipage}
+\caption{Left: SOC distribution before and after the $\log(1+\cdot)$
+transform. Right: log-SOC by IGBP land-cover class (top eight by $n$).
+Forest classes have the highest median; the Grasslands ($n_1{=}1052$)
+vs.\ Croplands ($n_2{=}543$) contrast motivates the hypothesis test below.}
+\label{fig:eda1}
+\end{figure}
+
+We then computed the Pearson correlation of every AlphaEarth dimension
+with log-SOC (Figure~\ref{fig:corr}); six dimensions exceed $|r| = 0.43$
+and the strongest is $A_{40}$ with $r = -0.606$. This is a non-trivial
+univariate signal given that the embeddings were never trained on any soil
+target.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/eda-corr-bar-1.png}
+\caption{Pearson correlation between each AlphaEarth dimension and
+$\log(1+\mathrm{SOC})$. Six dimensions exceed $|r| = 0.43$; $A_{40}$ is
+the strongest at $r = -0.61$.}
+\label{fig:corr}
+\end{figure}
+
+\subsection{Method 2 --- Hypothesis Testing (Welch's Two-Sample $t$-test)}
+We test whether the mean log-SOC differs between Grasslands ($n_1 = 1052$)
+and Croplands ($n_2 = 543$), the two largest IGBP groups in our sample.
+Formally,
+\[
+H_0: \mu_{\text{Grass}} = \mu_{\text{Crop}}, \qquad
+H_1: \mu_{\text{Grass}} \neq \mu_{\text{Crop}}.
+\]
+
+\textbf{Assumption checks.} Per-group QQ plots of log-SOC are nearly
+linear (notebook Section~3.2), and with $n_1 + n_2 = 1595$ the Central
+Limit Theorem secures approximate normality of the sample means even
+where per-observation deviation occurs. Levene's test does not reject
+equal variances ($F_{1,1593} = 2.26$, $p = 0.13$); we still use Welch's
+$t$ \cite{welch1947t} as a defensive choice since group sizes are unequal.
+
+The Welch test statistic is
+\[
+t = \frac{\bar{y}_{\text{Grass}} - \bar{y}_{\text{Crop}}}
+        {\sqrt{s_{\text{Grass}}^2/n_1 + s_{\text{Crop}}^2/n_2}}
+  = -6.24, \quad \text{df}_{\text{Welch}} = 1326, \quad p = 6.0 \times 10^{-10}.
+\]
+The 95\% confidence interval for the mean difference
+$\mu_{\text{Grass}} - \mu_{\text{Crop}}$ is $[-0.176, -0.092]$ on the log
+scale, and Cohen's $d = -0.31$ (small-to-medium effect). \emph{We reject
+$H_0$.} Croplands have higher mean log-SOC than Grasslands by roughly
+0.13 log units --- equivalent to about a 14\% higher SOC on the natural
+scale. This is consistent with the geography of the sample: U.S.~grasslands
+are concentrated in the semi-arid West (low productivity, low residue
+inputs), while croplands cluster in the Midwestern Mollisol belt with
+historically high SOC stocks.
+
+\subsection{Method 3 --- Bootstrap Confidence Intervals}
+The Welch CI is exact only under normality. We complement it with
+nonparametric bootstrap intervals \cite{efron1979bootstrap} that make no
+distributional assumption. We use the \texttt{boot} package
+\cite{canty2024boot} with $B = 10{,}000$ resamples and BCa
+(bias-corrected and accelerated) intervals.
+
+\textbf{(a) Bootstrap CI for the strongest correlation.} Resampling the
+$(A_{40}, \log\text{-SOC})$ pairs and recomputing $r$ gives
+$\hat{r} = -0.606$, BCa 95\% CI $[-0.628,\ -0.581]$ --- a narrow interval
+that excludes zero by a wide margin (Figure~\ref{fig:boot}, left).
+
+\textbf{(b) Bootstrap CI for the group mean difference.} A stratified
+resample (preserving group sizes) for
+$\bar{y}_{\text{Grass}} - \bar{y}_{\text{Crop}}$ gives a BCa 95\% CI of
+$[-0.176, -0.091]$ (Figure~\ref{fig:boot}, right), agreeing with Welch's
+CI $[-0.176, -0.092]$ to three decimal places --- a useful sanity check
+that the parametric assumptions of Section~2.2 hold here.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/boot-cor-fig-1.png}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/boot-md-fig-1.png}
+\end{minipage}
+\caption{Bootstrap distributions ($B=10{,}000$). Left: Pearson correlation
+between $A_{40}$ and log-SOC. Right: stratified mean difference between
+Grasslands and Croplands. Black: point estimate; red dashed: BCa 95\% CI.}
+\label{fig:boot}
+\end{figure}
+
+\subsection{Beyond the three: PCA and Random Forest}
+The above three methods come from the STAT~5000 syllabus. Two
+supplementary analyses --- \emph{not counted toward the three} --- are
+included because they directly answer the prediction question raised in
+the project proposal.
+
+\textbf{Principal Component Analysis.} A scree plot of a centered PCA on
+the 64 embedding dimensions shows that 24 PCs are required to explain 90\%
+of the variance and 32 PCs for 95\%; PC1 alone captures 20.8\%. The
+embedding is therefore moderately --- but not extremely --- redundant.
+
+\textbf{Spatial-block cross-validated Random Forest.} We fit a Random
+Forest \cite{breiman2001randomforests,wright2017ranger} regressing log-SOC
+on the 64 AlphaEarth dimensions, with 5-fold cross-validation in which
+folds are assigned over $1^\circ \times 1^\circ$ lat/lon blocks rather
+than over individual points (so neighbouring points cannot leak between
+train and test). Mean out-of-fold $R^2 = 0.752$ with RMSE $= 0.32$ log-units.
+A naive random-fold CV gives $R^2 = 0.758$, only marginally higher --- this
+small gap is reassuring evidence that the embedding-to-SOC signal generalises
+spatially rather than memorising location.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[b]{0.48\linewidth}
+\includegraphics[width=\linewidth]{figures/rf-pred-fig-1.png}
+\end{minipage}\hfill
+\begin{minipage}[b]{0.48\linewidth}
+\includegraphics[width=\linewidth]{figures/rf-importance-1.png}
+\end{minipage}
+\caption{Left: out-of-fold predicted vs.~observed log-SOC, 5-fold
+spatial-block CV. Right: top-15 AlphaEarth dimensions by Random Forest
+impurity importance --- $A_{40}$, $A_{43}$, $A_{05}$, and $A_{33}$
+(also the highest by univariate $|r|$) dominate.}
+\label{fig:rf}
+\end{figure}
+
+\section{Conclusions}
+We answered three questions and one bonus question:
+\begin{enumerate}
+\item Several AlphaEarth dimensions carry strong univariate signal for
+SOC (Method 1; $|r|$ up to $0.61$).
+\item Mean log-SOC differs significantly between Grasslands and Croplands
+(Method 2; Welch's $t$, $p < 10^{-9}$).
+\item The mean-difference and correlation effects are robust to
+distributional assumptions (Method 3; BCa bootstrap intervals exclude zero
+and agree closely with the parametric CI).
+\item A Random Forest using all 64 dimensions predicts log-SOC with
+$R^2 \approx 0.75$ on spatially-held-out blocks --- a useful baseline for
+soil mapping that requires no traditional remote-sensing preprocessing.
+\end{enumerate}
+
+\subsection{Limitations}
+Our SOC ``ground truth'' is itself an interpolated machine-learning product
+\cite{hengl2017openlandmap}, so this work measures alignment between two
+models rather than against field-measured SOC. The 250\,m SOC raster is
+also coarser than AlphaEarth's 10\,m, and there is a temporal mismatch
+(OpenLandMap is built on legacy profiles, AlphaEarth is annual 2024).
+Spatial-block CV mitigates --- but does not eliminate --- spatial
+autocorrelation effects.
+
+\subsection{Future research}
+Validating against field measurements (e.g., USDA SSURGO point profiles or
+ISRIC's WoSIS database) would convert this from a model-vs-model study into
+a true accuracy assessment. Extending to multi-depth SOC, pH, and texture,
+and benchmarking AlphaEarth against a Sentinel-2-only baseline, would
+isolate the marginal value of the foundation-model embedding.
+
+%%% BIBLIOGRAPHY %%%
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

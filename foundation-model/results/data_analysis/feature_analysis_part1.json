@@ -1,0 +1,186 @@
+{
+  "properties": {
+    "orgc": {
+      "name": "Organic Carbon",
+      "unit": "g/kg",
+      "statistics": {
+        "count": 515865,
+        "mean": 23.779876861460508,
+        "std": 67.80121023826015,
+        "min": 0.0,
+        "p5": 0.7,
+        "p25": 2.3,
+        "median": 6.0,
+        "p75": 15.0,
+        "p95": 90.7,
+        "max": 795.0,
+        "skewness": 5.486959015402736,
+        "kurtosis": 32.71959503591384
+      },
+      "distribution": "highly skewed (log-transform recommended)",
+      "transform": "log1p",
+      "embedding_dim": "scalar \u2192 linear projection"
+    },
+    "phaq": {
+      "name": "pH (H2O)",
+      "unit": "pH units",
+      "statistics": {
+        "count": 604525,
+        "mean": 6.270320733911749,
+        "std": 1.3244939452927054,
+        "min": 1.5,
+        "p5": 4.4,
+        "p25": 5.2,
+        "median": 6.1,
+        "p75": 7.3,
+        "p95": 8.5,
+        "max": 12.3,
+        "skewness": 0.3293125190335462,
+        "kurtosis": -0.7039879947305829
+      },
+      "distribution": "approximately normal",
+      "transform": "zscore",
+      "embedding_dim": "scalar \u2192 linear projection"
+    },
+    "clay": {
+      "name": "Clay Content",
+      "unit": "%",
+      "statistics": {
+        "count": 646162,
+        "mean": 25.300130029311536,
+        "std": 17.829646763419767,
+        "min": 0.0,
+        "p5": 2.5,
+        "p25": 11.3,
+        "median": 22.0,
+        "p75": 36.0,
+        "p95": 60.0,
+        "max": 100.0,
+        "skewness": 0.8473311695255793,
+        "kurtosis": 0.2929123862077381
+      },
+      "distribution": "moderately skewed",
+      "transform": "zscore",
+      "embedding_dim": "scalar \u2192 linear projection"
+    },
+    "sand": {
+      "name": "Sand Content",
+      "unit": "%",
+      "statistics": {
+        "count": 540897,
+        "mean": 39.93035097269055,
+        "std": 27.5213515072542,
+        "min": 0.0,
+        "p5": 2.6,
+        "p25": 15.5,
+        "median": 37.0,
+        "p75": 61.0,
+        "p95": 89.0,
+        "max": 100.0,
+        "skewness": 0.35031669856513586,
+        "kurtosis": -0.9953610922894578
+      },
+      "distribution": "approximately normal",
+      "transform": "zscore",
+      "embedding_dim": "scalar \u2192 linear projection"
+    },
+    "silt": {
+      "name": "Silt Content",
+      "unit": "%",
+      "statistics": {
+        "count": 614484,
+        "mean": 32.00664835862284,
+        "std": 21.059851054973752,
+        "min": 0.0,
+        "p5": 3.3,
+        "p25": 14.1,
+        "median": 29.2,
+        "p75": 47.0,
+        "p95": 70.2,
+        "max": 100.0,
+        "skewness": 0.46417316150715426,
+        "kurtosis": -0.7353973943674457
+      },
+      "distribution": "approximately normal",
+      "transform": "zscore",
+      "embedding_dim": "scalar \u2192 linear projection"
+    },
+    "cecph7": {
+      "name": "CEC at pH 7",
+      "unit": "cmol+/kg",
+      "statistics": {
+        "count": 319139,
+        "mean": 17.4745016434845,
+        "std": 15.215053401702233,
+        "min": 0.1,
+        "p5": 2.4,
+        "p25": 7.3,
+        "median": 13.8,
+        "p75": 23.0,
+        "p95": 43.6,
+        "max": 140.0,
+        "skewness": 2.612494066381368,
+        "kurtosis": 11.485248584655382
+      },
+      "distribution": "highly skewed (log-transform recommended)",
+      "transform": "log1p",
+      "embedding_dim": "scalar \u2192 linear projection"
+    }
+  },
+  "correlations": {},
+  "depth_patterns": {
+    "upper_depth": {
+      "min": 0.0,
+      "max": 3277.0,
+      "mean": 49.67925943764226,
+      "common_depths": {
+        "0": 213265,
+        "20": 29630,
+        "30": 26320,
+        "10": 25254,
+        "15": 21112,
+        "25": 17626,
+        "60": 15243,
+        "40": 14240,
+        "50": 13143,
+        "5": 12415
+      }
+    },
+    "lower_depth": {
+      "min": 1.0,
+      "max": 3292.0,
+      "mean": 75.19402751528966
+    },
+    "thickness": {
+      "mean": 25.514768077647407,
+      "std": 22.0289554502833,
+      "common": {
+        "20": 83107,
+        "10": 80695,
+        "30": 74706,
+        "15": 59952,
+        "25": 40342
+      }
+    }
+  },
+  "embedding_recommendations": {},
+  "geographic": {
+    "latitude": {
+      "min": -77.8486633300781,
+      "max": 82.19999694824219,
+      "mean": 14.29807700786375,
+      "std": 33.60564190467503
+    },
+    "longitude": {
+      "min": -172.36333333333334,
+      "max": 179.25,
+      "mean": -8.119530142622942,
+      "std": 90.31922949221028
+    },
+    "hemisphere": {
+      "northern": 143033,
+      "southern": 85057,
+      "ratio": 1.6816135062369941
+    }
+  }
+}

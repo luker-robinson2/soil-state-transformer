@@ -1,0 +1,98 @@
+{
+  "generated_at": "2025-12-24T01:19:22.861408",
+  "project": "Soil Dynamics Foundation Model",
+  "data_sources": {
+    "wosis": {
+      "description": "World Soil Information Service - Global soil profiles",
+      "total_profiles": 228090,
+      "total_layers": 901099,
+      "coverage": "Global (228k profiles, 77\u00b0S-82\u00b0N)",
+      "properties": [
+        "Organic Carbon (SOC)",
+        "pH (H2O, KCl, CaCl2)",
+        "Clay/Sand/Silt content",
+        "Cation Exchange Capacity",
+        "Bulk Density",
+        "Total Nitrogen"
+      ],
+      "depth_range": "0-500+ cm (primarily 0-100cm)",
+      "status": "Downloaded (435 MB)"
+    },
+    "era5": {
+      "description": "ECMWF Reanalysis 5 - Global climate data",
+      "resolution": "0.25\u00b0 x 0.25\u00b0 (~31km)",
+      "temporal": "Hourly, 1940-present",
+      "variables": [
+        "2m temperature (t2m)",
+        "Soil temperature layer 1 (stl1)",
+        "Volumetric soil water layer 1 (swvl1)",
+        "Total precipitation (tp)"
+      ],
+      "status": "Test sample downloaded (CONUS Jan 2024)"
+    },
+    "soilgrids": {
+      "description": "SoilGrids 250m - Global soil predictions",
+      "resolution": "250m",
+      "status": "Pending (API temporarily unavailable)"
+    }
+  },
+  "integration_strategy": {
+    "spatial_alignment": {
+      "method": "Point extraction at WoSIS profile locations",
+      "wosis": "Point coordinates (lat/lon)",
+      "era5": "Bilinear interpolation from 0.25\u00b0 grid",
+      "soilgrids": "Point extraction from 250m raster"
+    },
+    "temporal_alignment": {
+      "method": "Rolling window features",
+      "windows": [
+        "30-day",
+        "90-day",
+        "365-day"
+      ],
+      "reference": "WoSIS sampling date (where available)"
+    }
+  },
+  "feature_engineering_plan": {
+    "static_features": [
+      "Latitude, Longitude (with Fourier encoding)",
+      "Elevation, Slope, Aspect (from DEM)",
+      "Soil texture class (from SoilGrids)",
+      "WRB soil classification (from WoSIS)"
+    ],
+    "temporal_features": [
+      "Mean temperature (30d, 90d)",
+      "Temperature range (min/max over 30d)",
+      "Precipitation total (30d, 90d)",
+      "Growing degree days (base 10\u00b0C)",
+      "Frost days count (30d)",
+      "Soil moisture trend"
+    ],
+    "target_variables": [
+      "Soil Organic Carbon (SOC) - primary",
+      "pH - secondary",
+      "Available nutrients (N, P, K) - tertiary"
+    ]
+  },
+  "model_architecture": {
+    "name": "Soil State Transformer (SST)",
+    "pre_training": {
+      "dataset": "WoSIS global profiles (~230k)",
+      "task": "Masked property prediction",
+      "objective": "Learn general soil-climate-property relationships"
+    },
+    "fine_tuning": {
+      "method": "LoRA (Low-Rank Adaptation)",
+      "dataset": "Local field data (100-500 samples)",
+      "objective": "Adapt to regional soil characteristics"
+    }
+  },
+  "next_steps": [
+    "1. Download full ERA5 time series for WoSIS profile dates",
+    "2. Download SoilGrids covariates when API available",
+    "3. Create training sequences in notebooks",
+    "4. Prototype baseline models (XGBoost/RF)",
+    "5. Design and test SST architecture",
+    "6. Implement LoRA fine-tuning"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "variables": {
+    "tp": {
+      "name": "Total Precipitation",
+      "unit": "m",
+      "shape": [
+        2,
+        105,
+        237
+      ],
+      "min": 0.0,
+      "max": 0.005127429962158203,
+      "mean": 2.7139258236275055e-05,
+      "std": 0.00012854627857450396,
+      "soil_relevance": "Water input, erosion, leaching",
+      "feature_engineering": [
+        "cumulative",
+        "dry_spell_days",
+        "intensity"
+      ]
+    },
+    "t2m": {
+      "name": "2-meter Temperature",
+      "unit": "K",
+      "shape": [
+        2,
+        105,
+        237
+      ],
+      "min": 231.226806640625,
+      "max": 299.010009765625,
+      "mean": 273.6397399902344,
+      "std": 14.209124565124512,
+      "soil_relevance": "Controls biological activity, decomposition rates",
+      "feature_engineering": [
+        "rolling_mean",
+        "growing_degree_days",
+        "frost_days"
+      ]
+    },
+    "stl1": {
+      "name": "Soil Temperature Layer 1",
+      "unit": "K",
+      "shape": [
+        2,
+        105,
+        237
+      ],
+      "min": 242.88368225097656,
+      "max": 300.7899169921875,
+      "mean": 278.1423645019531,
+      "std": 11.59056282043457,
+      "soil_relevance": "Direct soil thermal state, affects nutrient cycling",
+      "feature_engineering": [
+        "rolling_mean",
+        "diurnal_range",
+        "freeze_thaw_cycles"
+      ]
+    },
+    "swvl1": {
+      "name": "Soil Moisture Layer 1",
+      "unit": "m**3 m**-3",
+      "shape": [
+        2,
+        105,
+        237
+      ],
+      "min": -0.000359266996383667,
+      "max": 0.704138994216919,
+      "mean": 0.188789963722229,
+      "std": 0.16360443830490112,
+      "soil_relevance": "Water availability, microbial activity, nutrient transport",
+      "feature_engineering": [
+        "rolling_mean",
+        "drought_index",
+        "saturation_days"
+      ]
+    }
+  },
+  "encoding_recommendations": {
+    "recommended_approach": "Hierarchical Temporal Encoding",
+    "sequence_lengths": {
+      "weekly": 52,
+      "monthly": 12,
+      "seasonal": 4
+    },
+    "features_per_timestep": 8,
+    "total_embedding_dim": 128,
+    "sinusoidal_doy": true,
+    "hemisphere_aware": true
+  }
+}
