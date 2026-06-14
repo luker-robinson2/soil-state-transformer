@@ -1,0 +1,332 @@
+---
+import Base from '../layouts/Base.astro';
+import Architecture from '../components/Architecture.astro';
+import BakeoffChart from '../components/charts/BakeoffChart.tsx';
+import MultiTruthPanel from '../components/charts/MultiTruthPanel.tsx';
+import CalibrationChart from '../components/charts/CalibrationChart.tsx';
+import { MODALITIES, OBJECTIVES, RETRIEVAL } from '../data/results';
+
+const toc = [
+  { id: 'tldr', label: 'TL;DR' },
+  { id: 'motivation', label: 'Motivation' },
+  { id: 'data', label: 'Data' },
+  { id: 'method', label: 'Method' },
+  { id: 'experiments', label: 'Experiments' },
+  { id: 'results', label: 'Results' },
+  { id: 'finding', label: 'Multi-truth finding' },
+  { id: 'limits', label: 'Limitations' },
+  { id: 'reproducibility', label: 'Reproducibility' },
+];
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+---
+
+<Base title="GeoSoil — case study">
+  <!-- HEADER -->
+  <header class="mx-auto max-w-6xl px-5 pb-8 pt-16 sm:px-8 sm:pt-20">
+    <p class="eyebrow reveal">Flagship case study · representation learning</p>
+    <h1
+      class="reveal mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl"
+    >
+      GeoSoil: a multi-modal, multi-truth latent of soil and place
+    </h1>
+    <p class="reveal mt-5 max-w-2xl text-lg leading-relaxed text-ink-2">
+      A representation that compresses satellite, radar, terrain and climate signal into
+      a 256-d vector — and an evaluation protocol honest enough to show where that signal
+      runs out.
+    </p>
+  </header>
+
+  <div class="mx-auto grid max-w-6xl gap-12 px-5 sm:px-8 lg:grid-cols-[200px_1fr]">
+    <!-- TOC -->
+    <aside class="hidden lg:block">
+      <nav class="sticky top-20 space-y-1.5 border-l border-line pl-4">
+        {
+          toc.map((t) => (
+            <a
+              href={`#${t.id}`}
+              class="block py-0.5 text-sm text-ink-3 transition-colors hover:text-moss-600"
+            >
+              {t.label}
+            </a>
+          ))
+        }
+      </nav>
+    </aside>
+
+    <article class="min-w-0">
+      <!-- TL;DR -->
+      <section id="tldr" class="scroll-mt-20">
+        <div class="reveal rounded-2xl border border-moss-200 bg-moss-50/50 p-6 sm:p-8">
+          <p class="eyebrow">TL;DR</p>
+          <p class="mt-3 text-[1.05rem] leading-relaxed text-ink">
+            GeoSoil fuses nine geospatial modalities into a 256-d latent with six
+            self-supervised objectives, then validates against three independent ground
+            truths. End-to-end it beats every tabular baseline on modelled labels (SOC
+            <span class="tnum font-medium text-moss-700">R²=0.762</span>). But the same
+            family scores texture <span class="tnum font-medium text-clay">R²≤0</span> on
+            lab-measured pedons — exposing the circularity that single-benchmark soil
+            models hide. The honest contribution is the representation and the protocol.
+          </p>
+        </div>
+      </section>
+
+      <!-- MOTIVATION -->
+      <section id="motivation" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">01 · Motivation</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Representations, and label honesty
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Mapping soil at scale is valuable and hard: ground samples are sparse,
+            expensive and biased to accessible land. Two gaps motivate this work.
+          </p>
+          <p class="reveal">
+            <span class="font-medium text-ink">Representations, not point predictions.</span>
+            Most soil models are tabular regressors fit per-property, per-region. They
+            neither expose a reusable representation nor transfer. Foundation-model
+            thinking — learn a general latent once, probe it for many tasks — transformed
+            vision and language; geospatial soil work should follow.
+          </p>
+          <p class="reveal">
+            <span class="font-medium text-ink">Label honesty.</span> Popular gridded soil
+            products (OpenLandMap, SoilGrids) are themselves ML outputs derived from
+            satellite covariates. Training <em>and validating</em> a satellite model
+            against them risks circularity: shared inputs inflate accuracy. The remedy is
+            validation against independent, lab-measured truth.
+          </p>
+        </div>
+      </section>
+
+      <!-- DATA -->
+      <section id="data" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">02 · Data</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Nine modalities, two ground truths, one join
+        </h2>
+        <p class="reveal prose-col mt-4 text-[1.02rem] leading-relaxed text-ink-2">
+          All public, CONUS, point-referenced; harmonized to 0–30 cm and joined on
+          (lon, lat). Temporal sources carry 12 monthly steps.
+        </p>
+        <div class="reveal mt-6 overflow-hidden rounded-2xl border border-line">
+          <table class="w-full border-collapse text-sm">
+            <thead>
+              <tr class="bg-paper-2/70 text-left">
+                <th class="px-4 py-3 font-medium text-ink-2">Group</th>
+                <th class="px-4 py-3 font-medium text-ink-2">Source</th>
+                <th class="px-4 py-3 font-medium text-ink-2">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                MODALITIES.map((m, i) => (
+                  <tr class={i % 2 ? 'bg-card' : 'bg-paper/40'}>
+                    <td class="border-t border-line px-4 py-2.5 text-ink">{m.group}</td>
+                    <td class="border-t border-line px-4 py-2.5 font-mono text-[0.8rem] text-ink-2">
+                      {m.source}
+                    </td>
+                    <td class="border-t border-line px-4 py-2.5">
+                      <span
+                        class:list={[
+                          'rounded-full px-2 py-0.5 text-[0.72rem]',
+                          m.temporal
+                            ? 'bg-moss-100 text-moss-700'
+                            : m.role.includes('validation')
+                              ? 'bg-clay/15 text-clay'
+                              : 'bg-paper-2 text-ink-3',
+                        ]}
+                      >
+                        {m.role}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- METHOD -->
+      <section id="method" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">03 · Method</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Encoders → fusion → a latent that does everything
+        </h2>
+        <div class="reveal mt-6">
+          <Architecture />
+        </div>
+
+        <h3 class="reveal mt-10 text-lg font-semibold text-ink">Six jointly-optimized objectives</h3>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          {
+            OBJECTIVES.map((o, i) => (
+              <div class="reveal rounded-xl border border-line bg-card p-4">
+                <div class="flex items-baseline gap-2">
+                  <span class="tnum text-xs text-moss-400">{String(i + 1).padStart(2, '0')}</span>
+                  <h4 class="font-medium text-ink">{o.name}</h4>
+                </div>
+                <p class="mt-1.5 text-[0.9rem] leading-relaxed text-ink-3">{o.blurb}</p>
+              </div>
+            ))
+          }
+        </div>
+
+        <!-- the loss, typeset cleanly -->
+        <div class="reveal mt-8 rounded-2xl border border-line bg-ink p-6 text-paper">
+          <p class="font-mono text-[0.7rem] uppercase tracking-wide text-moss-200/70">
+            Supervised term — masked heteroscedastic Gaussian NLL
+          </p>
+          <p class="mt-3 overflow-x-auto font-mono text-[0.95rem] leading-relaxed text-moss-50">
+            ℒ_nll = ½ · Σₜ mₜ · [ log σₜ² + (yₜ − μₜ)² / σₜ² ]
+          </p>
+          <p class="mt-3 text-[0.85rem] leading-relaxed text-paper/65">
+            Per target t, the head emits μₜ and σₜ; mₜ masks missing labels so each pedon
+            contributes only the properties it actually measured. σₜ is trained — the model
+            says how unsure it is, and the calibration plot below checks whether it’s telling
+            the truth.
+          </p>
+        </div>
+      </section>
+
+      <!-- EXPERIMENTS -->
+      <section id="experiments" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">04 · Experiments</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          The bake-off
+        </h2>
+        <p class="reveal prose-col mt-4 text-[1.02rem] leading-relaxed text-ink-2">
+          Every model is scored under the same 1°×1° spatial-block GroupKFold — no point
+          leaks between a fold’s train and test. Pick a property; the field re-sorts.
+          Two things to look for: end-to-end <span class="font-medium text-moss-700">GeoSoil</span>
+          leads on every target, and a <span class="font-medium text-moss-500">frozen latent</span>
+          fed to a plain GBM stays competitive — evidence the representation, not just the
+          architecture, carries the signal.
+        </p>
+        <div class="reveal mt-6">
+          <BakeoffChart client:visible />
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="results" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">05 · Results</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Calibration & retrieval
+        </h2>
+        <p class="reveal prose-col mt-4 text-[1.02rem] leading-relaxed text-ink-2">
+          A model that reports σ is only useful if σ is honest. Across all five properties
+          the 95% intervals cover 89–92% of held-out points, and the split-conformal step
+          pulls 90% coverage onto the diagonal.
+        </p>
+        <div class="reveal mt-6">
+          <CalibrationChart client:visible />
+        </div>
+
+        <h3 class="reveal mt-12 text-lg font-semibold text-ink">
+          The latent is a usable index
+        </h3>
+        <p class="reveal prose-col mt-3 text-[1.02rem] leading-relaxed text-ink-2">
+          Cross-modal retrieval — query one modality’s embedding, rank the rest — recovers
+          the true match far above chance, confirming the fused space is structured, not
+          collapsed.
+        </p>
+        <div class="reveal mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+          {
+            [
+              { v: pct(RETRIEVAL.recall1), l: 'recall@1' },
+              { v: pct(RETRIEVAL.recall5), l: 'recall@5' },
+              { v: pct(RETRIEVAL.recall10), l: 'recall@10' },
+              { v: pct(RETRIEVAL.randomBaseline10), l: 'chance@10' },
+            ].map((s) => (
+              <div class="bg-card px-4 py-5">
+                <p class="tnum text-2xl font-semibold text-moss-700">{s.v}</p>
+                <p class="mt-1 font-mono text-[0.72rem] text-ink-3">{s.l}</p>
+              </div>
+            ))
+          }
+        </div>
+        <p class="mt-3 font-mono text-[0.68rem] text-ink-faint">
+          recall@10 is 31× the random baseline · n=1000 · source: verification_jepa.json
+        </p>
+      </section>
+
+      <!-- THE FINDING -->
+      <section id="finding" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">06 · The standout</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          The multi-truth finding
+        </h2>
+        <p class="reveal prose-col mt-4 text-[1.02rem] leading-relaxed text-ink-2">
+          This is the result single-label benchmarks cannot show. The
+          <span class="font-medium text-ink">in-domain control</span> is decisive: trained
+          directly on lab data, AlphaEarth predicts lab-measured texture and bulk density at
+          R²≤0 while pH carries genuine signal. Much of the apparent texture accuracy on
+          modelled labels was circular. Adding radar and bare-soil recovers real,
+          lab-verifiable signal — modestly, and honestly.
+        </p>
+        <div class="reveal mt-6">
+          <MultiTruthPanel client:visible />
+        </div>
+      </section>
+
+      <!-- LIMITATIONS -->
+      <section id="limits" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">07 · Limitations</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          What satellites cannot see
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Satellite features encode <span class="font-medium text-ink">surface appearance</span>.
+            Subsurface texture and bulk density are not remotely verifiable to lab accuracy.
+            Recovering them needs proximal sensing — MIR/VNIR soil spectroscopy, gamma-ray
+            radiometrics, EM induction. That is the frontier for absolute accuracy.
+          </p>
+          <p class="reveal">
+            Depth is topsoil only (0–30 cm); horizon-resolved prediction is future work.
+            Compute is single-machine; larger pretraining corpora and additional geospatial
+            foundation embeddings (Prithvi, Clay) are expected to help but were out of scope.
+          </p>
+        </div>
+      </section>
+
+      <!-- REPRODUCIBILITY -->
+      <section id="reproducibility" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">08 · Reproducibility</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Everything here is checkable
+        </h2>
+        <div class="reveal mt-5 grid gap-4 sm:grid-cols-2">
+          <a
+            href="#"
+            class="group rounded-2xl border border-line bg-card p-6 transition-colors hover:border-moss-400"
+          >
+            <p class="font-mono text-[0.7rem] uppercase tracking-wide text-moss-500">PDF</p>
+            <h3 class="mt-2 text-lg font-semibold text-ink">White paper</h3>
+            <p class="mt-1.5 text-sm text-ink-3">
+              The full method, multi-truth protocol, and references.
+              <span class="block font-mono text-[0.7rem] text-ink-faint">docs/whitepaper/main.pdf</span>
+            </p>
+          </a>
+          <a
+            href="#"
+            class="group rounded-2xl border border-line bg-card p-6 transition-colors hover:border-moss-400"
+          >
+            <p class="font-mono text-[0.7rem] uppercase tracking-wide text-moss-500">Code</p>
+            <h3 class="mt-2 text-lg font-semibold text-ink">Repository</h3>
+            <p class="mt-1.5 text-sm text-ink-3">
+              Model, bake-off, verification, and the public-data pulls.
+              <span class="block font-mono text-[0.7rem] text-ink-faint">geosoil/ · data/extraction/</span>
+            </p>
+          </a>
+        </div>
+        <p class="reveal prose-col mt-6 text-[1.02rem] leading-relaxed text-ink-2">
+          Every metric on this page is read directly from <code class="rounded bg-paper-2 px-1.5 py-0.5 font-mono text-[0.85em]">geosoil/results/*.json</code> —
+          the same files the training and verification scripts write. No number was typed
+          by hand.
+        </p>
+      </section>
+    </article>
+  </div>
+</Base>

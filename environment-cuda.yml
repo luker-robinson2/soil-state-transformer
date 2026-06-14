@@ -1,0 +1,28 @@
+# CUDA environment for GeoSoil on CU Alpine (NVIDIA A100, partition aa100).
+# Build: module load anaconda; conda env create -f environment-cuda.yml; conda activate geosoil
+# Then (needs a CUDA toolchain loaded — `module load cuda`):
+#   pip install --no-build-isolation causal-conv1d>=1.2 mamba-ssm>=2.2
+# (mamba-ssm compiles a CUDA kernel; ensure nvcc CUDA major matches the torch cu12 build.)
+name: geosoil
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      # torch with CUDA 12.1 wheels
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - torch==2.4.1
+      - numpy>=1.26
+      - pandas>=2.0
+      - pyarrow>=14
+      - scikit-learn>=1.4
+      - scipy>=1.11
+      - matplotlib>=3.8
+      - umap-learn>=0.5
+      - einops>=0.7            # mamba-ssm dependency
+      - lightgbm>=4.0
+      - xgboost>=2.0
+      - catboost>=1.2
+      - earthengine-api>=0.1.380
+      - requests
+      # mamba-ssm + causal-conv1d installed AFTER env create (need nvcc), see header.

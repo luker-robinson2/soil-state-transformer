@@ -1,0 +1,93 @@
+---
+// Static architecture figure: per-modality encoders → attention fusion → 256-d z → heads.
+const mods = [
+  { label: 'AlphaEarth 64-d', kind: 'static' },
+  { label: 'Sentinel-2', kind: 'static' },
+  { label: 'Sentinel-1 SAR', kind: 'static' },
+  { label: 'Terrain / DEM', kind: 'static' },
+  { label: 'ERA5 ×12', kind: 'temporal' },
+  { label: 'MODIS ×12', kind: 'temporal' },
+];
+---
+
+<figure class="not-prose my-2">
+  <div class="overflow-hidden rounded-2xl border border-line bg-card p-5 sm:p-7">
+    <div class="grid grid-cols-1 items-center gap-5 md:grid-cols-[1.1fr_auto_0.8fr_auto_0.9fr]">
+      <!-- modalities -->
+      <div class="space-y-2">
+        <p class="eyebrow mb-2.5">Modalities</p>
+        {
+          mods.map((m) => (
+            <div
+              class:list={[
+                'flex items-center justify-between rounded-lg border px-3 py-2 text-sm',
+                m.kind === 'temporal'
+                  ? 'border-moss-200 bg-moss-50/60 text-moss-700'
+                  : 'border-line bg-paper-2/60 text-ink-2',
+              ]}
+            >
+              <span>{m.label}</span>
+              <span class="font-mono text-[0.62rem] uppercase tracking-wide opacity-55">
+                {m.kind === 'temporal' ? 'GRU/SSM' : 'MLP'}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- arrow -->
+      <div class="hidden md:flex justify-center text-ink-faint">
+        <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
+          <path d="M0 10h34m0 0-6-5m6 5-6 5" stroke="currentColor" stroke-width="1.4" />
+        </svg>
+      </div>
+
+      <!-- fusion -->
+      <div class="flex flex-col items-center">
+        <div
+          class="relative w-full rounded-xl border border-moss-300 bg-moss-50 px-4 py-6 text-center"
+        >
+          <p class="eyebrow mb-1">Attention fusion</p>
+          <p class="text-sm leading-snug text-moss-800">
+            CLS token + presence mask<br />over modality tokens
+          </p>
+          <div
+            class="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-moss-700 px-3.5 py-1.5 text-paper"
+          >
+            <span class="font-mono text-sm">z</span>
+            <span class="font-mono text-[0.7rem] opacity-75">∈ ℝ²⁵⁶</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- arrow -->
+      <div class="hidden md:flex justify-center text-ink-faint">
+        <svg width="40" height="20" viewBox="0 0 40 20" fill="none">
+          <path d="M0 10h34m0 0-6-5m6 5-6 5" stroke="currentColor" stroke-width="1.4" />
+        </svg>
+      </div>
+
+      <!-- heads -->
+      <div class="space-y-2">
+        <p class="eyebrow mb-2.5">Heads on z</p>
+        <div class="rounded-lg border border-line bg-paper-2/60 px-3 py-2 text-sm text-ink-2">
+          μ, σ × 5 targets
+          <span class="block font-mono text-[0.62rem] text-ink-faint">heteroscedastic</span>
+        </div>
+        <div class="rounded-lg border border-line bg-paper-2/60 px-3 py-2 text-sm text-ink-2">
+          JEPA / InfoNCE
+          <span class="block font-mono text-[0.62rem] text-ink-faint">projection + predictor</span>
+        </div>
+        <div class="rounded-lg border border-line bg-paper-2/60 px-3 py-2 text-sm text-ink-2">
+          Temporal forecast
+          <span class="block font-mono text-[0.62rem] text-ink-faint">latent dynamics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="mt-3 font-mono text-[0.68rem] text-ink-faint">
+    Per-modality encoders map each source to a shared width; a small Transformer fuses the
+    tokens (ignoring absent modalities via a presence mask) into the 256-d latent z, which feeds
+    every head.
+  </figcaption>
+</figure>

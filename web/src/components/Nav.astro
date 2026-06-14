@@ -1,0 +1,59 @@
+---
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/geosoil', label: 'GeoSoil' },
+  { href: '/about', label: 'About' },
+];
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-line/70 backdrop-blur-md"
+  style="background: color-mix(in srgb, var(--color-paper) 82%, transparent);"
+>
+  <nav
+    class="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 sm:px-8"
+  >
+    <a href="/" class="group flex items-center gap-2.5" aria-label="GeoSoil home">
+      <span
+        class="grid h-6 w-6 place-items-center rounded-[7px] bg-moss-700 text-paper transition-transform duration-500 group-hover:rotate-[8deg]"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3C8 8 5 11 5 15a7 7 0 0 0 14 0c0-4-3-7-7-12Z" fill="currentColor" opacity="0.92"/>
+        </svg>
+      </span>
+      <span class="font-mono text-[0.92rem] font-medium tracking-tight text-ink"
+        >GeoSoil</span
+      >
+    </a>
+
+    <div class="flex items-center gap-1">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class:list={[
+              'relative rounded-full px-3.5 py-1.5 text-sm transition-colors duration-200',
+              isActive(l.href)
+                ? 'text-ink'
+                : 'text-ink-3 hover:text-ink',
+            ]}
+          >
+            {isActive(l.href) && (
+              <span class="absolute inset-0 -z-0 rounded-full bg-moss-100/70" />
+            )}
+            <span class="relative">{l.label}</span>
+          </a>
+        ))
+      }
+      <a
+        href="/geosoil#reproducibility"
+        class="ml-1.5 hidden rounded-full border border-line-strong px-3.5 py-1.5 text-sm text-ink-2 transition-colors hover:border-moss-400 hover:text-moss-600 sm:inline-block"
+      >
+        White paper ↗
+      </a>
+    </div>
+  </nav>
+</header>

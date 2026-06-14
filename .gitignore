@@ -16,10 +16,23 @@ gcloud-*.json
 *.pth
 *.ckpt
 *.sqlite
+*.csv.gz
+*.csv
 foundation-model/data/data/
 foundation-model/data/processed/
+data/processed/
+data/acquire/
+geosoil/results/*.npy
 foundation-model/checkpoints/
 alphaearth-soc/future_work/data/kssl_raw/
+
+# ---- Node / web build artifacts ----
+node_modules/
+web/dist/
+.astro/
+
+# ---- ML training artifacts ----
+catboost_info/
 
 # ---- Python ----
 __pycache__/

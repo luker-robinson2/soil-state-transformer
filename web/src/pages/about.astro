@@ -1,0 +1,98 @@
+---
+import Base from '../layouts/Base.astro';
+
+const stack = [
+  'PyTorch', 'Self-supervised learning', 'JEPA / VICReg / InfoNCE', 'Conformal UQ',
+  'Spatial cross-validation', 'Google Earth Engine', 'LightGBM / XGBoost / CatBoost',
+  'Transformers', 'Mamba / SSMs', 'Astro / React',
+];
+const portfolio = [
+  {
+    tag: 'Flagship',
+    title: 'GeoSoil',
+    body: 'Multi-modal geospatial representation — the latent, the bake-off, and the multi-truth protocol on this site.',
+    href: '/geosoil',
+  },
+  {
+    tag: 'Study',
+    title: 'AlphaEarth → SOC',
+    body: 'A complete, reproducible study on 100% public data: do DeepMind’s 64-d embeddings carry soil-organic-carbon signal? Spatial-CV RF reaches R²≈0.75.',
+    href: '/geosoil',
+  },
+  {
+    tag: 'Foundation model',
+    title: 'Soil State Transformer',
+    body: 'A multi-modal transformer pre-trained on ~230k global WoSIS profiles with masked-property prediction, LoRA-fine-tuned for field transfer.',
+    href: '/geosoil',
+  },
+];
+---
+
+<Base title="About — Luke Robinson">
+  <section class="mx-auto max-w-6xl px-5 pb-12 pt-20 sm:px-8 sm:pt-28">
+    <div class="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+      <div>
+        <p class="eyebrow reveal">About</p>
+        <h1 class="reveal mt-4 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
+          I build models that earn trust before they claim accuracy.
+        </h1>
+        <div class="prose-col mt-6 space-y-4 text-[1.05rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            I’m a machine-learning engineer working at the intersection of representation
+            learning and the physical world — geospatial, soil, and earth-observation data.
+            My interest is the unglamorous half of ML that decides whether a model is real:
+            honest evaluation, uncertainty you can act on, and figures a skeptic can click.
+          </p>
+          <p class="reveal">
+            GeoSoil is the clearest example. It would have been easy to report
+            R²=0.76 and stop. Instead the whole project is built to find out where that
+            number is borrowed from a circular label and where it reflects something a lab
+            could verify. That instinct — to falsify my own result — is what I bring to a team.
+          </p>
+        </div>
+
+        <div class="reveal mt-8 flex flex-wrap gap-2.5">
+          {
+            stack.map((s) => (
+              <span class="rounded-full border border-line bg-card px-3 py-1.5 font-mono text-[0.78rem] text-ink-2">
+                {s}
+              </span>
+            ))
+          }
+        </div>
+
+        <div class="reveal mt-9 flex flex-wrap gap-3">
+          <a
+            href="mailto:lukerob20042@gmail.com"
+            class="inline-flex items-center gap-2 rounded-full bg-moss-700 px-5 py-2.5 text-paper transition-colors hover:bg-moss-800"
+          >
+            Get in touch →
+          </a>
+          <a
+            href="/geosoil"
+            class="inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-ink-2 transition-colors hover:border-moss-400 hover:text-moss-600"
+          >
+            See the flagship
+          </a>
+        </div>
+      </div>
+
+      <!-- portfolio rail -->
+      <div class="reveal space-y-3">
+        <p class="eyebrow">One story, three parts</p>
+        {
+          portfolio.map((p) => (
+            <a
+              href={p.href}
+              class="group block rounded-2xl border border-line bg-card p-5 transition-colors hover:border-moss-300"
+            >
+              <p class="font-mono text-[0.68rem] uppercase tracking-wide text-moss-500">{p.tag}</p>
+              <h3 class="mt-1.5 font-semibold text-ink group-hover:text-moss-700">{p.title}</h3>
+              <p class="mt-1.5 text-[0.9rem] leading-relaxed text-ink-3">{p.body}</p>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</Base>

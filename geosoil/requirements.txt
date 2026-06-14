@@ -1,0 +1,19 @@
+# GeoSoil — multi-modal geospatial soil representation model
+torch>=2.2
+numpy>=1.26
+pandas>=2.0
+pyarrow>=14
+scikit-learn>=1.4
+scipy>=1.11
+matplotlib>=3.8
+umap-learn>=0.5
+
+# tabular baselines
+lightgbm>=4.0
+xgboost>=2.0
+catboost>=1.2
+# tabpfn  # optional; gated HuggingFace model — needs `huggingface-cli login` + accept terms
+
+# data extraction (Phase 0)
+earthengine-api>=0.1.380
+# soilspecdata        # optional, OSSL spectral library download

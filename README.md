@@ -1,9 +1,21 @@
 # Soil Machine Learning — Portfolio
 
 Foundation-model and geospatial machine learning for **soil property prediction**.
-This repo holds the data-science work behind my portfolio site, in two parts that
-together tell one story: *can modern representation learning predict what's in the
-soil from above?*
+This repo holds the data-science work behind my portfolio site. One story, three
+parts: *can modern representation learning predict what's in the soil from above —
+and produce a reusable latent map of place?*
+
+---
+
+## ⭐ GeoSoil — multi-modal geospatial soil representation  ·  [`geosoil/`](geosoil/)
+**The flagship.** A high-dimensional **learned latent** of soil + geospatial state,
+fused from AlphaEarth embeddings, Sentinel-2 spectra, geography, terrain, and
+climate/vegetation time series, trained with **self-supervised cross-modal
+objectives** (JEPA + InfoNCE + masked modeling + VICReg) and a multi-target
+heteroscedastic head. Verified against **lab-measured KSSL truth** under
+spatial-block CV, with a **bake-off** of JEPA / Mamba / EBM variants vs strong
+tabular baselines (LightGBM/XGBoost/CatBoost/TabPFN) and a frozen-latent→GBM
+hybrid. The evolution of the Soil State Transformer below.
 
 ---
 
@@ -56,20 +68,18 @@ Pre-train on global soil data, then **LoRA-fine-tune** on local fields.
 
 ```
 .
+├── geosoil/             # ⭐ flagship: multi-modal latent soil representation model
 ├── alphaearth-soc/      # AlphaEarth→SOC study (paper, R, GEE, data)
-├── foundation-model/    # Soil State Transformer research
+├── foundation-model/    # Soil State Transformer research (GeoSoil's predecessor)
+├── data/                # Phase-0 extraction (GEE covariates) + processed master table
 ├── docs/
+│   ├── research/        # SOTA survey behind GeoSoil's design
 │   ├── PROVENANCE.md    # where each piece came from
 │   └── SCRUB_LOG.md     # record of the SST sanitization pass
 └── README.md
 ```
 
-## Roadmap toward the public artifact
-The highest-ROI next step is **one polished public artifact**: an SST write-up or
-self-contained notebook built around the WoSIS-only pre-training story. The
-AlphaEarth/SOC study is publishable as-is and is the natural front door for the
-portfolio site.
-
 ## Tech
-Python · PyTorch · scikit-learn · R · Google Earth Engine · WoSIS · ERA5 ·
-SoilGrids · Vertex AI · LoRA
+Python · PyTorch (MPS) · scikit-learn · LightGBM/XGBoost/CatBoost/TabPFN · R ·
+Google Earth Engine · AlphaEarth · Sentinel-2 · WoSIS · KSSL · ERA5 · SoilGrids ·
+JEPA · contrastive SSL · Mamba/SSM · energy-based models · conformal prediction
