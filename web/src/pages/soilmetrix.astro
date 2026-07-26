@@ -1,0 +1,260 @@
+---
+import Base from '../layouts/Base.astro';
+
+const toc = [
+  { id: 'tldr', label: 'TL;DR' },
+  { id: 'problem', label: 'Problem' },
+  { id: 'system', label: 'System' },
+  { id: 'features', label: 'Features' },
+  { id: 'validation', label: 'Validation' },
+  { id: 'engineering', label: 'Engineering' },
+  { id: 'limits', label: 'Limitations' },
+  { id: 'role', label: 'My role' },
+];
+
+const stages = [
+  { n: '01', name: 'Ingest', detail: 'Sentinel-2 multi-spectral imagery · 13 bands' },
+  { n: '02', name: 'Features', detail: '50–100+ engineered features per point · 10 m grid' },
+  { n: '03', name: 'Train', detail: 'Vertex AI GPU training · spatially-blocked validation' },
+  { n: '04', name: 'Predict', detail: 'Per-field nutrient predictions · 172+ fields' },
+  { n: '05', name: 'Serve', detail: '6 services on GKE · Helm · Cloud Build CI/CD' },
+];
+
+const stats = [
+  { v: '40 min', l: 'end-to-end run (was multi-day)' },
+  { v: '172+', l: 'fields in production' },
+  { v: '12+ / 5', l: 'farms / states' },
+  { v: '10 m', l: 'feature resolution' },
+];
+---
+
+<Base
+  title="SoilMetrix pipeline — case study"
+  description="Production geo-soil ML: an end-to-end pipeline turning Sentinel-2 imagery into field-specific soil-nutrient predictions, from feature engineering to GKE serving."
+>
+  <header class="mx-auto max-w-6xl px-5 pb-8 pt-16 sm:px-8 sm:pt-20">
+    <p class="eyebrow reveal">Flagship case study · production ML</p>
+    <h1
+      class="reveal mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl"
+    >
+      SoilMetrix: satellite pixels to soil decisions, in 40 minutes
+    </h1>
+    <p class="reveal mt-5 max-w-2xl text-lg leading-relaxed text-ink-2">
+      The production counterpart to <a href="/geosoil" class="text-moss-600 underline decoration-moss-300 underline-offset-2 hover:text-moss-700">GeoSoil</a>:
+      an end-to-end ML pipeline that turns Sentinel-2 imagery into field-specific
+      soil-nutrient predictions for working farms — built and operated as a
+      part-time engineer across three years.
+    </p>
+  </header>
+
+  <div class="mx-auto grid max-w-6xl gap-12 px-5 sm:px-8 lg:grid-cols-[200px_1fr]">
+    <aside class="hidden lg:block">
+      <nav class="sticky top-20 space-y-1.5 border-l border-line pl-4">
+        {
+          toc.map((t) => (
+            <a
+              href={`#${t.id}`}
+              class="block py-0.5 text-sm text-ink-3 transition-colors hover:text-moss-600"
+            >
+              {t.label}
+            </a>
+          ))
+        }
+      </nav>
+    </aside>
+
+    <article class="min-w-0">
+      <!-- TL;DR -->
+      <section id="tldr" class="scroll-mt-20">
+        <div class="reveal rounded-2xl border border-moss-200 bg-moss-50/50 p-6 sm:p-8">
+          <p class="eyebrow">TL;DR</p>
+          <p class="mt-3 text-[1.05rem] leading-relaxed text-ink">
+            I designed and built the end-to-end pipeline behind SoilMetrix's soil-nutrient
+            predictions: Sentinel-2 ingestion → 50–100+ features per point at 10&nbsp;m →
+            Vertex AI training → serving from six services on GKE. It replaced a
+            <span class="font-medium">multi-day manual workflow</span> with a
+            <span class="tnum font-medium text-moss-700">40-minute</span> automated run and
+            delivers production predictions across
+            <span class="tnum font-medium text-moss-700">172+ fields</span> on 12+ farms in
+            5 states. Validation is spatially blocked — the detail that keeps the accuracy
+            numbers honest.
+          </p>
+        </div>
+
+        <div class="reveal mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+          {
+            stats.map((s) => (
+              <div class="bg-card px-4 py-5">
+                <p class="tnum text-2xl font-semibold text-moss-700">{s.v}</p>
+                <p class="mt-1 font-mono text-[0.72rem] leading-snug text-ink-3">{s.l}</p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- PROBLEM -->
+      <section id="problem" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">01 · Problem</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Soil sampling doesn't scale; satellites do
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Farmers manage inputs field-by-field, but lab soil sampling is sparse and
+            slow — a handful of points must speak for hundreds of acres. SoilMetrix's
+            bet is that multi-spectral satellite signal, engineered carefully, can
+            interpolate between those samples and turn them into wall-to-wall nutrient
+            maps a farmer can act on.
+          </p>
+          <p class="reveal">
+            When I joined, producing predictions for a new farm was a multi-day manual
+            workflow: data pulls, feature computation, model runs and map exports, each
+            step hand-operated. The job was to make it a pipeline — reliable enough for
+            production, fast enough to iterate on models daily.
+          </p>
+        </div>
+      </section>
+
+      <!-- SYSTEM -->
+      <section id="system" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">02 · System</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          One automated path from imagery to field map
+        </h2>
+        <div class="reveal mt-6 overflow-hidden rounded-2xl border border-line">
+          {
+            stages.map((s, i) => (
+              <div
+                class:list={[
+                  'flex items-baseline gap-4 px-5 py-4',
+                  i % 2 ? 'bg-card' : 'bg-paper/40',
+                  i > 0 ? 'border-t border-line' : '',
+                ]}
+              >
+                <span class="tnum text-xs text-moss-400">{s.n}</span>
+                <div>
+                  <p class="font-medium text-ink">{s.name}</p>
+                  <p class="mt-0.5 font-mono text-[0.78rem] text-ink-3">{s.detail}</p>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <p class="reveal prose-col mt-5 text-[1.02rem] leading-relaxed text-ink-2">
+          The platform runs as six services on Kubernetes (GKE) spanning eleven GCP
+          services — Vertex AI for GPU training, Cloud SQL for state, Cloud Build for
+          CI/CD — with Helm charts handling cross-environment deployment. One command
+          takes a new farm from raw imagery to served predictions in about 40 minutes.
+        </p>
+      </section>
+
+      <!-- FEATURES -->
+      <section id="features" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">03 · Feature engineering</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Where the domain knowledge lives
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Raw bands are weak predictors on their own; the signal is in the derived
+            structure. I authored the core Python package that computes
+            <span class="font-medium text-ink">50–100+ features per point at 10&nbsp;m
+            resolution</span>: spectral indices from the 13 Sentinel-2 bands, GIS
+            derivatives computed with GRASS and PostGIS, and the sampling-grid
+            generation that decides where predictions are made.
+          </p>
+          <p class="reveal">
+            The same package owns the soil-sampling algorithms and multi-state
+            derivative processing — so agronomy assumptions live in one tested library,
+            not scattered across notebooks.
+          </p>
+        </div>
+      </section>
+
+      <!-- VALIDATION -->
+      <section id="validation" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">04 · Validation</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Spatial blocking, or the metrics lie
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Soil is spatially autocorrelated: two points 200&nbsp;m apart are nearly
+            duplicates. Randomly split them across train and test and the model is
+            graded on its neighbors — metrics inflate, and the field map looks better
+            in the backtest than it performs on a new farm. All model evaluation here
+            uses <span class="font-medium text-ink">spatially blocked
+            cross-validation</span>, so test data is always geographically disjoint
+            from training data.
+          </p>
+          <p class="reveal">
+            The research side of this argument — including what happens when popular
+            soil benchmarks are themselves model outputs — is made quantitatively in
+            the <a href="/geosoil" class="text-moss-600 underline decoration-moss-300 underline-offset-2 hover:text-moss-700">GeoSoil case study</a>,
+            where the same spatial-block protocol is applied against three independent
+            ground truths.
+          </p>
+        </div>
+      </section>
+
+      <!-- ENGINEERING -->
+      <section id="engineering" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">05 · Engineering</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Boring, repeatable deployment
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Retraining and deployment are automated: Cloud Build runs the CI/CD path,
+            Helm charts template the six services across environments, and models move
+            from Vertex AI training to serving without manual promotion steps. The
+            40-minute figure is the whole loop — not just inference — which is what
+            makes daily model iteration practical for a part-time team.
+          </p>
+          <p class="reveal">
+            Details here are method-level by design: client names, datasets, and
+            infrastructure identifiers are omitted. The methodology, architecture
+            reasoning, and my own experiments are what's mine to show — the
+            <a href="https://github.com/luker-robinson2/soil-state-transformer" class="text-moss-600 underline decoration-moss-300 underline-offset-2 hover:text-moss-700">public research repo</a>
+            demonstrates the same skills on public data.
+          </p>
+        </div>
+      </section>
+
+      <!-- LIMITATIONS -->
+      <section id="limits" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">06 · Limitations</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          What this pipeline doesn't do
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Per-pixel uncertainty is not yet a first-class product output — predictions
+            ship as point estimates, and quantifying spatial confidence is the clearest
+            next step (the conformal machinery explored in GeoSoil is the candidate).
+            And like all optical remote sensing, the approach reads surface signal:
+            subsurface properties remain bounded by what 13 bands at 10&nbsp;m can see.
+          </p>
+        </div>
+      </section>
+
+      <!-- ROLE -->
+      <section id="role" class="scroll-mt-20 pt-16">
+        <p class="eyebrow reveal">07 · My role</p>
+        <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Solo on the pipeline, part of a product
+        </h2>
+        <div class="prose-col mt-5 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+          <p class="reveal">
+            Data Scientist &amp; ML Engineer, June 2023 – present, part-time throughout
+            my BS and into my MS at CU Boulder. I designed and built the end-to-end
+            pipeline, authored the core feature-engineering package, and own the
+            training and deployment automation. Product, agronomy expertise, and the
+            customer relationships are the wider team's.
+          </p>
+        </div>
+      </section>
+    </article>
+  </div>
+</Base>

@@ -1,0 +1,13 @@
+# Render Blueprint — deploys the portfolio site (web/) as a static site.
+# Render dashboard: New + → Blueprint → select this repo, or New + → Static Site
+# with the same settings below.
+services:
+  - type: web
+    name: geosoil
+    runtime: static
+    rootDir: web
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

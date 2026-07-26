@@ -1,0 +1,155 @@
+---
+import Base from '../layouts/Base.astro';
+
+type Project = {
+  cat: string;
+  group: string; // space-separated filter keys
+  title: string;
+  ctx: string;
+  blurb: string;
+  metric: string;
+  stack: string[];
+  href?: string;
+  external?: boolean;
+};
+
+const projects: Project[] = [
+  {
+    cat: 'Representation learning',
+    group: 'ml',
+    title: 'GeoSoil',
+    ctx: 'Self-initiated · white paper + repo',
+    blurb:
+      'A 256-d multi-modal latent of soil and place — the baseline bake-off, calibration, and the multi-truth protocol that catches benchmark circularity.',
+    metric: 'R²_SOC 0.762 · spatial-block CV',
+    stack: ['PyTorch', 'JEPA', 'Earth Engine', 'Conformal UQ'],
+    href: '/geosoil',
+  },
+  {
+    cat: 'Production ML · geospatial',
+    group: 'ml production geospatial',
+    title: 'SoilMetrix Platform',
+    ctx: 'SoilMetrix-Inc → Aiterra (2026)',
+    blurb:
+      'A patented AI soil-analysis SaaS that turns massive geospatial datasets into field-specific soil models and interactive field maps for farmers.',
+    metric: 'patented ML pipelines · production SaaS',
+    stack: ['Python', 'PostgreSQL', 'FastAPI', 'Earth Engine'],
+    href: '/soilmetrix',
+  },
+  {
+    cat: 'Time-series forecasting',
+    group: 'ml',
+    title: 'Markov Famine',
+    ctx: 'Self-initiated · STAT 5000 · paper',
+    blurb:
+      'A non-homogeneous Markov chain + XGBoost forecaster for Horn-of-Africa food-security phases, scored against persistence with conformal prediction intervals.',
+    metric: 'persistence-referenced skill · conformal PI',
+    stack: ['Python', 'XGBoost', 'Markov chains', 'scikit-learn'],
+    href: 'https://github.com/luker-robinson2/markov-famine',
+    external: true,
+  },
+  {
+    cat: 'Production · systems',
+    group: 'production',
+    title: 'Venue.Network',
+    ctx: 'Music-by-Masses',
+    blurb:
+      'An event-management and ticketing platform built as Node.js microservices behind a Kong gateway — inventory, artist-booking workflows, settlements — plus a booking-intelligence ML model.',
+    metric: 'microservices · k6 load-tested',
+    stack: ['Node.js', 'NX', 'Kong', 'PostgreSQL'],
+    href: '/venue-network',
+  },
+  {
+    cat: 'Foundation model',
+    group: 'ml',
+    title: 'Soil State Transformer',
+    ctx: 'Self-initiated',
+    blurb:
+      'A multi-modal transformer pre-trained on ~230k global WoSIS profiles with masked-property prediction, LoRA-fine-tuned for field transfer.',
+    metric: '~230k WoSIS profiles · LoRA fine-tune',
+    stack: ['PyTorch', 'Transformers', 'LoRA', 'SLURM'],
+    href: 'https://github.com/luker-robinson2/soil-state-transformer',
+    external: true,
+  },
+  {
+    cat: 'Geospatial study',
+    group: 'geospatial ml',
+    title: 'AlphaEarth → SOC',
+    ctx: 'STAT 5000 · 100% public data',
+    blurb:
+      "Does DeepMind's 64-d AlphaEarth embedding carry soil-organic-carbon signal? A fully reproducible study with hypothesis tests, bootstrap CIs, and spatial-CV random forest.",
+    metric: 'R² ≈ 0.75 · spatial-CV RF',
+    stack: ['LightGBM', 'Earth Engine', 'scikit-learn'],
+    href: 'https://github.com/luker-robinson2/soil-state-transformer',
+    external: true,
+  },
+];
+
+---
+
+<Base
+  title="Projects — Luke Robinson"
+  description="Selected work in representation learning, geospatial ML, production systems, and honest evaluation — each with a reproducible repo or a falsifiable result."
+>
+  <section class="mx-auto max-w-6xl px-5 pb-8 pt-20 sm:px-8 sm:pt-24">
+    <p class="eyebrow reveal">Index</p>
+    <h1
+      class="reveal mt-4 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl"
+    >
+      Selected work.
+    </h1>
+    <p class="reveal prose-col mt-5 text-lg leading-relaxed text-ink-2">
+      Representation learning, geospatial ML, production systems, and honest
+      evaluation.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-5 pb-24 sm:px-8">
+    <div class="grid gap-5 md:grid-cols-2">
+      {
+        projects.map((p) => {
+          const Tag = p.href ? 'a' : 'div';
+          const linkProps = p.href
+            ? p.external
+              ? { href: p.href, target: '_blank', rel: 'noopener noreferrer' }
+              : { href: p.href }
+            : {};
+          return (
+            <Tag
+              {...linkProps}
+              class:list={[
+                'reveal group flex flex-col rounded-2xl border border-line bg-card p-7 transition-colors',
+                p.href ? 'hover:border-moss-300' : '',
+              ]}
+            >
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-mono text-[0.7rem] uppercase tracking-[0.13em] text-moss-500">
+                  {p.cat}
+                </span>
+                {p.href && (
+                  <span class="font-mono text-xs text-ink-faint transition-colors group-hover:text-moss-600">
+                    open ↗
+                  </span>
+                )}
+              </div>
+              <h3 class="mt-4 text-xl font-semibold tracking-tight text-ink">
+                {p.title}
+              </h3>
+              <p class="mt-1 font-mono text-[0.7rem] text-ink-faint">{p.ctx}</p>
+              <p class="mt-3 text-[0.92rem] leading-relaxed text-ink-2">
+                {p.blurb}
+              </p>
+              <div class="mt-auto">
+                <div class="mt-6 h-px bg-line" />
+                <p class="mt-4 font-mono text-xs text-moss-600">{p.metric}</p>
+                <p class="mt-1.5 font-mono text-[0.7rem] leading-relaxed text-ink-faint">
+                  {p.stack.join('  ·  ')}
+                </p>
+              </div>
+            </Tag>
+          );
+        })
+      }
+    </div>
+  </section>
+</Base>

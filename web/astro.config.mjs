@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // Static site — Tier A is fully precomputed, no backend.
 export default defineConfig({
-  site: 'https://geosoil.example.com',
+  site: 'https://geosoil.onrender.com',
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
