@@ -59,7 +59,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
         <div class="reveal rounded-2xl border border-moss-200 bg-moss-50/50 p-6 sm:p-8">
           <p class="eyebrow">TL;DR</p>
           <p class="mt-3 text-[1.05rem] leading-relaxed text-ink">
-            GeoSoil fuses nine geospatial modalities into a 256-d latent with six
+            GeoSoil fuses eleven geospatial modalities into a 256-d latent with six
             self-supervised objectives, then validates against three independent ground
             truths. End-to-end it beats every tabular baseline on modelled labels (SOC
             <span class="tnum font-medium text-moss-700">R²=0.762</span>). But the same
@@ -102,7 +102,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
       <section id="data" class="scroll-mt-20 pt-16">
         <p class="eyebrow reveal">02 · Data</p>
         <h2 class="reveal mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Nine modalities, two ground truths, one join
+          Eleven modalities, two ground truths, one join
         </h2>
         <p class="reveal prose-col mt-4 text-[1.02rem] leading-relaxed text-ink-2">
           All public, CONUS, point-referenced; harmonized to 0–30 cm and joined on
@@ -299,25 +299,29 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
         </h2>
         <div class="reveal mt-5 grid gap-4 sm:grid-cols-2">
           <a
-            href="#"
+            href="/whitepaper.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             class="group rounded-2xl border border-line bg-card p-6 transition-colors hover:border-moss-400"
           >
             <p class="font-mono text-[0.7rem] uppercase tracking-wide text-moss-500">PDF</p>
             <h3 class="mt-2 text-lg font-semibold text-ink">White paper</h3>
             <p class="mt-1.5 text-sm text-ink-3">
               The full method, multi-truth protocol, and references.
-              <span class="block font-mono text-[0.7rem] text-ink-faint">docs/whitepaper/main.pdf</span>
+              <span class="block font-mono text-[0.7rem] text-ink-faint">whitepaper.pdf</span>
             </p>
           </a>
           <a
-            href="#"
+            href="https://github.com/luker-robinson2/soil-state-transformer"
+            target="_blank"
+            rel="noopener noreferrer"
             class="group rounded-2xl border border-line bg-card p-6 transition-colors hover:border-moss-400"
           >
             <p class="font-mono text-[0.7rem] uppercase tracking-wide text-moss-500">Code</p>
             <h3 class="mt-2 text-lg font-semibold text-ink">Repository</h3>
             <p class="mt-1.5 text-sm text-ink-3">
               Model, bake-off, verification, and the public-data pulls.
-              <span class="block font-mono text-[0.7rem] text-ink-faint">geosoil/ · data/extraction/</span>
+              <span class="block font-mono text-[0.7rem] text-ink-faint">github.com/luker-robinson2/soil-state-transformer</span>
             </p>
           </a>
         </div>

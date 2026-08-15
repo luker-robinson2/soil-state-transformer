@@ -4,8 +4,8 @@ import MultiTruthPanel from '../components/charts/MultiTruthPanel.tsx';
 import { HEADLINE } from '../data/results';
 
 const stats = [
-  { v: '256-d', l: 'learned latent z' },
-  { v: '9', l: 'fused modalities' },
+  { v: `${HEADLINE.latentDim}-d`, l: 'learned latent z' },
+  { v: String(HEADLINE.nModalities), l: 'fused modalities' },
   { v: '3', l: 'independent ground truths' },
   { v: '6', l: 'self-supervised objectives' },
 ];

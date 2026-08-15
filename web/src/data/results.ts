@@ -17,7 +17,10 @@ export const TARGETS: { key: Target; label: string; unit: string; long: string }
 export type Row = Record<Target, number>;
 
 // ── Bake-off: R² against OpenLandMap labels, spatial-block CV ──────────────
-// Source: geosoil/results/baselines.json, cv_transformer.json, hybrid.json
+// Source: geosoil/results/baselines.json, cv_jepa.json, hybrid.json, verification_jepa.json
+// GeoSoil = the JEPA/GRU default (cv_jepa.json), matching the white paper's flagship row.
+// The Transformer temporal-encoder swap (cv_transformer.json) differs only on sand/clay
+// (0.789 / 0.687) and is within seed noise — see the white paper, Table 3.
 export type ModelKind = 'tabular' | 'frozen-probe' | 'geosoil';
 
 export interface ModelRow {
@@ -44,7 +47,7 @@ export const BAKEOFF: ModelRow[] = [
   { key: 'hybrid', name: 'Frozen z → GBM', note: 'latent + features → GBM', kind: 'frozen-probe',
     r2: { soc: 0.735, ph: 0.916, sand: 0.752, clay: 0.631, bd: 0.829 } },
   { key: 'geosoil', name: 'GeoSoil', note: 'multi-modal fusion, end-to-end', kind: 'geosoil',
-    r2: { soc: 0.762, ph: 0.926, sand: 0.789, clay: 0.687, bd: 0.858 } },
+    r2: { soc: 0.762, ph: 0.926, sand: 0.786, clay: 0.684, bd: 0.858 } },
 ];
 
 // ── The multi-truth finding ────────────────────────────────────────────────
@@ -67,7 +70,7 @@ export const MULTI_TRUTH: TruthSeries[] = [
     sub: 'modelled label product · spatial CV',
     n: 3000,
     tone: 'good',
-    r2: { soc: 0.762, ph: 0.926, sand: 0.789, clay: 0.687, bd: 0.858 },
+    r2: { soc: 0.762, ph: 0.926, sand: 0.786, clay: 0.684, bd: 0.858 },
   },
   {
     key: 'kssl-ae',
@@ -122,14 +125,20 @@ export interface Modality {
   role: string;
   temporal?: boolean;
 }
+// Nine groups spanning eleven modality encoders — the radar/soil-sensing and
+// micro-events rows each carry two (SAR + bare-soil; CHIRPS + CDL). Matches
+// ModalityEncoders in geosoil/modalities.py, whose names list is
+// ["ae", "geo"] + 9 conditional encoders. Same grouping as white paper Table 1.
 export const MODALITIES: Modality[] = [
   { group: 'Foundation embedding', source: 'AlphaEarth Foundations 64-d', role: 'core modality' },
   { group: 'Optical spectral', source: 'Sentinel-2 (6 bands + indices)', role: 'modality' },
-  { group: 'Radar', source: 'Sentinel-1 SAR (VV/VH)', role: 'soil-sensing' },
-  { group: 'Terrain', source: 'Copernicus DEM', role: 'modality' },
+  { group: 'Radar / soil-sensing', source: 'Sentinel-1 SAR · bare-soil S2', role: 'soil-sensing' },
+  { group: 'Terrain', source: 'Copernicus DEM (elev/slope/TWI)', role: 'modality' },
   { group: 'Climate', source: 'ERA5-Land monthly ×12', role: 'temporal', temporal: true },
   { group: 'Vegetation', source: 'MODIS NDVI/EVI ×12', role: 'temporal', temporal: true },
-  { group: 'Dynamics', source: 'SMAP · CHIRPS · CDL', role: 'micro-events' },
+  { group: 'Soil moisture', source: 'SMAP monthly ×12', role: 'temporal', temporal: true },
+  { group: 'Micro-events', source: 'CHIRPS precip · CDL rotation', role: 'micro-events' },
+  { group: 'Geography', source: '(lon, lat) → Fourier features', role: 'modality' },
   { group: 'Labels (modelled)', source: 'OpenLandMap SOC/pH/texture/BD', role: 'training labels' },
   { group: 'Labels (measured)', source: 'KSSL / NCSS lab pedons', role: 'independent validation' },
 ];
@@ -147,7 +156,7 @@ export const OBJECTIVES: { name: string; blurb: string }[] = [
 export const HEADLINE = {
   latentDim: 256,
   embeddingDim: 64,
-  nModalities: 9,
+  nModalities: 11,
   nTargets: 5,
   bestSOC: 0.762,
 };
