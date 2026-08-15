@@ -7,8 +7,12 @@
 \newcommand{\todo}[1]{\textcolor{red}{[#1]}}
 
 \title{\textbf{GeoSoil: A Multi-Modal, Multi-Truth Latent Representation\\of Soil and Place}}
-\author{Luke Robinson}
-\date{June 2026}
+\author{Luke Robinson\\[3pt]
+\normalsize\href{mailto:lukerob20042@gmail.com}{lukerob20042@gmail.com}\\[1pt]
+\normalsize\href{https://geosoil-uqxq.onrender.com}{geosoil-uqxq.onrender.com}
+\;\textbar\;
+\normalsize\href{https://github.com/luker-robinson2/soil-state-transformer}{github.com/luker-robinson2/soil-state-transformer}}
+\date{August 2026}
 
 \begin{document}
 \maketitle
@@ -146,7 +150,7 @@ Temporal encoder & SOC & pH & sand & clay & BD \\
 \midrule
 GRU (default)  & 0.762 & 0.926 & 0.786 & 0.684 & 0.858 \\
 Transformer    & 0.762 & 0.926 & 0.789 & 0.687 & 0.858 \\
-Mamba (S6 SSM) & \multicolumn{5}{c}{\emph{see note}} \\
+Mamba (S6 SSM) & \multicolumn{5}{c}{n/a --- \emph{not run; see note}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -188,14 +192,18 @@ The same model scoring SOC $R^2=0.762$ against OpenLandMap collapses against
 lab-measured KSSL (Table~\ref{tab:truth}). The in-domain control is decisive: trained
 directly on lab data, the foundation embedding alone predicts lab-measured texture at
 $R^2<0$; SOC remains hard ($R^2=0.13$); only \textbf{pH} ($R^2=0.55$) carries strong,
-genuine lab-verifiable signal, with texture recoverable to $R^2\approx0.3$ once radar
-and bare-soil modalities are added. Much of the apparent texture accuracy on modelled
+genuine lab-verifiable signal, with texture recoverable to $R^2\approx0.3$ by the full
+multi-modal model. Much of the apparent texture accuracy on modelled
 labels is therefore \textbf{circular}---OpenLandMap texture is itself derived from
 similar satellite covariates---and is invisible without multiple independent truths.
 
 \begin{table}[H]\centering\small
-\caption{Multi-truth validation, $R^2$. Transfer = OpenLandMap-trained tested on KSSL
-lab; in-domain = trained and tested on KSSL lab.}
+\caption{Multi-truth validation, $R^2$. \emph{Transfer} = OpenLandMap-trained model
+tested on held-out KSSL lab pedons ($n=157$; BD is measured for only 26 of them, so
+that entry is indicative only). \emph{GeoSoil in-domain} = spatial-block CV over all
+KSSL pedons ($n=2983$). The \emph{AlphaEarth-only} control is a train/test split of
+the same lab data ($n_{\text{train}}=2826$, $n_{\text{test}}=157$) and is reported for
+both estimators rather than a per-target best.}
 \label{tab:truth}
 \begin{tabular}{lccccc}
 \toprule
@@ -204,16 +212,20 @@ Validation & SOC & pH & sand & clay & BD \\
 OpenLandMap (spatial CV)      & 0.762 & 0.926 & 0.786 & 0.684 & 0.858 \\
 $\rightarrow$ KSSL lab (transfer) & $-0.44$ & 0.58 & 0.12 & 0.09 & 0.22 \\
 KSSL lab (in-domain, GeoSoil)     & 0.13 & 0.55 & \textbf{0.34} & \textbf{0.25} & 0.17 \\
-KSSL lab (in-domain, AlphaEarth-only) & 0.23 & 0.54 & $-0.21$ & $-0.20$ & 0.09 \\
+KSSL lab (in-domain, AlphaEarth-only, Ridge)    & 0.08 & 0.54 & $-0.13$ & $-0.18$ & 0.09 \\
+KSSL lab (in-domain, AlphaEarth-only, LightGBM) & 0.23 & 0.40 & $-0.21$ & $-0.20$ & $-0.21$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The third row is the control: with \emph{only} the AlphaEarth embedding, lab-measured
-sand and clay are predicted at $R^2<0$ (no usable signal); adding the Sentinel-1 radar
-and bare-soil reflectance modalities lifts them to $0.34$ and $0.25$. This is direct
-evidence that the soil-sensing modalities---not the foundation embedding---carry the
-verifiable subsurface texture signal.
+The last two rows are the control: with \emph{only} the AlphaEarth embedding,
+lab-measured sand and clay are predicted at $R^2<0$ under \emph{both} a linear and a
+gradient-boosted estimator (no usable signal); adding the remaining
+modalities---notably Sentinel-1 radar and bare-soil reflectance---lifts them to $0.34$
+and $0.25$. This is direct evidence that the soil-sensing modalities---not the
+foundation embedding---carry the verifiable subsurface texture signal. We note the
+comparison is against the full multi-modal model rather than a single-modality
+ablation, so it bounds rather than isolates the radar/bare-soil contribution.
 
 \begin{figure}[H]\centering
 \includegraphics[width=\textwidth]{pred_obs_jepa.png}
@@ -244,9 +256,13 @@ topsoil 0--30\,cm; horizon-resolved prediction and additional geospatial foundat
 embeddings (Prithvi, Clay) are future work.
 
 \section{Reproducibility}
-All code (model, bake-off, verification) is in \texttt{geosoil/}; public-data pulls
-are in \texttt{data/extraction/}. Spatial-block CV, multi-truth validation, and the
-SOTA survey / data roadmap are documented in \texttt{docs/}.
+All code and data-extraction scripts are public at\\
+\url{https://github.com/luker-robinson2/soil-state-transformer}.
+The model, bake-off, and verification code are in \texttt{geosoil/}; the public-data
+pulls are in \texttt{data/extraction/}. Spatial-block CV, multi-truth validation, and
+the SOTA survey / data roadmap are documented in \texttt{docs/}. Every number in this
+paper is reproducible from the cached cross-validation artifacts in
+\texttt{geosoil/results/}.
 
 \begin{thebibliography}{9}\small
 \bibitem{ijepa} Assran et al. I-JEPA. arXiv:2301.08243.
