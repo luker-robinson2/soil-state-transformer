@@ -1,0 +1,156 @@
+# GeoSoil corpus source registry.
+# Every dataset or model that feeds the corpus is listed here BEFORE any code downloads it.
+# See docs/research/CORPUS-PLAN.md and CONTRIBUTING.md.
+#
+# status:  lead      -> found, not checked
+#          verified  -> count, license and access checked on `checked`
+#          ingested  -> loader merged; `loader` points at it
+# role:    label | pseudo_label (pretraining ablation only, never evaluation) | input | embedding | model
+# redistribute: may derived rows be committed to this public repo?
+
+sources:
+  - id: kssl_ldm
+    name: NCSS/KSSL Lab Data Mart
+    role: label
+    size: "~65k profiles (soilDB docs)"
+    license: public domain
+    redistribute: true
+    access: https://ncsslabdatamart.sc.egov.usda.gov/ (SQLite / GeoPackage, monthly)
+    status: verified
+    checked: 2026-11-16
+    notes: repo uses ~3k pedons today (alphaearth-soc/future_work/data/kssl_with_features.csv)
+
+  - id: wosis_2023
+    name: ISRIC WoSIS 2023 snapshot
+    role: label
+    size: "228k profiles, 217k sites, 174 countries"
+    license: per-profile CC-BY-4.0 or CC-BY-NC-4.0 (filter on license column)
+    redistribute: CC-BY rows only
+    access: https://doi.org/10.17027/isric-wdcsoils-20231130 (WFS)
+    status: verified
+    checked: 2026-11-16
+    loader: foundation-model/scripts/prepare_wosis.py (SST; reuse for C1.2)
+    notes: CONUS slice on disk as alphaearth-soc/future_work/data/wosis_conus.csv (37,311 rows); overlaps NCSS
+
+  - id: ossl_v1_2
+    name: Open Soil Spectral Library v1.2
+    role: label
+    size: "135,651 samples (87,707 georeferenced); MIR 82,573, VisNIR 64,644"
+    license: mixed CC-BY / CC-BY-SA / ODbL; LUCAS rows under JRC license
+    redistribute: non-LUCAS rows, per source license
+    access: https://docs.soilspectroscopy.org/
+    status: verified
+    checked: 2026-11-16
+    notes: KSSL slice duplicates kssl_ldm (join on labsampnum)
+
+  - id: raca
+    name: USDA Rapid Carbon Assessment
+    role: label
+    size: "6,017 sites, 32,084 pedons, 144,833 samples to 100 cm"
+    license: public domain
+    redistribute: true
+    access: https://agdatacommons.nal.usda.gov/articles/dataset/Rapid_Carbon_Assessment_RaCA_/24662088
+    status: verified
+    checked: 2026-11-16
+    notes: site coordinates deliberately degraded; final SOC hold-out, not for 10 m pixel matching
+
+  - id: lucas_topsoil
+    name: LUCAS topsoil 2009/2015/2018/2022
+    role: label
+    size: "~20k / 22k / 19k (unverified) / 33k locations"
+    license: JRC ESDAC license agreement (request form)
+    redistribute: false
+    access: https://esdac.jrc.ec.europa.eu/content/lucas-2022-topsoil-data
+    status: verified
+    checked: 2026-11-16
+    notes: transfer test only; never commit rows
+
+  - id: usgs_ds801
+    name: USGS Geochemical and mineralogical data for soils of the conterminous US (DS 801)
+    role: label
+    size: "4,857 sites, 3 depths"
+    license: public domain
+    redistribute: true
+    access: https://pubs.usgs.gov/ds/801/
+    status: lead
+
+  - id: gnatsgo_polaris_soilgrids_olm
+    name: gNATSGO, POLARIS, SoilGrids 2.0, OpenLandMap soil layers
+    role: pseudo_label
+    license: public domain / public domain / CC-BY-4.0 / CC-BY-SA-4.0
+    redistribute: per layer (OpenLandMap derivatives are share-alike)
+    status: verified
+    checked: 2026-11-16
+    notes: model products; ablation only. Current OpenLandMap labels live in soil_unified.csv
+
+  - id: era5_land
+    name: ERA5-Land (ARCO Zarr / CDS)
+    role: input
+    license: Copernicus licence (free, attribution)
+    redistribute: derived features yes
+    access: Earth Data Hub ARCO Zarr (free token) or CDS; ARCO-ERA5 gs://gcp-public-data-arco-era5
+    status: verified
+    checked: 2026-11-16
+
+  - id: planetary_computer
+    name: Planetary Computer STAC (MODIS 6.1, Daymet, gridMET, TerraClimate, S1 RTC, S2 L2A, HLS, Copernicus DEM, 3DEP, WorldCover)
+    role: input
+    license: per collection (mostly open / public domain)
+    redistribute: derived features yes (check per collection)
+    access: https://planetarycomputer.microsoft.com/ (free SAS token)
+    status: verified
+    checked: 2026-11-16
+
+  - id: smap
+    name: SMAP L3/L4 soil moisture
+    role: input
+    license: NASA open data
+    redistribute: true
+    access: earthaccess (NASA Earthdata login)
+    status: verified
+    checked: 2026-11-16
+
+  - id: usgs_radiometrics
+    name: USGS national aeroradiometric (K/U/Th) grids
+    role: input
+    license: public domain
+    redistribute: true
+    status: lead
+
+  - id: alphaearth
+    name: AlphaEarth Foundations Satellite Embedding v1
+    role: embedding
+    size: "64-d, 10 m, annual 2017-2025, ~465 TB"
+    license: CC-BY-4.0 (attribution "Google and Google DeepMind")
+    redistribute: derived point features yes, with attribution
+    access: source.coop/tge-labs/aef (free; aef-loader); gs://alphaearth_foundations is requester-pays since 2026-07
+    status: verified
+    checked: 2026-11-16
+    notes: weights not public. Measure range-read cost per point first (CORPUS-PLAN C0.2)
+
+  - id: tessera
+    name: TESSERA embeddings and models (Cambridge)
+    role: embedding
+    size: "128-d Matryoshka, 10 m, 2017-2025; students 1M-44M"
+    license: embeddings CC-BY, weights CC0, plus Acceptable Use Policy
+    redistribute: derived point features yes, with attribution
+    access: pip install geotessera; https://huggingface.co/geotessera
+    status: verified
+    checked: 2026-11-16
+
+  - id: galileo
+    name: Galileo (nasaharvest)
+    role: model
+    size: "Nano / Tiny / Base (85M)"
+    license: verify in repo (reported MIT)
+    access: https://github.com/nasaharvest/galileo ; HF nasaharvest/galileo
+    status: lead
+    notes: closest input match; baseline + temporal-encoder init
+
+  - id: presto
+    name: Presto (nasaharvest)
+    role: model
+    size: "~0.4M"
+    license: verify in repo (reported MIT)
+    access: https://github.com/nasaharvest/presto
+    status: lead

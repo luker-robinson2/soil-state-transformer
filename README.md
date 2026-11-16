@@ -19,6 +19,12 @@ hybrid. The evolution of the Soil State Transformer below.
 
 ---
 
+**Next: an open soil foundation model on CU Alpine.** The plan for scaling GeoSoil (corpus, model
+ladder, compute, feature selection) is in [`docs/research/`](docs/research/): start with
+[SCALING-PLAN.md](docs/research/SCALING-PLAN.md). To help, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
+
 ## 1. AlphaEarth → Soil Organic Carbon  ·  [`alphaearth-soc/`](alphaearth-soc/)
 **A complete, reproducible study on 100% public data.** ✅ *Showcase-ready.*
 
