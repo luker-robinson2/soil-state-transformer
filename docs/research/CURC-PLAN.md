@@ -2,7 +2,7 @@
 
 Written 2026-11-16; revised the same day after checking every fact against curc.readthedocs.io,
 access-ci.org, nairrpilot.org and the Earth Engine docs. Companion docs: SCALING-PLAN.md (model and
-compute ladder), CORPUS-PLAN.md (building the pretraining corpus and choosing features).
+compute ladder), CORPUS-PLAN.md (data sources and acquisition), EXECUTION-PLAN.md (step-by-step schedule).
 
 ## Where GeoSoil stands
 
@@ -111,7 +111,7 @@ Plan the work so it fits inside 24 h jobs with checkpoint and resume.
 | Alpine **Peak** | 450k–7.5M SU | Committee review | Only after Ascent shows results. |
 | NSF ACCESS **Explore** | 400k credits | Grad student may be PI, but **the advisor must be co-PI**, plus a letter on letterhead | For unfunded thesis or dissertation work. Needs an institutional email. **Discover** (1.5M) is open to grad PIs too. |
 | **NAIRR** Pilot | GPU allocations, 12 months | Grad students apply with an advisor support letter; results must be open and publishable | Still running as of 2026-09-01. Monthly cycle, deadline the 15th. |
-| GEE noncommercial | Community 150, **Contributor 1,000**, Partner 100,000 EECU-h/month | Contributor **requires an active billing account**; reverify every year | Only needed for AlphaEarth and a few EE-only layers (see CORPUS-PLAN.md). |
+| GEE noncommercial | Community 150, **Contributor 1,000**, Partner 100,000 EECU-h/month | Contributor **requires an active billing account**; reverify every year | Possibly not needed: AlphaEarth is on a free Source Cooperative mirror. Only Dynamic World is EE-only (see CORPUS-PLAN.md). |
 
 Candidate faculty for PI / co-PI: Greg Tucker (Landlab, Earth surface processes), or the STAT 5010 or
 CSCI 5622 instructor.
@@ -140,7 +140,7 @@ NAIRR additionally requires open results.
    Without them the baseline is AlphaEarth + S2 only.
 3. **Baseline sweep.** `scaling_sweep.sbatch`: 4 presets × up to 4 A100-hours. It gives a size-vs-skill
    baseline on both label sources (`--source openlandmap` and `--source kssl`) at close to zero cost.
-4. **Corpus build.** Follow CORPUS-PLAN.md, phases C1–C3, as CPU array jobs on `acpu` plus transfer-node downloads.
+4. **Corpus build.** Follow EXECUTION-PLAN.md phases 1–5, as CPU array jobs on `acpu` plus transfer-node downloads.
 5. **Ties to coursework:**
    - The STAT 5010 final project (RaCA SOC + Landlab terrain, due 12-04) can run its models here.
    - The CSCI 5622 project too, but only on its public-data parts.

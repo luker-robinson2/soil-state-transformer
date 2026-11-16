@@ -111,27 +111,29 @@ sources:
     checked: 2026-11-16
 
   - id: usgs_radiometrics
-    name: USGS national aeroradiometric (K/U/Th) grids
+    name: USGS NURE airborne radiometric (K/U/Th) Bayesian grids, CONUS
     role: input
     license: public domain
     redistribute: true
-    status: lead
+    access: https://www.usgs.gov/data/bayesian-modeling-nure-airborne-radiometric-data-conterminous-united-states-predictions-and
+    status: verified
+    checked: 2026-11-16
 
   - id: alphaearth
     name: AlphaEarth Foundations Satellite Embedding v1
     role: embedding
-    size: "64-d, 10 m, annual 2017-2025, ~465 TB"
+    size: "64-d, 10 m, annual; 2018-2024 on the AWS mirror (GCS readme: 2017-2025); hundreds of TB"
     license: CC-BY-4.0 (attribution "Google and Google DeepMind")
     redistribute: derived point features yes, with attribution
-    access: source.coop/tge-labs/aef (free; aef-loader); gs://alphaearth_foundations is requester-pays since 2026-07
+    access: s3://us-west-2.opendata.source.coop/tge-labs/aef (free, not requester-pays; aef_index.gpkg, aef-loader); the GCS bucket is requester-pays
     status: verified
     checked: 2026-11-16
-    notes: weights not public. Measure range-read cost per point first (CORPUS-PLAN C0.2)
+    notes: weights not public. Measure range-read cost per point first (EXECUTION-PLAN step 0.6)
 
   - id: tessera
     name: TESSERA embeddings and models (Cambridge)
     role: embedding
-    size: "128-d Matryoshka, 10 m, 2017-2025; students 1M-44M"
+    size: "128-d Matryoshka, 10 m, 2024 only so far (2017-2024 planned); students 1M-44M"
     license: embeddings CC-BY, weights CC0, plus Acceptable Use Policy
     redistribute: derived point features yes, with attribution
     access: pip install geotessera; https://huggingface.co/geotessera
@@ -153,4 +155,132 @@ sources:
     size: "~0.4M"
     license: verify in repo (reported MIT)
     access: https://github.com/nasaharvest/presto
+    status: lead
+
+  - id: iscn3
+    name: International Soil Carbon Network Gen3
+    role: label
+    size: "71,198 profiles, 431,324 layers, 67,112 sites"
+    license: per contributor
+    redistribute: per contributor
+    access: EDI package edi.360
+    status: verified
+    checked: 2026-11-16
+    notes: heavily overlaps NRCS; dedupe against kssl_ldm
+
+  - id: brazil_soildata
+    name: SoilData / MapBiomas Solo (Brazil)
+    role: label
+    size: "45k+ samples at 15k points; 28,065 SOC-stock points"
+    license: mostly CC-BY
+    redistribute: CC-BY datasets
+    access: https://soildata.mapbiomas.org
+    status: verified
+    checked: 2026-11-16
+
+  - id: lucas_mega
+    name: LUCAS-MEGA harmonized LUCAS 2009-2018
+    role: label
+    size: "72,552 samples at 29,872 points"
+    license: check whether it overrides the JRC terms
+    redistribute: false (until checked)
+    access: https://arxiv.org/abs/2512.09576
+    status: verified
+    checked: 2026-11-16
+
+  - id: napeshm
+    name: Soil Health Institute NAPESHM
+    role: label
+    size: "1,453 plots, 94 sites, 110 variables"
+    license: open (Ag Data Commons)
+    redistribute: true
+    access: https://doi.org/10.15482/USDA.ADC/25632270
+    status: verified
+    checked: 2026-11-16
+
+  - id: mexico_inegi
+    name: Mexico INEGI soil profiles
+    role: label
+    size: "62,362 SOC values at 26,297 sites"
+    license: INEGI open data terms
+    access: INEGI downloads
+    status: verified
+    checked: 2026-11-16
+    notes: partly inside WoSIS
+
+  - id: china_csdlv2
+    name: China Soil Dataset for Land surface modeling v2 (CSDLv2)
+    role: label
+    size: "11,209 profiles"
+    license: open (scidb.cn)
+    access: https://essd.copernicus.org/articles/17/517/2025/
+    status: verified
+    checked: 2026-11-16
+    notes: may release only gridded layers; overlaps WoSIS
+
+  - id: canada_npdb
+    name: Canada National Pedon Database
+    role: label
+    license: Open Government Licence - Canada
+    access: https://open.canada.ca/data/en/dataset/6457fad6-b6f5-47a3-9bd1-ad14aea4b9e0 ; full holdings via aafc.cansis-siscan.aac@agr.gc.ca
+    status: verified
+    checked: 2026-11-16
+
+  - id: tern_federator
+    name: TERN Soil Data Federator / ANSIS (Australia)
+    role: label
+    size: "195,383 site observations (lab subset unknown)"
+    license: mostly CC-BY
+    access: free API key (TERN); ansis.net
+    status: verified
+    checked: 2026-11-16
+
+  - id: isda_full
+    name: iSDA / AfSIS full sample table
+    role: label
+    size: "~100-150k samples (open part ~49k)"
+    license: CC-BY (open part); agreement for the rest
+    access: s3://isdasoil, s3://afsis; full set by email to iSDA
+    status: lead
+
+  - id: brazil_bssl
+    name: Brazilian Soil Spectral Library
+    role: label
+    size: "39,284 samples"
+    license: on request
+    access: email J. Dematte (USP/ESALQ)
+    status: lead
+
+  - id: emit_minerals
+    name: EMIT L2B mineral identification and band depth (60 m)
+    role: input
+    license: NASA open data
+    redistribute: true
+    access: LP DAAC / earthaccess
+    status: verified
+    checked: 2026-11-16
+
+  - id: ai4soilhealth_cube
+    name: AI4SoilHealth EU soil data cube (SHDC4EU)
+    role: pseudo_label
+    license: open (Zenodo community ai4soilhealth)
+    status: verified
+    checked: 2026-11-16
+
+  - id: india_shc
+    name: India Soil Health Card
+    role: label
+    size: "~50M samples"
+    license: restricted (AIKosh)
+    redistribute: false
+    access: AIKosh restricted access or collaboration (ICAR-IISS / IIT Delhi); do not scrape
+    status: lead
+
+  - id: china_3rd_survey
+    name: China Third National Soil Survey
+    role: label
+    size: "2.87M points, 3.11M samples"
+    license: government-controlled
+    redistribute: false
+    access: collaboration only (CAS Nanjing Institute of Soil Science / CAAS)
     status: lead

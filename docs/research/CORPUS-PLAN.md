@@ -1,188 +1,213 @@
-# Building the GeoSoil corpus: sources, sampling, features
+# Building the GeoSoil corpus: sources, acquisition, sampling, features
 
-Draft 2026-11-16. This is the data half of SCALING-PLAN.md. Corpus tiers C0–C3 and rungs R0–R4 are
-defined there. Every source used must be recorded in `data/corpus/sources.yaml` with its license
-before any of its data enters the corpus.
+Draft 2026-11-16, expanded the same day. This is the data half of SCALING-PLAN.md, which defines corpus
+tiers C0–C4 and rungs R0–R4 and maps each tier to a model size. The step-by-step schedule is
+EXECUTION-PLAN.md.
 
-Verification status: counts and licenses were checked against the source pages on 2026-11-16 unless
-marked *(unverified)*. Re-check before a release.
+Rules:
+- Every source used must be registered in `data/corpus/sources.yaml` with its license before any of its
+  data enters the corpus.
+- Status markers: **[V]** = verified on a primary or near-primary page on 2026-11-16; **[U]** = not
+  verified. Re-check before a release.
 
-## A. Labelled soil data (the probe and fine-tune set)
+## A. Labelled soil data: every large source we know of
 
-| Priority | Source | Size | Targets | License / access | Notes |
+Ranked by how soon we can actually use it, not by raw size. The two largest datasets in the world are
+not open (India SHC, China's 3rd survey); see §A3.
+
+### A1. Open now: download and ingest
+
+| Source | Size | Region | Targets | License | Notes |
 |---|---|---|---|---|---|
-| 1 | **NCSS/KSSL Lab Data Mart** | ~65k profiles (soilDB docs); layers *(unverified, ~400k)* | all 5, at depth, plus MIR | Public domain. SQLite or GeoPackage from ncsslabdatamart.sc.egov.usda.gov, monthly | We use ~3k today. Biggest single win. |
-| 2 | **WoSIS 2023 snapshot** | 228k profiles, 217k sites, 174 countries, >900k layers | all 5 | **Per-profile CC-BY or CC-BY-NC.** Filter on the license column. WFS or DOI 10.17027/isric-wdcsoils-20231130 | We have the CONUS slice (37k) on disk, unused. Its largest contributor is US NCSS, so it overlaps KSSL. |
-| 3 | **OSSL v1.2** | 135,651 samples, 87,707 with coordinates. MIR 82,573, VisNIR 64,644 | SOC, pH, texture, BD + spectra | Mixed CC-BY / CC-BY-SA / ODbL. **The LUCAS rows inherit the JRC license.** | The KSSL slice duplicates LDM; join on `labsampnum`. Spectra become an optional proximal modality. |
-| 4 | **RaCA** | 6,017 sites, 32,084 pedons, 144,833 samples, to 100 cm | SOC (+ BD, VisNIR) | Public domain, 336 MB | **Site coordinates are degraded on purpose.** Use for SOC-stock and depth supervision and as the final hold-out, not for 10 m pixel matching. |
-| 5 | **LUCAS topsoil** 2009/2015/2018/2022 | ~20k / 22k / 19k *(unverified)* / 33k locations | all 5 (2022: + metals, eDNA) | Free, but **request form + license; no redistribution** | The KSSL → LUCAS transfer test. Never commit LUCAS rows. |
-| 6 | **USGS DS 801** (conterminous US soils) | 4,857 sites, 3 depths | geochemistry, mineralogy | Public domain | Small, but a probability-like national sample. Good for design-based accuracy checks. |
-| 7 | AfSIS / iSDA | ~1.9k with spectra + more *(unverified)* | | CC-BY 4.0, `s3://afsis` | Africa coverage for the global tier. |
-| 8 | Brazil febr (14,477), BDsolos (~9k); Canada NPDB; Australia ANSIS / TERN | various | | Mostly open (Canada OGL; TERN CC-BY) | Global tier. ANSIS federates the Australian state collections. Check its API. |
-| 9 | NEON megapit + distributed soils | 47 sites *(unverified)* | | CC0 | Research grade, co-located with flux towers. |
+| **NCSS/KSSL Lab Data Mart** | ~65k profiles; layers ~400k [U] | US + some foreign | all 5 at depth, + MIR | public domain | SQLite / GeoPackage, monthly. We use ~3k today. **Biggest single US win.** |
+| **WoSIS 2023** | 228k profiles, 217k sites, 174 countries, >900k layers [V] | global | all 5 | per profile: CC-BY or CC-BY-NC | WFS or DOI 10.17027/isric-wdcsoils-20231130. The CONUS slice (37k) is on disk, unused. Overlaps NCSS. |
+| **OSSL v1.2** | 135,651 samples, 87,707 georeferenced; MIR 82–92k, VisNIR 64–65k [V] | global | SOC, pH, texture, BD + spectra | CC-BY / CC-BY-SA / ODbL. LUCAS rows: JRC license. | Contains KSSL (join on `labsampnum`) and LUCAS. |
+| **ISCN3** | 71,198 profiles, 431,324 layers, 67,112 sites [V] | mostly US | SOC, BD | per contributor | EDI `edi.360`. Heavily overlaps NRCS, so dedupe against KSSL. |
+| **Brazil SoilData / MapBiomas Solo** | 45k+ samples at 15k points; 28,065 SOC-stock points [V] | Brazil | texture, OC, BD, coarse fragments | mostly CC-BY | soildata.mapbiomas.org. **Best new open win:** tropical soils we lack entirely. |
+| **iSDA / AfSIS** (open part) | ~49k entries open [U]; ~100–150k trained iSDAsoil [V] | sub-Saharan Africa | chemistry + MIR | CC-BY | AWS `s3://isdasoil`, `s3://afsis`, SoilHive. The full set is on request (§A2). |
+| **RaCA** | 6,017 sites, 32,084 pedons, 144,833 samples to 100 cm [V] | US | SOC, BD, VisNIR | public domain | **Coordinates degraded on purpose.** Use as the final SOC hold-out and for depth/stock supervision. |
+| **LUCAS-MEGA** | 72,552 samples at 29,872 points [V] | EU | harmonized LUCAS 2009–2018 | open (arXiv 2512.09576) | Check whether its license overrides the JRC terms before committing any row. |
+| **LUCAS 2022 topsoil** | 18,984 samples [V] | EU | all 5 + metals, eDNA | ESDAC registration, **no redistribution** | KSSL → EU transfer test. Never commit rows. |
+| **Mexico INEGI** | 62,362 SOC values at 26,297 sites [V] | Mexico | SOC (+ others) | INEGI open data | Partly inside WoSIS already. |
+| **China CSDLv2** | 11,209 profiles [V] | China | all 5 | open (scidb.cn) | May release only gridded layers [U]. Overlaps WoSIS. |
+| **Canada NPDB** (open subset) | count not stated; >10k pedons behind the 100 m grids [V] | Canada | | Open Government Licence | open.canada.ca. Full holdings on request. |
+| **Australia TERN Soil Data Federator** | 195,383 site observations [V]; lab-analysed subset [U] | Australia | varies | mostly CC-BY | Free API key. ANSIS is the newer portal. |
+| **USGS DS 801** | 4,857 sites, 3 depths | CONUS | geochemistry, mineralogy | public domain | A probability-like national sample, used for design-based accuracy. |
+| **Soil Health Institute NAPESHM** | 1,453 plots, 94 sites, 110 variables [V] | US/Mexico | soil health + management | open (Ag Data Commons) | Small, but rich in management treatments. |
+| New Zealand NSD | ~1,500 profiles [V] | NZ | | free | |
+| NEON | 47 sites [U] | US | | CC0 | Co-located with flux towers. |
 
-**Pseudo-labels: pretraining ablation only, never evaluation.** gNATSGO/SSURGO (public domain),
-POLARIS (p5/p50/p95), SoilGrids 2.0 (CC-BY) and OpenLandMap (**CC-BY-SA**). These are model products.
-Training on them is how the current model learned to copy OpenLandMap (lab SOC R² −0.44).
+**Spectral libraries** (an optional proximal modality and extra SOC/texture truth): KSSL MIR (>80k,
+inside OSSL), Brazil BSSL (39,284 [V], on request), LUCAS VisNIR (~20k per round), AfSIS MIR,
+Viscarra Rossel global VisNIR (~23k [U], on request), ICRAF-ISRIC (~4.4k [U]).
 
-**Deduplication is mandatory.** These sources overlap:
+### A2. On request: weeks to months; send these first, they are the long pole
+
+| Source | What you get | How |
+|---|---|---|
+| iSDA full sample table | ~100–150k African samples (vs ~49k open) | Email iSDA; noncommercial data agreement |
+| Brazil BSSL | 39k spectra + chemistry | Email J. Demattê (University of São Paulo, ESALQ); offer co-authorship |
+| WoSIS restricted profiles | profiles whose providers didn't grant open release | Email ISRIC (WoSIS team); they broker provider consent |
+| Canada NPDB full | full pedon holdings | aafc.cansis-siscan.aac@agr.gc.ca |
+| Viscarra Rossel global VisNIR | ~23k global spectra | Email the authors |
+| RaCA exact coordinates | true site locations | NRCS National Soil Survey Center, as a National Cooperative Soil Survey (NCSS) cooperator; no published procedure [U] |
+| USFS FIA Phase-3 soils, true plot coordinates | forest pH / C / N plots; fills KSSL's forest gap | FIA Spatial Data Services. Needs a study plan + an FIA collaborator. Cheaper route: SDS runs our covariate overlay for us. |
+| EnMAP scenes | hyperspectral soil minerals | DLR noncommercial science proposal (archive access is immediate) |
+
+### A3. Largest in the world, but not open: collaboration only
+
+| Source | Size | Status |
+|---|---|---|
+| **India Soil Health Card** | ~50M samples [V]; GPS since 2023 | AIKosh lists it "Restricted"; public portal is aggregates only. Route: AIKosh access (needs an Indian institution) or a collaboration with ICAR-IISS Bhopal / IIT Delhi (CoRE Stack). No texture/BD; mixed methods. **Do not scrape.** |
+| **China 3rd National Soil Survey** | 2.87M points, 3.11M samples [V] | Government-controlled. Only through a co-authored collaboration (CAS Nanjing Institute of Soil Science, CAAS). Out of scope for 2026–27. |
+| China Soil Profile Dataset | 63k+ profiles (2nd survey) [V] | 25 printed volumes, not machine-readable |
+
+### A4. Pseudo-labels: pretraining ablation only, never evaluation
+
+gNATSGO/SSURGO, POLARIS, SoilGrids 2.0, OpenLandMap (**CC-BY-SA**), and the AI4SoilHealth EU data cube
+(30 m SOC/pH/texture/BD predictions, open on Zenodo). These are model products. Training on them is how
+the current model learned to copy OpenLandMap (lab SOC R² −0.44).
+
+### A5. Deduplication and expected yield
+
+Known overlaps:
 - OSSL ⊃ KSSL, LUCAS
 - WoSIS ⊃ NCSS
 - ISCN ≈ re-packaged NRCS
 - SoilGrids training points = WoSIS
 - RaCA samples were run at KSSL
+- WoSIS ⊃ parts of INEGI and CSDL
 
-Order of keys:
+Dedup keys, in order:
 1. Source keys (`pedon_key`, `labsampnum`).
 2. Coordinates within 100 m **and** an overlapping depth interval.
 3. Keep the record with the most complete method metadata.
 
 Log every drop in `data/corpus/dedup_log.parquet`.
 
-After dedup, expect about **250k unique labelled locations** globally, about 80k of them in CONUS *(estimate)*.
+| Stage | Unique labelled locations (estimate) |
+|---|---|
+| Today on disk | ~43k CONUS |
+| A1 open sources, after dedup | **~300k global, ~90k CONUS** |
+| + A2 requests granted | ~400k |
+| + an A3 collaboration | millions (India SHC alone) |
 
-## B. Inputs: gridded sources and open foundation models
+These are estimates until the dedup script runs (EXECUTION-PLAN step 1.9). Labels matter for probing and
+fine-tuning. **Model size is set by the unlabelled corpus** (SCALING-PLAN.md).
 
-**Read from the cloud, not Earth Engine.** That keeps the EE quota for AlphaEarth fallbacks only.
+## B. Unlabelled inputs: the pretraining corpus
 
-| Modality | Source | Access | Cadence used |
-|---|---|---|---|
-| Climate | **ERA5-Land** (ARCO Zarr via Earth Data Hub, free token; or CDS), ARCO-ERA5 `gs://gcp-public-data-arco-era5` (anonymous), Daymet / gridMET / TerraClimate (Planetary Computer), PRISM (wget) | Zarr point reads | daily → weekly patches |
-| Vegetation, LST | MODIS 6.1 NDVI/EVI/LST (Planetary Computer STAC) | COG | 8/16-day → weekly |
-| Soil moisture | SMAP L3/L4 | NASA Earthdata `earthaccess` | daily → weekly |
-| Terrain | Copernicus DEM 30 m, USGS 3DEP (Planetary Computer / AWS) | COG | static: elevation, slope, TWI, curvature, MRVBF |
-| Soil-sensing | **USGS aeroradiometric K/U/Th** grids, bare-soil S2 composite (SYSI/BSC method), S1 RTC SAR (Planetary Computer), surficial geology | various | static / annual |
-| Land cover | ESA WorldCover, Dynamic World (EE only), CDL (CONUS) | COG / EE | annual |
-| **AlphaEarth** embeddings | 64-d, 10 m, 2017–2025, CC-BY 4.0. **Source Cooperative mirror `source.coop/tge-labs/aef`** (free). `gs://alphaearth_foundations` has been requester-pays since 2026-07. | COG range reads, `aef-loader` | annual |
-| **TESSERA** embeddings | 128-d Matryoshka, 10 m, S1+S2, 2017–2025, CC-BY (weights CC0, plus an Acceptable Use Policy) | `pip install geotessera` | annual |
+All of these are point-sampled; the corpus never stores whole rasters.
 
-**Open pretrained models to use:**
+### B1. Per-location inputs (one value or series per point)
 
-| Model | Why | How it enters GeoSoil |
+| Modality | Source | Coverage | Access / cost | Cadence used |
+|---|---|---|---|---|
+| **AlphaEarth** embeddings | 64-d, 10 m, CC-BY 4.0 | global; **2018–2024** on the AWS mirror [V] (GCS readme says 2017–25) | **Free, not requester-pays:** `s3://us-west-2.opendata.source.coop/tge-labs/aef` + `aef_index.gpkg`, `aef-loader`. The GCS bucket is requester-pays. | annual |
+| **TESSERA** embeddings | 128-d Matryoshka, 10 m, CC-BY (weights CC0) | global, **2024 only so far** [V]; 2017–24 planned | free, `geotessera` | annual |
+| Climate | ERA5-Land (ARCO Zarr via Earth Data Hub, or CDS), ARCO-ERA5 (`gs://gcp-public-data-arco-era5`, anonymous), Daymet / gridMET / TerraClimate (Planetary Computer), PRISM | global / NA | free | daily → weekly patches |
+| Vegetation, LST | MODIS 6.1 (Planetary Computer), HLS v2 (LP DAAC, us-west-2) | global | free | 8/16-day → weekly |
+| Soil moisture | SMAP L3/L4 (`earthaccess`) | global 9 km | free | daily → weekly |
+| Terrain | Copernicus DEM 30 m, 3DEP | global / US | free | static |
+| **Soil minerals** | **EMIT L2B mineral ID + band depth**, 60 m [V] | dryland belt ±52° | free (LP DAAC) | static |
+| **Radiometrics** | USGS NURE K/U/Th Bayesian grids [V]; Australia Radmap v4 (100 m, CC-BY) [V] | CONUS + AK; Australia | free | static. **Strong clay / parent-material predictor.** |
+| Bare soil, SAR | S2 bare-soil composite (SYSI/BSC method), S1 RTC (Planetary Computer / AWS) | global | free in us-west-2 | annual |
+| Land cover | ESA WorldCover, Dynamic World (EE only), CDL (US) | | free | annual |
+
+**Coarse modalities are cheap.** ERA5-Land (9 km), SMAP (9 km) and MODIS (500 m) have far fewer unique
+cells than we have points. Extract per unique cell, then join. Only the 10 m embeddings and S1/S2 are
+truly per-point, and they are tiled. So **dense sampling inside tiles costs much less per point than
+scattered sampling.** That is what makes the C4 tier feasible.
+
+### B2. Pre-tiled ML datasets (alternative or extra pretraining data)
+
+| Dataset | Size | Notes |
 |---|---|---|
-| **Galileo** (nasaharvest, Nano / Tiny / Base 85M) | Pixel time series over S1, S2, ERA5, TerraClimate, SRTM and Dynamic World: the closest match to our inputs. Pretraining data released. | Baseline, and initialization for the temporal encoder (R1 ablation) |
-| **TESSERA** (1M–44M students, CC0) | Pixel S1/S2 series, distillation recipe | Second embedding modality, baseline, and the distillation recipe for R4 |
-| **Presto** (~0.4M) | Tiny monthly pixel time-series model | Fast baseline |
-| AnySat, Prithvi-EO-2.0, TerraMind, Copernicus-FM | Patch / image models | Low priority; GeoSoil is per-point |
+| TerraMesh | 9.09M samples, 7 modalities, 14 TB Zarr [V] | **CC-BY-SA** (share-alike) |
+| Major TOM Core-S2L2A | 2.25M patches, ~23 TB [V]; plus embedding sets (DINOv2, SigLIP, UniverSat, MMEarth) | open, HF |
+| MMEarth | 1.2M locations, 12 modalities incl. ERA5, DEM, land cover [V] | **no soil layer** |
+| SSL4EO-S12 v1.1 | ~250k locations × 4 seasons [U] | |
 
-Licenses marked "verify" in the survey (Galileo, Presto, AnySat, Copernicus-FM) must be confirmed from
-each repo before use. Aurora and Prithvi-WxC are weather models and not relevant.
+These are patch datasets. GeoSoil is per-point, so they are a fallback or an image branch, not the core corpus.
 
-**Spatial or patch embeddings, not needed now:** Clay v1.5 (chip-level), Major TOM embedding sets.
+### B3. Open pretrained models
 
-## C. Sampling the unlabelled corpus (C2 and C3)
+| Model | Size | How it enters GeoSoil |
+|---|---|---|
+| **Galileo** (nasaharvest) | Nano 0.8M / Tiny 5.3M / Base 85M; pretrained on 127k samples × 24 months | Closest input match (S1, S2, ERA5, TerraClimate, SRTM, Dynamic World). Baseline + temporal-encoder initialization. |
+| **TESSERA** | students 1M / 7M / 21M / 44M; 2B teacher (weights CC0) | Second embedding modality, baseline, and the distillation recipe |
+| **Presto** | 0.4M; 21.5M pixel time series | Fast baseline |
+| AlphaEarth | ~480M (weights not public) | Embeddings only |
+| Prithvi-EO-2.0, TerraMind, AnySat, Copernicus-FM | patch / image models | Low priority |
 
-The goal is to cover as many distinct soil-forming conditions as possible per byte, not to sample uniformly.
+Confirm the Galileo, Presto, AnySat and Copernicus-FM licenses from each repo before use.
 
-1. **Strata.** Use climate (Köppen or k-means on ERA5 normals), terrain class, land cover, and an
-   AlphaEarth k-means cluster (k ≈ 256).
-2. **Draw** with conditioned Latin hypercube sampling (cLHS; Minasny & McBratney 2006) or iterative
-   proportional fitting over the strata (as in Wickrema et al. 2025). The aim is to widen the range of
-   variation rather than duplicate common regimes.
-3. **Thin near-duplicates** by AlphaEarth embedding distance, SemDeDup-style (arXiv 2303.09540). Sorscher
-   et al. 2022 show pruning helps most when data is plentiful, so thin C3 hard and C2 lightly.
-4. **Always include** every labelled site, plus 4–8 unlabelled neighbours within 1 km. Pretraining then
-   covers the label distribution, and the neighbours provide local-contrast pairs.
-5. **Hold out** 1° blocks (about 10%) and the year 2025 across all tiers. Fix the block assignment once,
-   in `data/corpus/splits.parquet`.
+## C. Sampling the unlabelled corpus
 
-Sizes: C2 = 2M CONUS locations, C3 = 10M global. Go beyond that only if the R2 → R3 probe curve is still
-rising with D at fixed N.
+The goal is to cover as many distinct soil-forming conditions as possible per byte.
+
+1. **Strata.** Climate (k-means on ERA5 normals), terrain class, land cover, and an AlphaEarth k-means
+   cluster (k ≈ 256).
+2. **Draw scattered points (C2, C3)** with conditioned Latin hypercube sampling (cLHS; Minasny &
+   McBratney 2006), or with iterative proportional fitting over the strata (Wickrema et al. 2025).
+3. **Draw dense tiles (C4).** Choose ~11k AlphaEarth tile-years stratified as above. Read each tile
+   once, and keep ~10k pixels per tile after thinning.
+4. **Thin near-duplicates** by embedding distance, SemDeDup-style (arXiv 2303.09540). Prune C3/C4 hard
+   and C2 lightly (Sorscher et al. 2022).
+5. **Always include** every labelled site, plus 4–8 unlabelled neighbours within 1 km.
+6. **Hold out** 1° blocks (~10%) and the latest year that both embedding sources cover. Fix the
+   assignment once in `data/corpus/splits.parquet`.
 
 ## D. Choosing features
 
-Start from SCORPAN (soil = f(soil, climate, organisms, relief, parent material, age, space)) and treat
-every candidate as a **group** (a modality), not as a single column.
+Start from SCORPAN and treat each candidate as a **group** (a modality), not a single column.
 
 | SCORPAN factor | Candidate group | Current status |
 |---|---|---|
-| s (soil) | OSSL spectra (where present), pseudo-label priors (ablation only) | not built |
+| s (soil) | spectra (where present) | not built |
 | c (climate) | ERA5-Land weekly series, climate normals, aridity index | 12-month version built |
 | o (organisms) | MODIS phenology, AlphaEarth, TESSERA, land cover / CDL history | AlphaEarth + CDL built |
 | r (relief) | elevation, slope, TWI, curvature, MRVBF | partly built |
-| p (parent material) | **gamma radiometrics**, surficial geology, bare-soil S2, S1 SAR | bare-soil + SAR built |
-| a (age) | geologic age (from the geology map) | not built |
-| n (space) | Fourier lon/lat features | built |
+| p (parent material) | **radiometrics, EMIT minerals**, surficial geology, bare-soil S2, S1 SAR | bare-soil + SAR built |
+| a (age) | geologic age (geology map) | not built |
+| n (space) | Fourier lon/lat | built |
 
-**Selection protocol.** The evidence favours a hybrid: about 10–20 physical covariates plus the
-embeddings, rather than either alone (Koch et al. EGU26-13089; SpTGNN arXiv 2606.16580).
+**Protocol.** The evidence favours a hybrid of ~10–20 physical covariates plus the embeddings
+(Koch et al. EGU26-13089; SpTGNN arXiv 2606.16580).
 
-1. **Groupwise permutation importance and grouped SHAP, computed inside 5-fold spatial-block CV**, for
-   LightGBM on lab labels.
-   - Importance from random CV rewards features that just proxy location (Ploton et al. 2020).
-   - Report importance per target. pH and texture lean on parent material and climate; SOC leans on
-     climate, vegetation and relief.
-2. **Drop-group ablation** for the neural model, which modality dropout during pretraining gives
-   almost for free.
+1. **Groupwise permutation importance and grouped SHAP, inside 5-fold spatial-block CV**, with LightGBM
+   on lab labels. Importance from random CV rewards location proxies (Ploton et al. 2020). Report it
+   per target.
+2. **Drop-group ablation** for the neural model, via modality dropout.
 3. **Keep a group** if it improves lab-label spatial-CV skill for at least one target by more than the
-   seed-to-seed noise, or widens the area of applicability.
-   Drop a group if it only helps on OpenLandMap labels.
+   seed noise, or widens the area of applicability. Drop it if it only helps on OpenLandMap labels.
 4. **Temporal granularity test (R1):**
-   - (a) climate normals plus summary statistics
+   - (a) climate normals + summary statistics
    - (b) monthly series
    - (c) weekly patches over 1–4 years
-   Expect (a) ≈ (c) for texture and pH. Keep the long series only for targets where it beats (a).
+   Keep long series only where they beat (a).
 5. **Validation reporting:** always report spatial-block CV, leave-region-out, and area-of-applicability
-   masks. Where a probability sample exists (RaCA, USDA DS 801), add design-based accuracy
-   (Wadoux et al. 2021).
+   masks. Add design-based accuracy where a probability sample exists (RaCA, USGS DS 801).
 
 ## E. Label harmonization
 
-- **Keep the method, don't overwrite the value.** Carry `method_id` for every label. WoSIS codes the
-  analytical method for every value; KSSL has lab procedure codes.
-- **SOC:**
-  - Walkley-Black vs dry combustion: the correction is not a flat 1.32. It ranges 0.9–1.5 and rises with
-    clay (Shamrikova / FAO GSP; J. Plant Nutr. Soil Sci. 2025).
-  - Prefer a learned per-method offset head over converting values up front.
-- **pH:** H₂O vs CaCl₂. Use an EC-aware conversion (Minasny et al. 2011), or a separate head per method.
-- **Depth:** fit equal-area splines to standard depths (0–5, 5–15, 15–30, 30–60, 60–100 cm). The latent
-  already takes depth as an input.
-- **Noise floor:** estimate it from KSSL lab replicates per target, and store it in the results.
+- **Methods.** Carry `method_id` for every label (WoSIS method codes, KSSL procedure codes). Use per-method
+  offset heads rather than converting values up front.
+- **SOC.** Walkley-Black vs dry combustion is not a flat 1.32: it ranges 0.9–1.5 and rises with clay
+  (Shamrikova / FAO GSP; J. Plant Nutr. Soil Sci. 2025).
+- **pH.** H₂O vs CaCl₂: use an EC-aware conversion (Minasny et al. 2011) or separate heads.
+- **Depth.** Fit equal-area splines to 0–5, 5–15, 15–30, 30–60 and 60–100 cm.
+- **Noise floor.** Estimate it from KSSL lab replicates per target, and store it with the results.
 
-## F. Finding more data (outreach and lesser-known sources)
+## F. Where else to look (unchecked leads)
 
-These are leads to check; none has been verified yet. Record each in `sources.yaml` with
-`status: lead` until checked.
+Record each lead in `sources.yaml` with `status: lead`.
 
-- **National and federal:**
-  - NRCS soil survey data requests (unpublished pedons, precise RaCA coordinates under a data-use agreement)
-  - USDA-ARS LTAR network
-  - Soil Health Institute (North American Project to Evaluate Soil Health Measurements)
-  - USGS National Geochemical Database
-  - EPA NARS wetland soils
-- **Research networks:**
-  - CZNet (Critical Zone Collaborative Network)
-  - LTER sites
-  - AmeriFlux / FLUXNET site soil data
-  - ISCN Gen3
-  - NEON
-- **Data papers:** search Zenodo, PANGAEA, ESSD and Scientific Data for "soil profile database" or
-  "soil organic carbon dataset". Each country often has one (China, India, Europe beyond LUCAS, Russia's
-  EGRPR, New Zealand's NSD).
-- **Through ISRIC:** ask about WoSIS profiles with restricted licenses. Some holders grant academic use on request.
-- **CU Boulder:** Greg Tucker's group and INSTAAR may hold Front Range or Critical Zone soil cores; CSDMS
-  lists community datasets.
-- **Spectral libraries:** additional MIR/VisNIR sets submitted to OSSL after v1.2, and the KSSL MIR
-  library models (arXiv 2511.15965).
+- **US:** USDA-ARS LTAR, EPA NARS wetland soils, USGS National Geochemical Database, CZNet, LTER, AmeriFlux site soils.
+- **Data papers:** search Zenodo, PANGAEA, ESSD and Scientific Data for "soil profile database".
+  Candidates include India's NBSS&LUP profiles, Russia's EGRPR, Argentina, Uruguay.
+- **CU Boulder:** Greg Tucker's group, INSTAAR (Front Range / Critical Zone cores), CSDMS community data.
+- **EU:** the AI4SoilHealth / EU Soil Observatory releases, and national databases beyond LUCAS.
+- **Hugging Face / Kaggle:** search "soil". Check provenance and license before using anything.
 
-## G. Work items (for contributors)
-
-Each item lands as one PR with a test or a reproducible notebook. The source must be in `sources.yaml`
-before any code that downloads it.
-
-| ID | Item | Output | Runs on |
-|---|---|---|---|
-| C0.1 | Copy the GEE parquets to Alpine; rebuild master.parquet with temporal modalities | master.parquet | laptop → dtn |
-| C0.2 | Measure bytes and time per point for AlphaEarth range reads from Source Cooperative (`aef-loader`), versus EE `sampleRegions` | a short measurement note | acpu |
-| C0.3 | Test outbound internet from compute nodes (printed by the bootstrap job) | yes/no | aa100 |
-| C1.1 | KSSL LDM ingest (SQLite) → harmonized label table with `method_id` and depth splines | `labels_kssl.parquet` | acpu |
-| C1.2 | WoSIS 2023 ingest, CC-BY filter, dedup against KSSL. Start from `foundation-model/scripts/prepare_wosis.py`, which already loads global WoSIS for SST. | `labels_wosis.parquet` + dedup log | acpu |
-| C1.3 | OSSL ingest + spectra modality (optional) | `labels_ossl.parquet`, `spectra.zarr` | acpu |
-| C1.4 | RaCA ingest as SOC-stock hold-out | `labels_raca.parquet` | acpu |
-| C1.5 | LUCAS (after the license request) as a transfer test; never committed | local only | acpu |
-| C1.6 | Point feature extractors: ERA5-Land, MODIS, SMAP, DEM, radiometrics, AlphaEarth, TESSERA → feature store | `features/` Zarr shards | acpu array |
-| C1.7 | Spatial-block + 2025 splits | `splits.parquet` | acpu |
-| C1.8 | Feature-selection report (§D, steps 1–4) | `results/feature_selection.md` | acpu |
-| C2.1 | Strata + cLHS sampler + embedding-distance thinning | `points_c2.parquet` | acpu |
-| C2.2 | Run the C1.6 extractors at 2M points | feature store | acpu array |
-| C3.x | Same as C2 for global, 10M points | feature store | acpu array, after Ascent |
+Work items are numbered in EXECUTION-PLAN.md.

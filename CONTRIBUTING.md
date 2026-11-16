@@ -7,9 +7,10 @@ Computing (Alpine). The plan lives in [`docs/research/`](docs/research/):
 |---|---|
 | [CURC-PLAN.md](docs/research/CURC-PLAN.md) | Cluster access, partitions, allocations, policy |
 | [SCALING-PLAN.md](docs/research/SCALING-PLAN.md) | Model ladder R0–R4, compute, overfitting guards |
-| [CORPUS-PLAN.md](docs/research/CORPUS-PLAN.md) | Data sources, sampling, feature selection, work items C0–C3 |
+| [CORPUS-PLAN.md](docs/research/CORPUS-PLAN.md) | Every large soil dataset, how to get it, sampling, feature selection |
+| [EXECUTION-PLAN.md](docs/research/EXECUTION-PLAN.md) | Step-by-step phases 0–5 with gates |
 
-Pick a work item from CORPUS-PLAN.md §G. Each item lands as one pull request.
+Pick a step from EXECUTION-PLAN.md. Each step lands as one pull request.
 
 ## Ground rules
 
@@ -27,7 +28,7 @@ Pick a work item from CORPUS-PLAN.md §G. Each item lands as one pull request.
 3. **Lab truth is the target.** Report skill on lab-measured labels under spatial-block CV. Model
    products (OpenLandMap, POLARIS, SoilGrids, gNATSGO) may be auxiliary pretraining targets in a clearly
    labelled ablation. They are never evaluation labels.
-4. **Deduplicate across sources** (CORPUS-PLAN.md §A) and log every dropped row.
+4. **Deduplicate across sources** (CORPUS-PLAN.md §A5) and log every dropped row.
 5. **Keep the method.** Labels carry `method_id` and depth. Don't silently convert units or methods.
 6. **Splits are fixed.** Use `data/corpus/splits.parquet` (1° spatial blocks plus the 2025 hold-out year)
    once it exists. Don't re-randomize.
