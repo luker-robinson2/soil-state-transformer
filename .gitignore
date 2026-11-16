@@ -20,6 +20,8 @@ gcloud-*.json
 *.csv
 foundation-model/data/data/
 foundation-model/data/processed/
+data/raw/
+*.rds
 data/processed/
 data/acquire/
 geosoil/results/*.npy

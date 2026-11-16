@@ -25,4 +25,7 @@ dependencies:
       - catboost>=1.2
       - earthengine-api>=0.1.380
       - requests
+      - rasterio>=1.4         # AlphaEarth COG reads (scripts/corpus)
+      - pyproj>=3.6
+      - pytest>=8
       # mamba-ssm + causal-conv1d installed AFTER env create (need nvcc), see header.

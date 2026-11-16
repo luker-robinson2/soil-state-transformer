@@ -27,7 +27,7 @@ The long pole is data requests (weeks to months), so they go out first.
 | 0.3 | Paste `scripts/slurm/alpine-paste.sh` into the Jupyter terminal → bootstrap job | L → job | `aa100` | log ends `BOOTSTRAP OK`; the internet line says yes or no |
 | 0.4 | Copy `data/processed/gee_*.parquet` to Alpine; rebuild master.parquet | L/C | laptop → `dtn` | `modality_presence` shows climate, veg, moisture = True |
 | 0.5 | R0 sweep: `sbatch scripts/slurm/scaling_sweep.sbatch` (4 sizes × 2 label sources) | job | `aa100` | 8 results JSONs; a size-vs-skill table on OpenLandMap **and** KSSL |
-| 0.6 | Measure AlphaEarth read cost from Source Cooperative (`aef-loader`) at 100 scattered points vs 1 dense tile; check TESSERA years | C → job | `acpu` | MB per point and s per point, scattered vs dense. Decides how C2–C4 are built. |
+| 0.6 | ✅ 11-16, laptop: AlphaEarth read cost measured (`scripts/corpus/aef_read_cost.py`). Scattered ≈ 38 MB / 23 s per point-year; dense ≈ 38.5 B per pixel. KSSL's 52k sites fall in 19k blocks (6.5 TB for 9 years). **Decision: block-based corpus.** Still to do: rerun on Alpine for real throughput, and check TESSERA's years. | C → job | `acpu` | `geosoil/results/aef_read_cost_laptop.json` |
 | 0.7 | **Send data requests** (C drafts, L sends): iSDA full table, Brazil BSSL (Demattê), ISRIC restricted WoSIS, Canada NPDB full, ESDAC LUCAS 2022 registration, TERN API key | C → L | email | 6 requests sent; each logged in `sources.yaml` as `status: requested` with the date |
 | 0.8 | Ask a faculty member (Greg Tucker first) to be PI on Ascent or co-PI on ACCESS. Ask rc-help whether a grad student can be Ascent PI. | L | email | yes from one faculty member, or the rc-help answer |
 | 0.9 | Earth Engine noncommercial project: Contributor tier needs a billing account. Decide whether it's needed at all, given the Source Cooperative mirror. | L | console | decided |
@@ -42,8 +42,8 @@ PR with a test.
 
 | Step | Action | Who | Output |
 |---|---|---|---|
-| 1.1 | Label schema: `site_id, source, lon, lat, coord_precision_m, depth_top, depth_bot, target, value, unit, method_id, year, license` | C | `geosoil/corpus/schema.py` + test |
-| 1.2 | KSSL Lab Data Mart ingest (SQLite) | C | `labels_kssl.parquet` |
+| 1.1 | ✅ 11-16: label schema (long format, one row per value per method) | C | `geosoil/corpus/schema.py` |
+| 1.2 | ✅ 11-16: KSSL ingest (`data/extraction/kssl_export.R` → `python -m geosoil.corpus.kssl`), 9 tests. From the 2026-07 labtaxa mirror (USDA LDM was down): **52,340 georeferenced pedons (50,008 CONUS), 1.51M values**. Topsoil sites: SOC 41.8k, pH 41.4k, sand 49k, clay 50k, BD 15.9k. In KSSL, Walkley-Black ≈ dry combustion (median ratio 0.98, r = 0.94). Rerun from the official GeoPackage when the LDM site is back. | C | `labels_kssl.parquet` |
 | 1.3 | WoSIS 2023 ingest with CC-BY filter, starting from `foundation-model/scripts/prepare_wosis.py` | C | `labels_wosis.parquet` |
 | 1.4 | ISCN3 (EDI), Brazil SoilData, NAPESHM, USGS DS 801, Mexico INEGI, CSDLv2, Canada NPDB open subset | C | one parquet per source |
 | 1.5 | OSSL v1.2 labels (+ spectra kept aside) | C | `labels_ossl.parquet`, `spectra.zarr` |
@@ -77,7 +77,7 @@ doesn't, fix features and objectives before adding data. Scale amplifies a broke
 
 | Step | Action | Who | Where | Output |
 |---|---|---|---|---|
-| 3.1 | Strata + cLHS sampler + embedding-distance thinning → 2M CONUS points | C | `acpu` | `points_c2.parquet` |
+| 3.1 | Block sampler: label-anchored blocks + cLHS coverage blocks, then within-block embedding thinning → ~2M CONUS locations | C | `acpu` | `blocks_c2.parquet` |
 | 3.2 | Run the extractors at 2M points × 8 years | job | `acpu` array (+ `dtn`) | `features/c2` (~30 GB) |
 | 3.3 | **R2** (~100M) pretraining, 4 epochs max | job | `ah200` or `aa100` | checkpoints |
 | 3.4 | Probe R1 vs R2 on C1 labels; first scaling fit (probe skill vs N and D) | C | `aa100` | the scaling plot |
@@ -90,7 +90,7 @@ doesn't, fix features and objectives before adding data. Scale amplifies a broke
 
 | Step | Action | Who | Where | Output |
 |---|---|---|---|---|
-| 4.1 | Global sampler → 10M points (needs global coverage in every extractor) | C | `acpu` | `points_c3.parquet` |
+| 4.1 | Global block sampler → ~10M locations (needs global coverage in every extractor) | C | `acpu` | `blocks_c3.parquet` |
 | 4.2 | Extraction at 10M × 8 years | job | `acpu` array | `features/c3` (~140 GB) |
 | 4.3 | **R3** (~250M), about 8 h on 4×H200 | job | `ah200` | checkpoints |
 | 4.4 | Distill R3 → 20–50M Matryoshka student | job | `aa100` | student weights |
@@ -103,7 +103,7 @@ doesn't, fix features and objectives before adding data. Scale amplifies a broke
 
 | Step | Action | Who | Where | Output |
 |---|---|---|---|---|
-| 5.1 | Choose ~11k AlphaEarth tile-years (stratified); stream each tile once and keep ~10k thinned pixels per tile | job | `acpu` array (+ `dtn`) | `features/c4` (~1.7 TB in `/scratch/alpine`; rerunnable, 90-day purge) |
+| 5.1 | Extend the C3 blocks to ~1e9 pixel-years (more blocks, thinned); stream each block once (~40 MB) | job | `acpu` array (+ `dtn`) | `features/c4` (~1.7 TB in `/scratch/alpine`; rerunnable, 90-day purge) |
 | 5.2 | **R4a** (~650M, 2 epochs, ~420k SU budget) on Ascent | job | `ah200` (4×H200, 24 h jobs with requeue) | teacher checkpoints |
 | 5.3 | If R4a passes the rung gate over R3 and allocation allows: **R4b** (~1B, 4 epochs) | job | `ah200` | teacher |
 | 5.4 | Distill the teacher → 20–50M student; cache embeddings for CONUS / global | job | `aa100` | student + embedding product |

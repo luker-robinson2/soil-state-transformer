@@ -40,15 +40,17 @@ teacher trained on 1.4e10 location-years:
 |---|---|---|---|---|---|
 | C0 | today's labelled rows | 4e4 | 1.4 → 3M | <1 GB | **R0:** current presets. xl (31M) is already ~10× oversized. |
 | C1 | all labelled sites, global, deduplicated (~300k) × 7 years | 2e6 | 13 → 29M | 3.4 GB | **R1: ~30M** |
-| C2 | 2M scattered CONUS points × 8 years | 1.6e7 | 43 → 95M | 27 GB | **R2: ~100M** |
-| C3 | 10M scattered global points × 8 years | 8e7 | 108 → 238M | 136 GB | **R3: ~250M** |
-| C4 | dense: ~11k AlphaEarth tile-years × ~10k pixels each | 1e9 | 457M → 1B | 1.7 TB (in `/scratch`) | **R4: 0.5–1B teacher**, then a distilled student |
+| C2 | 2M CONUS locations from stratified 1024² blocks × 8 years | 1.6e7 | 43 → 95M | 27 GB | **R2: ~100M** |
+| C3 | 10M global locations from stratified blocks × 8 years | 8e7 | 108 → 238M | 136 GB | **R3: ~250M** |
+| C4 | dense: thinned pixels from label-anchored + coverage blocks, 9 years | 1e9 | 457M → 1B | 1.7 TB (in `/scratch`) | **R4: 0.5–1B teacher**, then a distilled student |
 
 Model sizes on labelled data alone are small (C0 → ~3M). **Labels set the probe, not the model size.**
 To make the model large we need many unlabelled locations, and C4 is the step that gets there. It is
 feasible because:
 - coarse modalities are shared across nearby points
-- the 10 m embeddings are read a whole tile at a time (CORPUS-PLAN.md §B1).
+- **measured:** a whole 1024² AlphaEarth block costs the same to read as one pixel in it (~38 MB). So
+  1e9 pixel-years is ~40 GB of reads, while scattered sampling at C2 scale would be ~684 TB
+  (CORPUS-PLAN.md §B1).
 
 ## Compute check
 

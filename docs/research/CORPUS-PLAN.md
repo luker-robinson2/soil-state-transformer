@@ -27,7 +27,7 @@ not open (India SHC, China's 3rd survey); see §A3.
 | **iSDA / AfSIS** (open part) | ~49k entries open [U]; ~100–150k trained iSDAsoil [V] | sub-Saharan Africa | chemistry + MIR | CC-BY | AWS `s3://isdasoil`, `s3://afsis`, SoilHive. The full set is on request (§A2). |
 | **RaCA** | 6,017 sites, 32,084 pedons, 144,833 samples to 100 cm [V] | US | SOC, BD, VisNIR | public domain | **Coordinates degraded on purpose.** Use as the final SOC hold-out and for depth/stock supervision. |
 | **LUCAS-MEGA** | 72,552 samples at 29,872 points [V] | EU | harmonized LUCAS 2009–2018 | open (arXiv 2512.09576) | Check whether its license overrides the JRC terms before committing any row. |
-| **LUCAS 2022 topsoil** | 18,984 samples [V] | EU | all 5 + metals, eDNA | ESDAC registration, **no redistribution** | KSSL → EU transfer test. Never commit rows. |
+| **LUCAS 2022 topsoil** | 18,984 samples [V] | EU | all 5 + metals, eDNA | ESDAC registration, **no redistribution** | The ESDAC page says public release is likely Q1 2027 [V]. KSSL → EU transfer test. Never commit rows. |
 | **Mexico INEGI** | 62,362 SOC values at 26,297 sites [V] | Mexico | SOC (+ others) | INEGI open data | Partly inside WoSIS already. |
 | **China CSDLv2** | 11,209 profiles [V] | China | all 5 | open (scidb.cn) | May release only gridded layers [U]. Overlaps WoSIS. |
 | **Canada NPDB** (open subset) | count not stated; >10k pedons behind the 100 m grids [V] | Canada | | Open Government Licence | open.canada.ca. Full holdings on request. |
@@ -103,7 +103,7 @@ All of these are point-sampled; the corpus never stores whole rasters.
 
 | Modality | Source | Coverage | Access / cost | Cadence used |
 |---|---|---|---|---|
-| **AlphaEarth** embeddings | 64-d, 10 m, CC-BY 4.0 | global; **2018–2024** on the AWS mirror [V] (GCS readme says 2017–25) | **Free, not requester-pays:** `s3://us-west-2.opendata.source.coop/tge-labs/aef` + `aef_index.gpkg`, `aef-loader`. The GCS bucket is requester-pays. | annual |
+| **AlphaEarth** embeddings | 64-d, 10 m, CC-BY 4.0 | global, **2017–2025** (bucket listing, 2026-11-16) [V]; 302,466 tiles of 8192², band-interleaved, 1024² zstd blocks | **Free, not requester-pays:** `https://data.source.coop/tge-labs/aef/v1/annual/` + `aef_index.parquet`. Bottom-up COGs: read the `.tiff` with its own transform, or the `.vrt` via `/vsis3/`. The GCS bucket is requester-pays. | annual |
 | **TESSERA** embeddings | 128-d Matryoshka, 10 m, CC-BY (weights CC0) | global, **2024 only so far** [V]; 2017–24 planned | free, `geotessera` | annual |
 | Climate | ERA5-Land (ARCO Zarr via Earth Data Hub, or CDS), ARCO-ERA5 (`gs://gcp-public-data-arco-era5`, anonymous), Daymet / gridMET / TerraClimate (Planetary Computer), PRISM | global / NA | free | daily → weekly patches |
 | Vegetation, LST | MODIS 6.1 (Planetary Computer), HLS v2 (LP DAAC, us-west-2) | global | free | 8/16-day → weekly |
@@ -116,8 +116,26 @@ All of these are point-sampled; the corpus never stores whole rasters.
 
 **Coarse modalities are cheap.** ERA5-Land (9 km), SMAP (9 km) and MODIS (500 m) have far fewer unique
 cells than we have points. Extract per unique cell, then join. Only the 10 m embeddings and S1/S2 are
-truly per-point, and they are tiled. So **dense sampling inside tiles costs much less per point than
-scattered sampling.** That is what makes the C4 tier feasible.
+truly per-point, and they are tiled.
+
+**Measured AlphaEarth read cost** (`scripts/corpus/aef_read_cost.py`, 20 KSSL sites, 2020; results in
+`geosoil/results/aef_read_cost_laptop.json`). Bytes are exact, from the TIFF block sizes. Seconds are from
+a home connection, so expect Alpine to be faster.
+
+| Pattern | Bytes | Seconds |
+|---|---|---|
+| One scattered point | ~38 MB per point-year (one whole 1024² block per band × 64 bands) | ~23 s |
+| A dense block | ~38.5 B per pixel (1M pixels for ~40 MB) | ~20 s |
+
+What that implies for each corpus:
+
+| Corpus | Read volume | Verdict |
+|---|---|---|
+| 2M points × 9 years, scattered | ~684 TB | **Infeasible** |
+| 1e9 pixel-years, dense | ~40 GB | **Cheap** |
+| All 52,340 KSSL sites | They fall in only 18,963 distinct blocks (2.8 per block): 0.7 TB per year, 6.5 TB for 9 years | Feasible as streamed reads on Alpine |
+
+**So every tier is built from whole blocks, never scattered points** (§C).
 
 ### B2. Pre-tiled ML datasets (alternative or extra pretraining data)
 
@@ -148,13 +166,21 @@ The goal is to cover as many distinct soil-forming conditions as possible per by
 
 1. **Strata.** Climate (k-means on ERA5 normals), terrain class, land cover, and an AlphaEarth k-means
    cluster (k ≈ 256).
-2. **Draw scattered points (C2, C3)** with conditioned Latin hypercube sampling (cLHS; Minasny &
-   McBratney 2006), or with iterative proportional fitting over the strata (Wickrema et al. 2025).
-3. **Draw dense tiles (C4).** Choose ~11k AlphaEarth tile-years stratified as above. Read each tile
-   once, and keep ~10k pixels per tile after thinning.
-4. **Thin near-duplicates** by embedding distance, SemDeDup-style (arXiv 2303.09540). Prune C3/C4 hard
-   and C2 lightly (Sorscher et al. 2022).
-5. **Always include** every labelled site, plus 4–8 unlabelled neighbours within 1 km.
+2. **The unit of sampling is a 1024² AlphaEarth block** (10.24 km square). Reading one costs the same
+   as reading a single pixel in it (§B1), so every block read yields all of its pixels.
+3. **Label-anchored blocks first.** Every block that contains a labelled site is read anyway to embed
+   that site: about 19k blocks for KSSL alone, and ~300k-site C1 will touch more. Keep the site pixels
+   plus thinned unlabelled pixels from the same block.
+4. **Coverage blocks next.** Add blocks chosen by conditioned Latin hypercube sampling (cLHS; Minasny &
+   McBratney 2006), or by iterative proportional fitting over the strata (Wickrema et al. 2025), until
+   the strata are covered.
+   - C2 (CONUS): ~2M locations ≈ 2k–20k blocks × 100–1,000 thinned pixels.
+   - C3 (global): ~10M locations ≈ 10k–100k blocks.
+   - C4: 1e9 pixel-years ≈ ~1k blocks × 9 years read in full, or more blocks thinned harder, which is
+     better for diversity.
+   Prefer **more blocks with fewer pixels each**: pixels inside one block are spatially autocorrelated.
+5. **Thin near-duplicates within each block** by embedding distance, SemDeDup-style (arXiv 2303.09540).
+   Prune C3/C4 hard and C2 lightly (Sorscher et al. 2022).
 6. **Hold out** 1° blocks (~10%) and the latest year that both embedding sources cover. Fix the
    assignment once in `data/corpus/splits.parquet`.
 

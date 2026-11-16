@@ -17,3 +17,8 @@ catboost>=1.2
 # data extraction (Phase 0)
 earthengine-api>=0.1.380
 # soilspecdata        # optional, OSSL spectral library download
+
+# corpus build (geosoil/corpus, scripts/corpus)
+rasterio>=1.4
+pyproj>=3.6
+pytest>=8

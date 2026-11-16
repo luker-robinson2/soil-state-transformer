@@ -16,9 +16,12 @@ sources:
     license: public domain
     redistribute: true
     access: https://ncsslabdatamart.sc.egov.usda.gov/ (SQLite / GeoPackage, monthly)
-    status: verified
+    status: ingested
     checked: 2026-11-16
-    notes: repo uses ~3k pedons today (alphaearth-soc/future_work/data/kssl_with_features.csv)
+    status_detail: "ingested 2026-11-16 from the labtaxa 2026.07 mirror: 52,340 georeferenced pedons, 1.51M values"
+    loader: data/extraction/kssl_export.R + geosoil/corpus/kssl.py
+    mirror: https://github.com/brownag/labtaxa/releases (monthly cached-LDM-SPC.rds)
+    notes: repo used ~3k pedons before (alphaearth-soc/future_work/data/kssl_with_features.csv)
 
   - id: wosis_2023
     name: ISRIC WoSIS 2023 snapshot
@@ -31,6 +34,7 @@ sources:
     checked: 2026-11-16
     loader: foundation-model/scripts/prepare_wosis.py (SST; reuse for C1.2)
     notes: CONUS slice on disk as alphaearth-soc/future_work/data/wosis_conus.csv (37,311 rows); overlaps NCSS
+    requested: "2026-11-16 (email to wosis@isric.org: license reading, restricted-provider contacts, next snapshot)"
 
   - id: ossl_v1_2
     name: Open Soil Spectral Library v1.2
@@ -60,10 +64,11 @@ sources:
     size: "~20k / 22k / 19k (unverified) / 33k locations"
     license: JRC ESDAC license agreement (request form)
     redistribute: false
-    access: https://esdac.jrc.ec.europa.eu/content/lucas-2022-topsoil-data
+    access: https://esdac.jrc.ec.europa.eu/content/lucas-2022-topsoil-data (2022 public likely Q1 2027, registration)
     status: verified
     checked: 2026-11-16
     notes: transfer test only; never commit rows
+    requested: "2026-11-16 (email to ec-esdac@ec.europa.eu: 2022 early access, 2009-2018 process, model-weight release terms)"
 
   - id: usgs_ds801
     name: USGS Geochemical and mineralogical data for soils of the conterminous US (DS 801)
@@ -122,13 +127,13 @@ sources:
   - id: alphaearth
     name: AlphaEarth Foundations Satellite Embedding v1
     role: embedding
-    size: "64-d, 10 m, annual; 2018-2024 on the AWS mirror (GCS readme: 2017-2025); hundreds of TB"
+    size: "64-d, 10 m, annual 2017-2025 (302,466 tiles); band-interleaved 1024px zstd blocks"
     license: CC-BY-4.0 (attribution "Google and Google DeepMind")
     redistribute: derived point features yes, with attribution
     access: s3://us-west-2.opendata.source.coop/tge-labs/aef (free, not requester-pays; aef_index.gpkg, aef-loader); the GCS bucket is requester-pays
     status: verified
     checked: 2026-11-16
-    notes: weights not public. Measure range-read cost per point first (EXECUTION-PLAN step 0.6)
+    notes: weights not public. Measured 2026-11-16 - scattered ~38 MB per point-year, dense ~38.5 B per pixel; build the corpus from whole blocks
 
   - id: tessera
     name: TESSERA embeddings and models (Cambridge)
@@ -225,13 +230,14 @@ sources:
     access: https://open.canada.ca/data/en/dataset/6457fad6-b6f5-47a3-9bd1-ad14aea4b9e0 ; full holdings via aafc.cansis-siscan.aac@agr.gc.ca
     status: verified
     checked: 2026-11-16
+    requested: "2026-11-16 (email to aafc.cansis-siscan.aac@agr.gc.ca for full holdings)"
 
   - id: tern_federator
     name: TERN Soil Data Federator / ANSIS (Australia)
     role: label
     size: "195,383 site observations (lab subset unknown)"
     license: mostly CC-BY
-    access: free API key (TERN); ansis.net
+    access: "register for a key at https://shiny.esoil.io/SoilDataFederator/Register/ (usr=Demo&key=Demo returns 5 rows); ansis.net"
     status: verified
     checked: 2026-11-16
 
@@ -242,6 +248,7 @@ sources:
     license: CC-BY (open part); agreement for the rest
     access: s3://isdasoil, s3://afsis; full set by email to iSDA
     status: lead
+    requested: "2026-11-16 (email to info@isda-africa.com)"
 
   - id: brazil_bssl
     name: Brazilian Soil Spectral Library
@@ -250,6 +257,7 @@ sources:
     license: on request
     access: email J. Dematte (USP/ESALQ)
     status: lead
+    requested: "2026-11-16 (email to jamdemat@usp.br)"
 
   - id: emit_minerals
     name: EMIT L2B mineral identification and band depth (60 m)
