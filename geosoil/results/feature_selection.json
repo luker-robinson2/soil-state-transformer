@@ -1,250 +1,269 @@
 {
-  "note": "Feature-group importance, Alpine job 35829185 (2026-11-17; run file results/runs/feature_selection_20261117T1135.json). LightGBM, 5-fold spatial CV, topsoil, 150k rows per target (BD: all 58.6k). Per group: [drop_group dR2, its fold sd, permutation dR2, SHAP share]. drop_group = R2 lost when retrained without the group (unique contribution); permutation = R2 lost when the group is shuffled in a fixed model (includes what correlated groups could replace).",
-  "results": {
+  "note": "Round-2 feature-group importance, Alpine job 35833569 (2026-11-17; run results/runs/feature_selection_20261117T1522.json). LightGBM, 5-fold spatial CV, topsoil, 150k rows per target (BD 58.6k). Per group: [drop-group dR2 (unique contribution), fold sd]. top_columns: largest mean |SHAP| share. Round-1 results are in feature_selection_round1.json.",
+  "r2_all": {
+    "soc": 0.545,
+    "ph": 0.594,
+    "sand": 0.448,
+    "clay": 0.375,
+    "bd": 0.511
+  },
+  "drop_group": {
     "soc": {
-      "r2": 0.539,
-      "sd": 0.03,
-      "n": 150000,
-      "g": {
-        "location": [
-          0.001,
-          0.001,
-          0.01,
-          0.01
-        ],
-        "depth": [
-          0.085,
-          0.009,
-          0.157,
-          0.1
-        ],
-        "terrain": [
-          0.005,
-          0.003,
-          0.022,
-          0.05
-        ],
-        "alphaearth": [
-          0.027,
-          0.005,
-          0.099,
-          0.26
-        ],
-        "climate_annual": [
-          0,
-          0.002,
-          0.042,
-          0.08
-        ],
-        "climate_monthly": [
-          0.006,
-          0.003,
-          0.488,
-          0.47
-        ],
-        "radiometrics": [
-          0.001,
-          0.002,
-          0.007,
-          0.02
-        ]
-      }
+      "location": [
+        0.003,
+        0.002
+      ],
+      "depth": [
+        0.084,
+        0.01
+      ],
+      "terrain": [
+        0.004,
+        0.001
+      ],
+      "alphaearth": [
+        0.021,
+        0.004
+      ],
+      "climate_annual": [
+        0.003,
+        0.001
+      ],
+      "climate_monthly": [
+        0.005,
+        0.003
+      ],
+      "terrain_multiscale": [
+        0.001,
+        0.003
+      ],
+      "radiometrics": [
+        0.003,
+        0.002
+      ],
+      "lithology": [
+        0.003,
+        0.003
+      ],
+      "thermal": [
+        0.001,
+        0.002
+      ],
+      "hydrology": [
+        0,
+        0.002
+      ],
+      "land_use_history": [
+        0.001,
+        0.002
+      ]
     },
     "ph": {
-      "r2": 0.579,
-      "sd": 0.036,
-      "n": 150000,
-      "g": {
-        "location": [
-          0,
-          0.003,
-          0.007,
-          0.01
-        ],
-        "depth": [
-          0.004,
-          0.002,
-          0.007,
-          0.01
-        ],
-        "terrain": [
-          0.001,
-          0.003,
-          0.016,
-          0.04
-        ],
-        "alphaearth": [
-          0.024,
-          0.004,
-          0.126,
-          0.3
-        ],
-        "climate_annual": [
-          0,
-          0.001,
-          0.197,
-          0.21
-        ],
-        "climate_monthly": [
-          0.004,
-          0.004,
-          0.309,
-          0.4
-        ],
-        "radiometrics": [
-          0.002,
-          0.003,
-          0.009,
-          0.02
-        ]
-      }
+      "location": [
+        0.001,
+        0.002
+      ],
+      "depth": [
+        0.004,
+        0.003
+      ],
+      "terrain": [
+        0.002,
+        0.002
+      ],
+      "alphaearth": [
+        0.012,
+        0.003
+      ],
+      "climate_annual": [
+        0.001,
+        0.003
+      ],
+      "climate_monthly": [
+        0.004,
+        0.003
+      ],
+      "terrain_multiscale": [
+        0.003,
+        0.002
+      ],
+      "radiometrics": [
+        0.001,
+        0.001
+      ],
+      "lithology": [
+        0.006,
+        0.002
+      ],
+      "thermal": [
+        0.005,
+        0.001
+      ],
+      "hydrology": [
+        0.001,
+        0.003
+      ],
+      "land_use_history": [
+        0.002,
+        0.004
+      ]
     },
     "sand": {
-      "r2": 0.423,
-      "sd": 0.019,
-      "n": 150000,
-      "g": {
-        "location": [
-          0.002,
-          0.002,
-          0.023,
-          0.03
-        ],
-        "depth": [
-          0,
-          0.004,
-          0.002,
-          0.01
-        ],
-        "terrain": [
-          0.006,
-          0.003,
-          0.033,
-          0.06
-        ],
-        "alphaearth": [
-          0.03,
-          0.005,
-          0.146,
-          0.35
-        ],
-        "climate_annual": [
-          0.002,
-          0.003,
-          0.015,
-          0.03
-        ],
-        "climate_monthly": [
-          0.007,
-          0.004,
-          0.254,
-          0.37
-        ],
-        "radiometrics": [
-          0.014,
-          0.006,
-          0.199,
-          0.15
-        ]
-      }
+      "location": [
+        -0.001,
+        0.004
+      ],
+      "depth": [
+        0,
+        0.002
+      ],
+      "terrain": [
+        0,
+        0.002
+      ],
+      "alphaearth": [
+        0.018,
+        0.007
+      ],
+      "climate_annual": [
+        -0.002,
+        0.005
+      ],
+      "climate_monthly": [
+        0.007,
+        0.002
+      ],
+      "terrain_multiscale": [
+        0.004,
+        0.003
+      ],
+      "radiometrics": [
+        0.012,
+        0.007
+      ],
+      "lithology": [
+        0.014,
+        0.004
+      ],
+      "thermal": [
+        0.001,
+        0.005
+      ],
+      "hydrology": [
+        -0.001,
+        0.003
+      ],
+      "land_use_history": [
+        0.001,
+        0.005
+      ]
     },
     "clay": {
-      "r2": 0.353,
-      "sd": 0.011,
-      "n": 150000,
-      "g": {
-        "location": [
-          0.001,
-          0.005,
-          0.052,
-          0.07
-        ],
-        "depth": [
-          0.011,
-          0.004,
-          0.022,
-          0.04
-        ],
-        "terrain": [
-          0.008,
-          0.002,
-          0.053,
-          0.07
-        ],
-        "alphaearth": [
-          0.044,
-          0.004,
-          0.163,
-          0.36
-        ],
-        "climate_annual": [
-          0,
-          0.004,
-          0.019,
-          0.04
-        ],
-        "climate_monthly": [
-          0.01,
-          0.009,
-          0.222,
-          0.38
-        ],
-        "radiometrics": [
-          0.005,
-          0.005,
-          0.038,
-          0.05
-        ]
-      }
+      "location": [
+        -0.001,
+        0.005
+      ],
+      "depth": [
+        0.01,
+        0.005
+      ],
+      "terrain": [
+        -0.001,
+        0.004
+      ],
+      "alphaearth": [
+        0.026,
+        0.002
+      ],
+      "climate_annual": [
+        -0.002,
+        0.004
+      ],
+      "climate_monthly": [
+        0.004,
+        0.004
+      ],
+      "terrain_multiscale": [
+        0.003,
+        0.005
+      ],
+      "radiometrics": [
+        0.001,
+        0.002
+      ],
+      "lithology": [
+        0.009,
+        0.004
+      ],
+      "thermal": [
+        0.003,
+        0.004
+      ],
+      "hydrology": [
+        -0.002,
+        0.004
+      ],
+      "land_use_history": [
+        -0.001,
+        0.004
+      ]
     },
     "bd": {
-      "r2": 0.502,
-      "sd": 0.038,
-      "n": 58603,
-      "g": {
-        "location": [
-          -0.003,
-          0.007,
-          0.015,
-          0.03
-        ],
-        "depth": [
-          0.022,
-          0.004,
-          0.047,
-          0.05
-        ],
-        "terrain": [
-          0.002,
-          0.001,
-          0.027,
-          0.07
-        ],
-        "alphaearth": [
-          0.056,
-          0.016,
-          0.189,
-          0.34
-        ],
-        "climate_annual": [
-          -0.002,
-          0.002,
-          0.019,
-          0.05
-        ],
-        "climate_monthly": [
-          -0.002,
-          0.007,
-          0.342,
-          0.43
-        ],
-        "radiometrics": [
-          0.001,
-          0.004,
-          0.017,
-          0.04
-        ]
-      }
+      "location": [
+        0.001,
+        0.004
+      ],
+      "depth": [
+        0.023,
+        0.006
+      ],
+      "terrain": [
+        0.002,
+        0.003
+      ],
+      "alphaearth": [
+        0.034,
+        0.007
+      ],
+      "climate_annual": [
+        0,
+        0.004
+      ],
+      "climate_monthly": [
+        -0.001,
+        0.006
+      ],
+      "terrain_multiscale": [
+        0,
+        0.004
+      ],
+      "radiometrics": [
+        -0.001,
+        0.007
+      ],
+      "lithology": [
+        0.003,
+        0.002
+      ],
+      "thermal": [
+        0.001,
+        0.006
+      ],
+      "hydrology": [
+        0.001,
+        0.004
+      ],
+      "land_use_history": [
+        -0.002,
+        0.002
+      ]
     }
+  },
+  "top_columns": {
+    "soc": "depth_mid 0.099, lst_day_09 0.063, lst_day_04 0.051, clim_vpd_04 0.033, clim_p_minus_pet 0.018, clim_def 0.018, clim_ppt_05 0.015, clim_def_05 0.013",
+    "ph": "clim_ai 0.115, clim_map 0.049, lst_diurnal_mean 0.031, hist_crop_1950 0.023, clim_ppt_03 0.018, clim_def_04 0.017, litho_glim_sc 0.017, lst_day_08 0.016",
+    "sand": "rad_th_k 0.084, rad_th 0.027, litho_glim_sc 0.023, tms_relief_20km 0.019, A31 0.018, A30 0.017, A06 0.016, A49 0.016",
+    "clay": "lat 0.040, depth_mid 0.038, rad_th 0.022, lst_day_09 0.022, A18 0.018, clim_srad_02 0.017, A40 0.014, A36 0.013",
+    "bd": "lst_diurnal_mean 0.070, depth_mid 0.047, clim_tmax_06 0.036, lst_night_07 0.031, A36 0.017, lon 0.015, clim_def_09 0.013, tms_relief_20km 0.011"
   }
 }

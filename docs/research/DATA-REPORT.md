@@ -103,6 +103,41 @@ dropped rows with no embedding.
 | **All groups, round 2** | **0.55** | **0.60** | **0.45** | **0.39** | **0.52** |
 | Gain over round 1 (all groups) | +0.003 | +0.013 | **+0.024** | **+0.024** | +0.007 |
 
+**Round-2 feature-group importance** (job 35833569). Unique contribution = R² lost when the group is
+removed and the model retrained; ± is the fold-to-fold sd.
+
+| Group | SOC | pH | Sand | Clay | BD |
+|---|---|---|---|---|---|
+| AlphaEarth | **+0.021** | **+0.012** | **+0.018** | **+0.026** | **+0.034** |
+| Depth | **+0.084** | +0.004 | 0 | **+0.010** | **+0.023** |
+| Lithology (new) | +0.003 | **+0.006 ± 0.002** | **+0.014 ± 0.004** | **+0.009 ± 0.004** | +0.003 |
+| Radiometrics | +0.003 | +0.001 | **+0.012 ± 0.007** | +0.001 | −0.001 |
+| Land-surface temperature (new) | +0.001 | **+0.005 ± 0.001** | +0.001 | +0.003 | +0.001 |
+| Climate (monthly) | +0.005 | +0.004 | +0.007 | +0.004 | −0.001 |
+| Multi-scale terrain (new) | +0.001 | +0.003 | +0.004 | +0.003 | 0 |
+| HAND (new) | 0 | +0.001 | −0.001 | −0.002 | +0.001 |
+| Land-use history (new) | +0.001 | +0.002 | +0.001 | −0.001 | −0.002 |
+| Terrain 30 m, coordinates | ≤ 0.004 | ≤ 0.002 | ≤ 0 | ≤ 0 | ≤ 0.002 |
+
+Top individual columns by SHAP share:
+- **SOC:** depth, September and April daytime LST, April VPD, **P−PET** (new), climatic water deficit.
+- **pH:** **aridity index** (0.115, the single largest), MAP, LST diurnal range, **1950 cropland
+  fraction**, GLiM carbonate rock.
+- **Sand:** **radiometric Th/K** (0.084), Th, GLiM carbonate rock, **20 km relief** (multi-scale), then
+  AlphaEarth dimensions.
+- **Clay:** latitude, depth, Th, September LST, AlphaEarth dimensions.
+- **BD:** LST diurnal range, depth, June tmax, July night LST.
+
+**Decisions from round 2:**
+- **Keep:** lithology, radiometrics, LST, monthly climate, multi-scale terrain. Multi-scale terrain is
+  marginal as a group, but its 20 km relief is a top sand column.
+- **Drop or demote:** HAND and land-use history show no unique value beyond noise for any target. Keep
+  hist_crop_1950 only as a pH probe. 30 m terrain and coordinates add nothing on top of the rest.
+- **Highest-value next step:** extend radiometrics coverage, since Th/K is the top sand feature but
+  covers 37% of sites. Canada (USGS OFR 2005-1413) after a projection check, then other national surveys.
+  Then improve lithology resolution beyond GLiM's 1:3.75M (national geological maps), and the
+  bare-soil composite.
+
 Earlier runs, which dropped rows without an embedding: AlphaEarth 2020 SOC 0.53, pH 0.57, sand 0.37,
 clay 0.32, BD 0.48; 8-year mean SOC 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49.
 
