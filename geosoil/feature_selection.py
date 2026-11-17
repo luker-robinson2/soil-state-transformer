@@ -24,7 +24,6 @@ os.environ.setdefault("OMP_NUM_THREADS", "8")
 
 import argparse
 import json
-import re
 
 import numpy as np
 import pandas as pd
@@ -34,21 +33,11 @@ from .features import terrain
 from .metrics import metrics
 
 TOPSOIL = ("0-5", "5-15", "15-30")
-MONTHLY = re.compile(r"^clim_[a-z]+_\d{2}$")
 
 
 def feature_groups(columns) -> dict[str, list[str]]:
-    cols = list(columns)
-    g = {
-        "location": [c for c in ("lon", "lat") if c in cols],
-        "depth": [c for c in ("depth_mid",) if c in cols],
-        "terrain": [c for c in terrain.FEATURES if c in cols],
-        "alphaearth": [c for c in C.AE_COLS if c in cols],
-        "climate_annual": [c for c in cols if c.startswith("clim_") and not MONTHLY.match(c)],
-        "climate_monthly": [c for c in cols if MONTHLY.match(c)],
-        "radiometrics": [c for c in cols if c.startswith("rad_")],
-    }
-    return {k: v for k, v in g.items() if v}
+    from .features.groups import feature_groups as fg
+    return fg(columns)
 
 
 def _model(seed: int = 0):

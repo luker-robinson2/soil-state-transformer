@@ -2,7 +2,7 @@
 
 For each target, topsoil intervals (0-5, 5-15, 15-30 cm) are modelled together, with interval
 depth as a feature. Feature groups are compared one at a time and together (each adds lon/lat and depth):
-    terrain | alphaearth | climate (clim_*) | radiometrics (rad_*) | terrain+alphaearth | all
+    every group in geosoil/features/groups.py alone | terrain+alphaearth | all
 Groups whose columns are absent are skipped. Every group is scored on the SAME rows (rows with
 at least one AlphaEarth or terrain value), so the columns are directly comparable.
 Scores come from 5-fold spatial-block CV on `split == "train"` and are reported beside the
@@ -31,13 +31,17 @@ BASE = ["depth_mid", "lon", "lat"]
 
 
 def groups(columns) -> dict[str, list[str]]:
-    clim = [c for c in columns if c.startswith("clim_")]
-    rad = [c for c in columns if c.startswith("rad_")]
-    terr = [c for c in terrain.FEATURES if c in columns]
-    ae = [c for c in C.AE_COLS if c in columns]
-    g = {"terrain": terr, "alphaearth": ae, "climate": clim, "radiometrics": rad,
-         "terrain+alphaearth": terr + ae, "all": terr + ae + clim + rad}
-    return {k: v for k, v in g.items() if v}
+    """Each modality alone, terrain + AlphaEarth, and everything (location and depth are always added)."""
+    from .features.groups import feature_groups
+    g = feature_groups(columns, include_location=False)
+    clim = g.pop("climate_annual", []) + g.pop("climate_monthly", [])
+    if clim:
+        g["climate"] = clim
+    out = dict(g)
+    if g.get("terrain") or g.get("alphaearth"):
+        out["terrain+alphaearth"] = g.get("terrain", []) + g.get("alphaearth", [])
+    out["all"] = [c for v in g.values() for c in v]
+    return {k: v for k, v in out.items() if v}
 
 
 def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0) -> dict:

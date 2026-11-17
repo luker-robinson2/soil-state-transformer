@@ -27,5 +27,7 @@ dependencies:
       - requests
       - rasterio>=1.4         # AlphaEarth COG reads (scripts/corpus)
       - pyproj>=3.6
+      - geopandas>=1.0          # lithology polygon lookups
+      - pyogrio>=0.9
       - pytest>=8
       # mamba-ssm + causal-conv1d installed AFTER env create (need nvcc), see header.

@@ -87,6 +87,11 @@ training tables / Zarr shards for the model                the "gold" side
 | 3 | Climate: 1991–2020 monthly normals (ppt, tmax, tmin, pet, aet, def, soil, vpd, srad) + annual summaries (MAP, MAT, aridity, seasonality) | TerraClimate climatology NetCDF (CC0), staged | containing 4 km cell | **built** (`geosoil/features/climate.py`); monthly time series for the temporal encoder later |
 | 4 | Gamma radiometrics K / U / Th + Th/K, U/Th | USGS NURE Bayesian grids, 2 km (CONUS, public domain); Radmap v4, 100 m (Australia, CC-BY) | containing cell | **built** (`geosoil/features/radiometrics.py`); Canada (OFR 2005-1413) waits on a projection check |
 | 4b | Multi-scale terrain: DEV, TPI, relief, slope at 0.5/1/2/5/10/20 km + max-DEV scale | Copernicus DEM GLO-90 on AWS (`copernicus-dem-90m`, tileList.txt) | 1° tile + 8 neighbours, summed-area tables | **built** (`geosoil/features/terrain_ms.py`) |
+| 4c | Lithology: GLiM 16 classes (global) + USGS SGMC generalized lithology (US), one-hot | GLiM FileGDB (Hamburg); SGMC FileGDB (ScienceBase) | point-in-polygon | **built** (`lithology.py`) |
+| 4d | Land-surface temperature: monthly day/night, diurnal range, amplitude | OpenLandMap MOD11A2 1 km climatology (CC-BY-SA) | containing cell | **built** (`thermal.py`) |
+| 4e | Depth to bedrock | ISRIC / Shangguan 2017, 250 m | containing cell | **built** (`regolith.py`) |
+| 4f | Height above nearest drainage (cell, 270 m mean, 270 m min) | ASF GLO-30 HAND COGs (CC0) | 1° tile | **built** (`hand.py`) |
+| – | Deferred: Hydrography90m (CC-BY-NC, ~0.4 MB/s server), Geomorpho90m (~80 GB/variable; covered by terrain_ms), HYDE 3.2.1 cultivation history and MODIS NPP (bigger processing), bare-soil composite (no global grid; must be computed) | | | planned |
 | 5 | Sentinel-2 bare-soil + seasonal medians; Sentinel-1 | Planetary Computer / Earth Search STAC | MGRS tile × season | planned |
 | 6 | MODIS NDVI / LST, SMAP | Planetary Computer, `earthaccess` | unique cell | planned |
 | 7 | TESSERA embeddings (2024 only so far) | `geotessera` | tile | planned |

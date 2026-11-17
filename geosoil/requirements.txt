@@ -21,4 +21,6 @@ earthengine-api>=0.1.380
 # corpus build (geosoil/corpus, scripts/corpus)
 rasterio>=1.4
 pyproj>=3.6
+geopandas>=1.0
+pyogrio>=0.9
 pytest>=8
