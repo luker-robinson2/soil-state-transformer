@@ -1,13 +1,15 @@
 """First C1 baseline: LightGBM on lab labels with the fixed spatial folds (Phase 2).
 
 For each target, topsoil intervals (0-5, 5-15, 15-30 cm) are modelled together, with interval
-depth as a feature. Feature groups are compared one at a time and together:
-    terrain | alphaearth | terrain + alphaearth (+ lon/lat, depth)
+depth as a feature. Feature groups are compared one at a time and together (each adds lon/lat and depth):
+    terrain | alphaearth | climate (clim_*) | radiometrics (rad_*) | terrain+alphaearth | all
+Groups whose columns are absent are skipped. Every group is scored on the SAME rows (rows with
+at least one AlphaEarth or terrain value), so the columns are directly comparable.
 Scores come from 5-fold spatial-block CV on `split == "train"` and are reported beside the
 noise-floor R2 ceiling. The `test` blocks are not touched here; they are kept for model selection.
 SOC is modelled as log1p, as everywhere else in GeoSoil.
 
-    python -m geosoil.baseline_c1 [--max-rows 200000]    # -> geosoil/results/baseline_c1.json
+    python -m geosoil.baseline_c1 [--max-rows 200000]    # -> geosoil/results/runs/baseline_c1_<time>.json
 """
 from __future__ import annotations
 
@@ -25,18 +27,22 @@ from .features import terrain
 from .metrics import metrics
 
 TOPSOIL = ("0-5", "5-15", "15-30")
-GROUPS = {
-    "terrain": list(terrain.FEATURES),
-    "alphaearth": list(C.AE_COLS),
-    "terrain+alphaearth": list(terrain.FEATURES) + list(C.AE_COLS),
-}
 BASE = ["depth_mid", "lon", "lat"]
+
+
+def groups(columns) -> dict[str, list[str]]:
+    clim = [c for c in columns if c.startswith("clim_")]
+    rad = [c for c in columns if c.startswith("rad_")]
+    terr = [c for c in terrain.FEATURES if c in columns]
+    ae = [c for c in C.AE_COLS if c in columns]
+    g = {"terrain": terr, "alphaearth": ae, "climate": clim, "radiometrics": rad,
+         "terrain+alphaearth": terr + ae, "all": terr + ae + clim + rad}
+    return {k: v for k, v in g.items() if v}
 
 
 def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0) -> dict:
     import lightgbm as lgb
     d = df[(df["target"] == target) & (df["split"] == "train")].dropna(subset=["value"])
-    d = d[d[cols].notna().any(axis=1)]
     y = np.log1p(d["value"].to_numpy()) if target in C.LOG_TARGETS else d["value"].to_numpy()
     X = d[BASE + cols].to_numpy(np.float32)
     pred = np.full(len(d), np.nan)
@@ -66,12 +72,18 @@ def main(argv: list[str] | None = None) -> None:
             dt = dt.sample(a.max_rows, random_state=0)
         key = f"{t}/topsoil_0_30/{'log1p' if t in C.LOG_TARGETS else 'raw'}"
         res[t] = {"r2_ceiling": floor.get(key, {}).get("r2_ceiling")}
-        for g, cols in GROUPS.items():
-            cols = [c for c in cols if c in dt]
-            if cols:
-                res[t][g] = cv_scores(dt, t, cols)
-                print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}")
-    (C.RESULTS / "baseline_c1.json").write_text(json.dumps(res, indent=2))
+        core = [c for c in list(C.AE_COLS) + list(terrain.FEATURES) if c in dt]
+        dt = dt[dt[core].notna().any(axis=1)]                       # same rows for every group
+        for g, cols in groups(dt.columns).items():
+            res[t][g] = cv_scores(dt, t, cols)
+            print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}")
+    # Runs land in results/runs/ (gitignored) so cluster jobs never dirty the git checkout;
+    # copy a run to results/baseline_c1.json deliberately when it becomes the reference.
+    runs = C.RESULTS / "runs"
+    runs.mkdir(exist_ok=True)
+    out = runs / f"baseline_c1_{pd.Timestamp.now():%Y%m%dT%H%M}.json"
+    out.write_text(json.dumps(res, indent=2))
+    print(f"wrote {out}")
 
 
 if __name__ == "__main__":

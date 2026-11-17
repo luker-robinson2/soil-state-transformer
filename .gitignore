@@ -25,6 +25,7 @@ data/raw/
 data/processed/
 data/acquire/
 geosoil/results/*.npy
+geosoil/results/runs/
 foundation-model/checkpoints/
 alphaearth-soc/future_work/data/kssl_raw/
 
