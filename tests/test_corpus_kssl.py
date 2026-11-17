@@ -68,7 +68,7 @@ def test_carbon_method_comes_from_code_not_column_name():
 def test_ph_keeps_both_methods_as_separate_rows():
     labels, _ = _build([_layer(ph_h2o=6.5, ph_h2o_method="4C1a2a", ph_cacl2=6.0, ph_cacl2_method="4C1a2a")])
     ph = labels[labels.target == "ph"].set_index("method_family").value
-    assert ph["ph_h2o_1to1"] == 6.5 and ph["ph_cacl2_0.01M"] == 6.0
+    assert ph["ph_h2o"] == 6.5 and ph["ph_cacl2"] == 6.0
     assert labels[labels.target == "ph"].method_id.nunique() == 2
 
 

@@ -88,8 +88,8 @@ def layer_values(layers: pd.DataFrame) -> pd.DataFrame:
     oc = L["organic_carbon_walkley_black"] * 10.0
     parts.append(_rows(L, "soc", oc, L["oc_walkley_black_method"], _family_carbon))
 
-    parts.append(_rows(L, "ph", L["ph_h2o"], "h2o:" + L["ph_h2o_method"].astype("string").fillna("NA"), "ph_h2o_1to1"))
-    parts.append(_rows(L, "ph", L["ph_cacl2"], "cacl2:" + L["ph_cacl2_method"].astype("string").fillna("NA"), "ph_cacl2_0.01M"))
+    parts.append(_rows(L, "ph", L["ph_h2o"], "h2o:" + L["ph_h2o_method"].astype("string").fillna("NA"), "ph_h2o"))
+    parts.append(_rows(L, "ph", L["ph_cacl2"], "cacl2:" + L["ph_cacl2_method"].astype("string").fillna("NA"), "ph_cacl2"))
     parts.append(_rows(L, "sand", L["sand_total"], L["particle_size_method"], _family_texture))
     parts.append(_rows(L, "clay", L["clay_total"], L["particle_size_method"], _family_texture))
     parts.append(_rows(L, "bd", L["bulk_density_third_bar"],
