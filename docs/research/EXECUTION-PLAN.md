@@ -61,7 +61,7 @@ PR with a test.
 
 | Step | Action | Who | Where | Output |
 |---|---|---|---|---|
-| 2.1 | Point extractors, one module per source, all writing to one Zarr feature store keyed by `site_id`. Sources: ERA5-Land, MODIS, SMAP, Copernicus DEM / 3DEP, NURE radiometrics, EMIT minerals, S1, bare-soil S2, WorldCover/CDL, AlphaEarth, TESSERA. | C | `acpu` array (per source × chunk) | `features/c1/*.zarr` |
+| 2.1 | 🔄 11-16: AlphaEarth block extractor built and validated (`geosoil/features/alphaearth.py`; pixel values identical to direct reads; 5 tests). C1 plan: 183,681 sites × 2017–2025 = 1.65M site-years in 623,920 blocks. Design in PIPELINE-DESIGN.md. Remaining: point extractors, one module per source, all writing to one Zarr feature store keyed by `site_id`. Sources: ERA5-Land, MODIS, SMAP, Copernicus DEM / 3DEP, NURE radiometrics, EMIT minerals, S1, bare-soil S2, WorldCover/CDL, AlphaEarth, TESSERA. | C | `acpu` array (per source × chunk) | `features/c1/*.zarr` |
 | 2.2 | Unique-cell extraction for coarse grids (ERA5, SMAP, MODIS) → join to points | C | `acpu` | fewer reads than points |
 | 2.3 | Feature-selection report: grouped permutation + grouped SHAP inside spatial CV, per target (CORPUS-PLAN §D) | C | `acpu` | `results/feature_selection.md` |
 | 2.4 | Temporal granularity test: normals vs monthly vs weekly patches | job | `aa100` | table |
