@@ -5,7 +5,7 @@ cd /projects/$USER && { [ -d soil-state-transformer ] || git clone -q https://gi
 #SBATCH --partition=aa100
 #SBATCH --qos=gpu-normal
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:a100-40gb:1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --time=02:00:00
