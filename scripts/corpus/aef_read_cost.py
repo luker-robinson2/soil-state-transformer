@@ -10,6 +10,7 @@ block-size metadata, not from network counters; seconds are wall-clock.
 
     python scripts/corpus/aef_read_cost.py --points data/processed/labels_kssl.parquet \
         --n 40 --year 2020 --out geosoil/results/aef_read_cost.json
+    # --points also takes a CSV (site_id, lon, lat), e.g. scripts/corpus/aef_sample_points.csv
 
 On Alpine, run it as a short `acpu` job; the projection at the end scales the
 measured numbers to the C2 / C4 corpus tiers in SCALING-PLAN.md.
@@ -145,9 +146,10 @@ def main() -> None:
     a = ap.parse_args()
 
     idx = load_index(a.index)
-    sites = pd.read_parquet(a.points, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
+    read = pd.read_csv if a.points.suffix == ".csv" else pd.read_parquet
+    sites = read(a.points)[["site_id", "lon", "lat"]].drop_duplicates("site_id")
     sites = sites[sites.lon.between(-125, -66) & sites.lat.between(24, 50)]   # CONUS
-    pts = sites.sample(a.n, random_state=a.seed)
+    pts = sites.sample(min(a.n, len(sites)), random_state=a.seed)
 
     with rasterio.Env(**GDAL_ENV):
         scat = pd.DataFrame(measure_scattered(idx, pts, a.year))

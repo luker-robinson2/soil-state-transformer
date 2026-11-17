@@ -32,3 +32,6 @@ python -m geosoil.train --variant mamba --quick --device cuda
 echo "BOOTSTRAP OK"
 SBATCH
 sbatch scripts/slurm/alpine_bootstrap.sbatch
+
+# --- AlphaEarth read cost on Alpine (EXECUTION-PLAN 0.6); run after the bootstrap job succeeded ---
+cd /projects/$USER/soil-state-transformer && git fetch -q origin corpus-c1 && git checkout -q corpus-c1 && mkdir -p logs && sbatch scripts/slurm/aef_read_cost.sbatch
