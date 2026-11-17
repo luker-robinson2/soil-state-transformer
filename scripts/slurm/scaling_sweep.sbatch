@@ -13,8 +13,8 @@
 # Submit: sbatch scripts/slurm/scaling_sweep.sbatch
 set -euo pipefail
 module load miniforge cuda
-eval "$(conda shell.bash hook)"
-conda activate geosoil
+set +u; eval "$(conda shell.bash hook)"; set -u
+set +u; conda activate geosoil; set -u   # conda activate trips over set -u
 cd "$SLURM_SUBMIT_DIR"
 SIZES=(small base large xl)
 SOURCES=(openlandmap kssl)

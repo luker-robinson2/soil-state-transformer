@@ -13,8 +13,8 @@ set -euo pipefail
 module purge
 module load miniforge
 cd "$SLURM_SUBMIT_DIR"
-eval "$(conda shell.bash hook)"
-conda activate geosoil
+set +u; eval "$(conda shell.bash hook)"; set -u
+set +u; conda activate geosoil; set -u   # conda activate trips over set -u
 python -c "import rasterio, pyproj" 2>/dev/null || pip install -q "rasterio>=1.4" "pyproj>=3.6"
 mkdir -p data/raw/aef
 python scripts/corpus/aef_read_cost.py --points scripts/corpus/aef_sample_points.csv \
