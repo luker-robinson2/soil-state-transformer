@@ -44,13 +44,13 @@ PR with a test.
 |---|---|---|---|
 | 1.1 | ✅ 11-16: label schema (long format, one row per value per method) | C | `geosoil/corpus/schema.py` |
 | 1.2 | ✅ 11-16: KSSL ingest (`data/extraction/kssl_export.R` → `python -m geosoil.corpus.kssl`), 9 tests. From the 2026-07 labtaxa mirror (USDA LDM was down): **52,340 georeferenced pedons (50,008 CONUS), 1.51M values**. Topsoil sites: SOC 41.8k, pH 41.4k, sand 49k, clay 50k, BD 15.9k. In KSSL, Walkley-Black ≈ dry combustion (median ratio 0.98, r = 0.94). Rerun from the official GeoPackage when the LDM site is back. | C | `labels_kssl.parquet` |
-| 1.3 | WoSIS 2023 ingest with CC-BY filter, starting from `foundation-model/scripts/prepare_wosis.py` | C | `labels_wosis.parquet` |
-| 1.4 | ISCN3 (EDI), Brazil SoilData, NAPESHM, USGS DS 801, Mexico INEGI, CSDLv2, Canada NPDB open subset | C | one parquet per source |
-| 1.5 | OSSL v1.2 labels (+ spectra kept aside) | C | `labels_ossl.parquet`, `spectra.zarr` |
-| 1.6 | RaCA as SOC-stock hold-out; **doubles as the STAT 5010 final-project data (due 12-04)** | C + L | `labels_raca.parquet` |
-| 1.7 | LUCAS-MEGA and LUCAS 2022 (local only, never committed) | C | local parquet, gitignored |
+| 1.3 | ✅ 11-16: WoSIS 2023 (`geosoil/corpus/wosis.py`). 152.7k sites after dropping US-NCSS. Licence kept per row rather than filtered, since non-commercial use is fine here. | C | `labels_wosis_2023.parquet` |
+| 1.4 | ✅ 11-16: Brazil SoilData 2024 (9.2k sites), Canada NPDB (8.1k), NAPESHM (1.5k plots), USGS DS 801 (4.8k). ISCN3, INEGI and CSDLv2 are not pullable (see `sources.yaml`). | C | one parquet per source |
+| 1.5 | ✅ 11-16: OSSL v1.2 lab values without KSSL/LUCAS (2.1k sites). Spectra not pulled yet. | C | `labels_ossl_v1_2.parquet` |
+| 1.6 | ✅ 11-16: RaCA hold-out (6.4k sites, 33k lab SOC, 82k measured BD; ~1 km coordinates). None of its lab samples appear in KSSL. **Doubles as the STAT 5010 final-project data (due 12-04).** | C + L | `labels_raca.parquet` |
+| 1.7 | LUCAS: LUCAS-MEGA isn't shared by its authors. LUCAS 2022 waits on the ESDAC reply (public ~Q1 2027). | C | local parquet, gitignored |
 | 1.8 | Harmonization: method IDs, per-method offsets, depth splines to 0–5 / 5–15 / 15–30 / 30–60 / 60–100 cm | C | `labels_harmonized.parquet` |
-| 1.9 | Cross-source dedup (keys → 100 m + depth overlap) with drop log | C | `labels_c1.parquet`, `dedup_log.parquet`, **the real unique count** |
+| 1.9 | ✅ 11-16: dedup (`geosoil/corpus/dedup.py`) and the one-shot builder `python -m geosoil.corpus.build_c1`. **C1 = 190,567 training sites (58k CONUS) + 6,367 hold-out; 3.07M values.** 25 tests. | C | `labels_c1.parquet`, `dedup_log.parquet`, `results/c1_summary.json` |
 | 1.10 | Fixed splits: 1° spatial blocks + hold-out year | C | `splits.parquet` |
 | 1.11 | Noise floor from KSSL lab replicates per target | C | `results/noise_floor.json` |
 

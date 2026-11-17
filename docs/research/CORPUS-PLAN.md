@@ -17,6 +17,13 @@ not open (India SHC, China's 3rd survey); see §A3.
 
 ### A1. Open now: download and ingest
 
+**Status 2026-11-16:** C1 is built (`python -m geosoil.corpus.build_c1`).
+- **Ingested:** KSSL (labtaxa mirror), WoSIS 2023, Canada NPDB, Brazil SoilData 2024, OSSL (non-KSSL, non-LUCAS rows),
+  NAPESHM, USGS DS 801 and RaCA (hold-out). Each was pulled anonymously.
+- **Arriving via WoSIS:** Australia (CSIRO), Mexico (INEGI), AfSP and Chile.
+- **Not pullable:** ISCN3, LUCAS-MEGA, CSDLv2 profiles, INEGI bulk, TERN, NEON and NZ NSD. These need a login, aren't
+  released, or the link is dead. `data/corpus/sources.yaml` records why for each.
+
 | Source | Size | Region | Targets | License | Notes |
 |---|---|---|---|---|---|
 | **NCSS/KSSL Lab Data Mart** | ~65k profiles; layers ~400k [U] | US + some foreign | all 5 at depth, + MIR | public domain | SQLite / GeoPackage, monthly. We use ~3k today. **Biggest single US win.** |
@@ -85,14 +92,25 @@ Dedup keys, in order:
 
 Log every drop in `data/corpus/dedup_log.parquet`.
 
-| Stage | Unique labelled locations (estimate) |
-|---|---|
-| Today on disk | ~43k CONUS |
-| A1 open sources, after dedup | **~300k global, ~90k CONUS** |
-| + A2 requests granted | ~400k |
-| + an A3 collaboration | millions (India SHC alone) |
+**Measured C1, 2026-11-16** (`geosoil/results/c1_summary.json`):
 
-These are estimates until the dedup script runs (EXECUTION-PLAN step 1.9). Labels matter for probing and
+| | Count |
+|---|---|
+| Training sites, deduplicated | **190,567** (58,388 CONUS) |
+| Hold-out sites (RaCA) | 6,367 |
+| Lab values | 3.07M |
+| Topsoil (<30 cm) training sites: SOC / pH / clay / sand / BD | 132.6k / 124.2k / 141.9k / 109.9k / 25.5k |
+| Training sites by source | WoSIS 120.7k · KSSL 47.3k · Brazil 9.1k · Canada 8.1k · USGS 4.8k · OSSL 0.5k · NAPESHM 0.1k |
+| Removed as cross-source copies | 8,300 WoSIS (of NPDB 4.5k, Brazil 2.8k, KSSL 1.0k), 1,589 OSSL (mostly in WoSIS) |
+| Coordinate precision > 10 km | ~3.5k WoSIS sites (keep for probing, filter before embedding) |
+| Training sites within 1 km of a RaCA hold-out site | 210 (flagged `near_holdout`) |
+| Values under non-commercial licences | 18% (fine for this project; filter before any redistribution) |
+
+**How dedup works:** a site is only dropped when its source is known to republish the other one (WoSIS and OSSL are
+compilations). Independent surveys such as USGS DS 801 and NAPESHM are never dropped just for being near a KSSL pedon.
+Native sources outrank their WoSIS copies.
+
+**Next:** the A2 requests (~+100k if granted), then A3 collaborations (millions). Labels matter for probing and
 fine-tuning. **Model size is set by the unlabelled corpus** (SCALING-PLAN.md).
 
 ## B. Unlabelled inputs: the pretraining corpus

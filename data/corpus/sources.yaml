@@ -29,35 +29,37 @@ sources:
     size: "228k profiles, 217k sites, 174 countries"
     license: per-profile CC-BY-4.0 or CC-BY-NC-4.0 (filter on license column)
     redistribute: CC-BY rows only
-    access: https://doi.org/10.17027/isric-wdcsoils-20231130 (WFS)
-    status: verified
+    access: "https://files.isric.org/public/wosis_snapshot/WoSIS_2023_December.zip"
+    status: ingested
     checked: 2026-11-16
-    loader: foundation-model/scripts/prepare_wosis.py (SST; reuse for C1.2)
+    loader: geosoil/corpus/wosis.py
     notes: CONUS slice on disk as alphaearth-soc/future_work/data/wosis_conus.csv (37,311 rows); overlaps NCSS
     requested: "2026-11-16 (email to wosis@isric.org: license reading, restricted-provider contacts, next snapshot)"
-
+    status_detail: "152,716 sites, 1.33M values after dropping US-NCSS (= KSSL); 120,668 sites kept after dedup"
   - id: ossl_v1_2
     name: Open Soil Spectral Library v1.2
     role: label
     size: "135,651 samples (87,707 georeferenced); MIR 82,573, VisNIR 64,644"
     license: mixed CC-BY / CC-BY-SA / ODbL; LUCAS rows under JRC license
     redistribute: non-LUCAS rows, per source license
-    access: https://docs.soilspectroscopy.org/
-    status: verified
+    access: "https://storage.googleapis.com/soilspec4gg-public/ossl_soilsite_L0_v1.2.csv.gz + ossl_soillab_L1_v1.2.csv.gz"
+    status: ingested
     checked: 2026-11-16
     notes: KSSL slice duplicates kssl_ldm (join on labsampnum)
-
+    loader: geosoil/corpus/ossl.py
+    status_detail: "non-KSSL, non-LUCAS rows: 2,083 sites; 494 kept after dedup (most are in WoSIS)"
   - id: raca
     name: USDA Rapid Carbon Assessment
-    role: label
+    role: label (hold-out)
     size: "6,017 sites, 32,084 pedons, 144,833 samples to 100 cm"
     license: public domain
     redistribute: true
-    access: https://agdatacommons.nal.usda.gov/articles/dataset/Rapid_Carbon_Assessment_RaCA_/24662088
-    status: verified
+    access: "https://nrcs.box.com/index.php?rm=box_download_shared_file&shared_name=s9bcdroihv1vyre70bkl336cdr13up7q (samples f_1031424800228, locations f_1031428176175)"
+    status: ingested
     checked: 2026-11-16
     notes: site coordinates deliberately degraded; final SOC hold-out, not for 10 m pixel matching
-
+    loader: geosoil/corpus/raca.py
+    status_detail: "hold-out: 6,367 sites, 33k lab SOC + 82k measured BD values; coords rounded ~1 km"
   - id: lucas_topsoil
     name: LUCAS topsoil 2009/2015/2018/2022
     role: label
@@ -76,9 +78,11 @@ sources:
     size: "4,857 sites, 3 depths"
     license: public domain
     redistribute: true
-    access: https://pubs.usgs.gov/ds/801/
-    status: lead
-
+    access: "https://pubs.usgs.gov/ds/801/downloads/Appendix_3b_Ahorizon_18Sept2013.txt"
+    status: ingested
+    checked: 2026-11-16
+    loader: geosoil/corpus/usgs_ds801.py
+    status_detail: "4,782 A-horizon SOC values (0-5 cm file has no carbon)"
   - id: gnatsgo_polaris_soilgrids_olm
     name: gNATSGO, POLARIS, SoilGrids 2.0, OpenLandMap soil layers
     role: pseudo_label
@@ -169,20 +173,21 @@ sources:
     license: per contributor
     redistribute: per contributor
     access: EDI package edi.360
-    status: verified
+    status: not_pullable
     checked: 2026-11-16
     notes: heavily overlaps NRCS; dedupe against kssl_ldm
-
+    status_detail: "EDI requires login for every REST download since 2026-07-30; the package is edi.1160 rev 1 (not edi.360)"
   - id: brazil_soildata
     name: SoilData / MapBiomas Solo (Brazil)
     role: label
     size: "45k+ samples at 15k points; 28,065 SOC-stock points"
     license: mostly CC-BY
     redistribute: CC-BY datasets
-    access: https://soildata.mapbiomas.org
-    status: verified
+    access: "https://repositorio.soildata.mapbiomas.org/api/access/datafile/832"
+    status: ingested
     checked: 2026-11-16
-
+    loader: geosoil/corpus/brazil.py
+    status_detail: "9,199 georeferenced sites, 119.5k values; 27.5k source rows are CC BY-NC"
   - id: lucas_mega
     name: LUCAS-MEGA harmonized LUCAS 2009-2018
     role: label
@@ -190,57 +195,58 @@ sources:
     license: check whether it overrides the JRC terms
     redistribute: false (until checked)
     access: https://arxiv.org/abs/2512.09576
-    status: verified
+    status: not_pullable
     checked: 2026-11-16
-
+    status_detail: "authors' data statement: they do not have permission to share the data"
   - id: napeshm
     name: Soil Health Institute NAPESHM
     role: label
     size: "1,453 plots, 94 sites, 110 variables"
     license: open (Ag Data Commons)
     redistribute: true
-    access: https://doi.org/10.15482/USDA.ADC/25632270
-    status: verified
+    access: "https://ndownloader.figshare.com/files/46794877"
+    status: ingested
     checked: 2026-11-16
-
+    loader: geosoil/corpus/napeshm.py
+    status_detail: "1,452 plots at 94 site coordinates, 7.2k values, 0-15 cm"
   - id: mexico_inegi
     name: Mexico INEGI soil profiles
     role: label
     size: "62,362 SOC values at 26,297 sites"
     license: INEGI open data terms
     access: INEGI downloads
-    status: verified
+    status: not_pullable
     checked: 2026-11-16
     notes: partly inside WoSIS
-
+    status_detail: "no working bulk point download found; ~14k INEGI values arrive via WoSIS (MX-INEGI)"
   - id: china_csdlv2
     name: China Soil Dataset for Land surface modeling v2 (CSDLv2)
     role: label
     size: "11,209 profiles"
     license: open (scidb.cn)
     access: https://essd.copernicus.org/articles/17/517/2025/
-    status: verified
+    status: not_pullable
     checked: 2026-11-16
     notes: may release only gridded layers; overlaps WoSIS
-
+    status_detail: "only gridded layers are published; the 11,209 profiles are not released"
   - id: canada_npdb
     name: Canada National Pedon Database
     role: label
     license: Open Government Licence - Canada
-    access: https://open.canada.ca/data/en/dataset/6457fad6-b6f5-47a3-9bd1-ad14aea4b9e0 ; full holdings via aafc.cansis-siscan.aac@agr.gc.ca
-    status: verified
+    access: "https://agriculture.canada.ca/atlas/data_donnees/nationalPedonDatabase/data_donnees/csv/npdb_v3_csv.zip"
+    status: ingested
     checked: 2026-11-16
     requested: "2026-11-16 (email to aafc.cansis-siscan.aac@agr.gc.ca for full holdings)"
-
+    loader: geosoil/corpus/npdb.py
+    status_detail: "8,136 pedons, 113.6k values"
   - id: tern_federator
     name: TERN Soil Data Federator / ANSIS (Australia)
     role: label
     size: "195,383 site observations (lab subset unknown)"
     license: mostly CC-BY
-    access: "register for a key at https://shiny.esoil.io/SoilDataFederator/Register/ (usr=Demo&key=Demo returns 5 rows); ansis.net"
-    status: verified
+    status: not_pullable
     checked: 2026-11-16
-
+    status_detail: "registration-only API and the registration link is dead; ~70k AU-CSIRO values arrive via WoSIS"
   - id: isda_full
     name: iSDA / AfSIS full sample table
     role: label
@@ -249,7 +255,7 @@ sources:
     access: s3://isdasoil, s3://afsis; full set by email to iSDA
     status: lead
     requested: "2026-11-16 (email to info@isda-africa.com)"
-
+    status_detail: "open table (isdasoil/soil_analysis_data) is 47k spectral predictions + only 2,157 wet-chem rows; those lab rows overlap AfSIS in OSSL, which is ingested"
   - id: brazil_bssl
     name: Brazilian Soil Spectral Library
     role: label
@@ -292,3 +298,26 @@ sources:
     redistribute: false
     access: collaboration only (CAS Nanjing Institute of Soil Science / CAAS)
     status: lead
+
+
+  - id: neon_soils
+    name: NEON megapit + periodic soil chemistry
+    role: label
+    status: not_pullable
+    checked: 2026-11-16
+    status_detail: "NEON data API returns 403 without a token"
+
+  - id: nz_nsd
+    name: New Zealand National Soils Database
+    role: label
+    license: CC-BY-ND-4.0
+    status: not_pullable
+    checked: 2026-11-16
+    status_detail: "CSV endpoints return 403; licence is no-derivatives anyway"
+
+  - id: sislac_sodes
+    name: SISLAC v1.2 (Latin America) and SODES (Spain)
+    role: label
+    access: "https://zenodo.org/records/7876731 ; https://zenodo.org/records/5094759"
+    status: lead
+    status_detail: "anonymous, but RAR-in-zip and MS Access formats; SISLAC is largely inside WoSIS - deferred"
