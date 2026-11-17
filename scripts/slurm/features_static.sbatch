@@ -17,6 +17,6 @@ module purge
 module load miniforge
 cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
-python -c "import geopandas, pyogrio" 2>/dev/null || pip install -q "geopandas>=1.0" "pyogrio>=0.9"
+python -c "import geopandas, pyogrio, zipfile_deflate64" 2>/dev/null || pip install -q "geopandas>=1.0" "pyogrio>=0.9" zipfile-deflate64
 python -m geosoil.features.static --source "${SOURCE:-all}"
 echo "STATIC OK"

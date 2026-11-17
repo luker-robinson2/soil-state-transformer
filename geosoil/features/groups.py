@@ -18,6 +18,7 @@ PREFIXES = {                                  # group -> column prefix
     "thermal": "lst_",
     "regolith": "regolith_",
     "hydrology": "hydro_",
+    "land_use_history": "hist_",
 }
 
 

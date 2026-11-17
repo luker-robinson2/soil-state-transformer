@@ -64,3 +64,19 @@ def test_static_rejects_unknown_sources(tmp_path):
     pd.DataFrame({"site_id": ["a"], "lon": [0.0], "lat": [0.0]}).to_parquet(tmp_path / "l.parquet")
     with pytest.raises(SystemExit):
         static.main(["--source", "nope", "--labels", str(tmp_path / "l.parquet")])
+
+
+def test_landuse_cell_area_and_history():
+    from geosoil.features import landuse as LU
+    a = LU.cell_area_km2(np.array([0.01, 60.01]))
+    assert a[0] == pytest.approx(85.5, rel=0.01) and a[1] == pytest.approx(a[0] * np.cos(np.radians(60.04)), rel=0.01)
+    years = LU.DECADES
+    crop = {y: np.array([0.0 if y < 1900 else 0.5, 0.0, np.nan]) for y in years}   # site 0 farmed from 1900
+    graz = {y: np.array([0.1, 0.3, np.nan]) for y in LU.GRAZ_YEARS}
+    d = LU.derive(crop, graz)
+    assert d.loc[0, "hist_years_since_conv"] == 2017 - 1900
+    assert d.loc[0, "hist_crop_max"] == 0.5 and d.loc[0, "hist_crop_1850"] == 0.0
+    assert d.loc[0, "hist_crop_years"] == pytest.approx(2025 - 1900)
+    assert np.isnan(d.loc[1, "hist_years_since_conv"]) and d.loc[1, "hist_crop_years"] == 0
+    assert d.loc[2].isna().all()
+    assert LU.member("cropland", 1950) == "baseline/asc/1950AD_lu/cropland1950AD.asc"

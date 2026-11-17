@@ -4,7 +4,7 @@ Raster sources declare `source()` and go through the shared sampler (rasters.py)
 own logic (polygon lookups, tiled extraction) declare `extract(sites)`.
 
     python -m geosoil.features.static --source climate        # or radiometrics, thermal, regolith,
-    python -m geosoil.features.static --source all            #    lithology, hand
+    python -m geosoil.features.static --source all            #    lithology, hand, landuse
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import pandas as pd
 from .. import config as C
 from . import rasters
 
-SOURCES = ("climate", "radiometrics", "thermal", "regolith", "lithology", "hand")
+SOURCES = ("climate", "radiometrics", "thermal", "regolith", "lithology", "hand", "landuse")
 
 
 def main(argv: list[str] | None = None) -> None:
