@@ -16,6 +16,8 @@ PREFIXES = {                                  # group -> column prefix
     "radiometrics": "rad_",
     "lithology": "litho_",
     "surficial": "surf_",
+    "bare_soil": "bs_",
+    "alphaearth_context": "aectx",
     "thermal": "lst_",
     "regolith": "regolith_",
     "hydrology": "hydro_",

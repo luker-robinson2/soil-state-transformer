@@ -23,7 +23,8 @@ delivers, and **what has to be true before the next phase is worth starting**. T
   Rebuild: `python -m geosoil.corpus.build_c1`.
 - **Alpine.**
   - Access works through the OnDemand Jupyter terminal; SSH is still broken.
-  - The conda env is built (`ENV OK`); the GPU smoke test waits on the shared A100 pool.
+  - The conda env is built (`ENV OK`) and the GPU smoke test passed on an H200 MIG slice (11-17). GPU caps
+    are per type: when one pool shows QOSGrpGRES, submit to another (`--partition=ah200 --gres=gpu:h200_3g.71gb:1`).
   - Compute nodes have internet.
   - AlphaEarth reads come straight from S3 (66 MB/s).
 - **Measured design constraint.** AlphaEarth must be read a whole 1024² block at a time (37 B per pixel),
@@ -34,6 +35,25 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 **In progress:**
 - Phase 2 features. Done: AlphaEarth 2017–2025 and terrain for all sites. Built and ready to run: climate normals and radiometrics (`bash scripts/slurm/run_phase2_static.sh <topic>` from the Alpine terminal). Next: the feature-selection report, then the R1 neural bake-off on GPU.
 - Data requests sent 2026-11-16 to iSDA, BSSL (Demattê), ISRIC, CanSIS and ESDAC.
+
+## Improvement track (added 2026-11-17)
+
+The round-2 baseline sits 0.3–0.5 R² below the noise-floor ceilings, and texture is furthest from its
+ceiling. These five items are ordered by expected gain per unit of work. Each is measured with the same
+protocol: same rows, same spatial folds, drop-group ΔR² across 3 seeds. An item is kept only if it adds
+≥ +0.005 R² on at least one target without hurting the others.
+
+| # | Item | Why | Status | Where |
+|---|---|---|---|---|
+| I1 | **Neighbouring-label features**: values and distances of the nearest training-fold sites | Soil is strongly spatially autocorrelated. Hengl et al. 2018 (RFsp) and most DSM studies find this the largest cheap gain. Must be built inside each fold, with training rows excluding their own spatial block so they see the same neighbour distances the test fold does. | in progress | `geosoil/features/neighbours.py` |
+| I2 | **C1 neural trainer** (step 2.6) | The old `train.py` targets the first OpenLandMap pipeline. A tabular network will roughly tie LightGBM; its value is the path to pretraining on the 39.7M unlabelled AlphaEarth pixel-years and the per-year sequence. | planned | `geosoil/train_c1.py` |
+| I3 | **Spatial context for AlphaEarth**: embedding means and spread in windows around each site | Multi-scale terrain earned its place the same way; one pixel misses the surrounding landscape. | in progress (Earth Engine) | `geosoil/features/gee_context.py` |
+| I4 | **More texture labels outside the US** | Non-US sites lack radiometrics and surficial maps, and sand/clay are furthest from their ceilings. | researching pullable sources; LUCAS/iSDA/BSSL requests pending | `data/corpus/sources.yaml` |
+| I5 | **Bare-soil reflectance composite** (Sentinel-2, multi-year, vegetation masked; Demattê et al. 2018, 2020) | The strongest remote texture signal in the literature, and global. Needs Earth Engine, which the project now has (`geo-soil-foundational-model`). | in progress (Earth Engine) | `geosoil/features/gee_context.py` |
+
+**Earth Engine.** The project `geo-soil-foundational-model` is registered for noncommercial use. Auth
+locally with `gcloud auth login` (or `earthengine authenticate`); the extractors take a token from
+gcloud. Sampling is server-side, so these extractors run from a laptop or Alpine alike.
 
 ## Phases
 

@@ -9,7 +9,7 @@ Scores come from 5-fold spatial-block CV on `split == "train"` and are reported 
 noise-floor R2 ceiling. The `test` blocks are not touched here; they are kept for model selection.
 SOC is modelled as log1p, as everywhere else in GeoSoil.
 
-    python -m geosoil.baseline_c1 [--max-rows 200000]    # -> geosoil/results/runs/baseline_c1_<time>.json
+    python -m geosoil.baseline_c1 [--max-rows 200000] [--neighbours]   # -> geosoil/results/runs/baseline_c1_<time>.json
 """
 from __future__ import annotations
 
@@ -44,18 +44,26 @@ def groups(columns) -> dict[str, list[str]]:
     return {k: v for k, v in out.items() if v}
 
 
-def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0) -> dict:
+def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0, neighbours: bool = False) -> dict:
+    """Spatial-CV score. neighbours=True adds fold-built neighbouring-label features (features/neighbours.py)."""
     import lightgbm as lgb
-    d = df[(df["target"] == target) & (df["split"] == "train")].dropna(subset=["value"])
+    from .features import neighbours as NB
+    d = df[(df["target"] == target) & (df["split"] == "train")].dropna(subset=["value"]).reset_index(drop=True)
     y = np.log1p(d["value"].to_numpy()) if target in C.LOG_TARGETS else d["value"].to_numpy()
     X = d[BASE + cols].to_numpy(np.float32)
     pred = np.full(len(d), np.nan)
     for k in sorted(d["fold"].unique()):
         tr, va = (d["fold"] != k).to_numpy(), (d["fold"] == k).to_numpy()
+        Xtr, Xva = X[tr], X[va]
+        if neighbours:
+            ytr = y[tr]
+            nb_tr = NB.fold_features(d[tr], d[tr], ytr, exclude_same_block=True).to_numpy(np.float32)
+            nb_va = NB.fold_features(d[tr], d[va], ytr, exclude_same_block=False).to_numpy(np.float32)
+            Xtr, Xva = np.hstack([Xtr, nb_tr]), np.hstack([Xva, nb_va])
         m = lgb.LGBMRegressor(n_estimators=600, learning_rate=0.05, num_leaves=63, subsample=0.8,
                               subsample_freq=1, colsample_bytree=0.8, random_state=seed, verbose=-1)
-        m.fit(X[tr], y[tr])
-        pred[va] = m.predict(X[va])
+        m.fit(Xtr, y[tr])
+        pred[va] = m.predict(Xva)
     out = metrics(y, pred)
     out["n"], out["sites"] = int(len(d)), int(d["site_id"].nunique())
     return out
@@ -64,6 +72,7 @@ def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0) -> 
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--max-rows", type=int, default=0, help="subsample rows per target (speed)")
+    ap.add_argument("--neighbours", action="store_true", help="also score fold-built neighbouring-label features")
     a = ap.parse_args(argv)
     df = pd.read_parquet(C.DATA_PROC / "train_c1.parquet")
     df = df[df["interval"].isin(TOPSOIL)].copy()
@@ -78,8 +87,12 @@ def main(argv: list[str] | None = None) -> None:
         res[t] = {"r2_ceiling": floor.get(key, {}).get("r2_ceiling")}
         core = [c for c in list(C.AE_COLS) + list(terrain.FEATURES) if c in dt]
         dt = dt[dt[core].notna().any(axis=1)]                       # same rows for every group
-        for g, cols in groups(dt.columns).items():
-            res[t][g] = cv_scores(dt, t, cols)
+        gs = groups(dt.columns)
+        runs_ = [(g, cols, False) for g, cols in gs.items()]
+        if a.neighbours:                                             # roadmap I1: alone and on top of all
+            runs_ += [("neighbours", [], True), ("all+neighbours", gs["all"], True)]
+        for g, cols, nb in runs_:
+            res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
             print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}")
     # Runs land in results/runs/ (gitignored) so cluster jobs never dirty the git checkout;
     # copy a run to results/baseline_c1.json deliberately when it becomes the reference.
