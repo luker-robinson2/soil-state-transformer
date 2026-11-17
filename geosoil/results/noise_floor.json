@@ -1,0 +1,92 @@
+{
+  "method": "KSSL does not publish analytical replicates in the tables we ingest, so the floor is estimated from co-located pedons: distinct KSSL pedons within MAX_DIST_M of each other, same standard depth interval, same method family. Half the mean squared difference of such pairs is the nugget (lab error + sub-30 m soil variation). Against the total variance of the same values it gives the best R\u00b2 a model with ~10 m inputs could reach:",
+  "max_dist_m": 30.0,
+  "max_sites_per_point": 3,
+  "n_site_pairs": 3562,
+  "targets": {
+    "bd/topsoil_0_30/raw": {
+      "n_pairs": 3697,
+      "nugget": 0.013252273798302754,
+      "total_variance": 0.07503250220820921,
+      "r2_ceiling": 0.8233795567482376,
+      "median_pair_dist_m": 0.0
+    },
+    "bd/all_depths/raw": {
+      "n_pairs": 5972,
+      "nugget": 0.012917969747779534,
+      "total_variance": 0.07307255158533187,
+      "r2_ceiling": 0.8232172071794382,
+      "median_pair_dist_m": 0.0
+    },
+    "clay/topsoil_0_30/raw": {
+      "n_pairs": 8986,
+      "nugget": 23.78462884860419,
+      "total_variance": 186.28086233301735,
+      "r2_ceiling": 0.8723184520904568,
+      "median_pair_dist_m": 11.028549546921894
+    },
+    "clay/all_depths/raw": {
+      "n_pairs": 13733,
+      "nugget": 34.50680932411015,
+      "total_variance": 237.52961876335704,
+      "r2_ceiling": 0.8547262884361038,
+      "median_pair_dist_m": 9.9183901934911
+    },
+    "ph/topsoil_0_30/raw": {
+      "n_pairs": 14584,
+      "nugget": 0.15010781765028147,
+      "total_variance": 1.481594921307723,
+      "r2_ceiling": 0.8986849809678144,
+      "median_pair_dist_m": 12.113804876667567
+    },
+    "ph/all_depths/raw": {
+      "n_pairs": 21480,
+      "nugget": 0.16149086001864177,
+      "total_variance": 1.6769870885474327,
+      "r2_ceiling": 0.9037017869001476,
+      "median_pair_dist_m": 11.294974197976615
+    },
+    "sand/topsoil_0_30/raw": {
+      "n_pairs": 8972,
+      "nugget": 51.7882269302418,
+      "total_variance": 669.8814718340905,
+      "r2_ceiling": 0.9226904622567794,
+      "median_pair_dist_m": 11.028549546921894
+    },
+    "sand/all_depths/raw": {
+      "n_pairs": 13703,
+      "nugget": 65.32765779461484,
+      "total_variance": 715.3029256008792,
+      "r2_ceiling": 0.9086713398526403,
+      "median_pair_dist_m": 9.888223326378036
+    },
+    "soc/topsoil_0_30/raw": {
+      "n_pairs": 7351,
+      "nugget": 417.3398627591686,
+      "total_variance": 3234.4791449745103,
+      "r2_ceiling": 0.8709715400677108,
+      "median_pair_dist_m": 10.612537730491846
+    },
+    "soc/topsoil_0_30/log1p": {
+      "n_pairs": 7351,
+      "nugget": 0.11813293989033039,
+      "total_variance": 0.8641641358040876,
+      "r2_ceiling": 0.8632980298581704,
+      "median_pair_dist_m": 10.612537730491846
+    },
+    "soc/all_depths/raw": {
+      "n_pairs": 10887,
+      "nugget": 396.05249193333555,
+      "total_variance": 2325.444797665717,
+      "r2_ceiling": 0.8296874248183,
+      "median_pair_dist_m": 9.660302460999436
+    },
+    "soc/all_depths/log1p": {
+      "n_pairs": 10887,
+      "nugget": 0.12473716832317476,
+      "total_variance": 1.162566331885296,
+      "r2_ceiling": 0.8927053322446621,
+      "median_pair_dist_m": 9.660302460999436
+    }
+  }
+}
