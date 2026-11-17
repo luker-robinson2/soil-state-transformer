@@ -317,9 +317,54 @@ sources:
     checked: 2026-11-16
     status_detail: "CSV endpoints return 403; licence is no-derivatives anyway"
 
-  - id: sislac_sodes
-    name: SISLAC v1.2 (Latin America) and SODES (Spain)
+  - id: sislac
+    name: SISLAC v1.2, Latin America and Caribbean soil profiles (Díaz et al.)
     role: label
-    access: "https://zenodo.org/records/7876731 ; https://zenodo.org/records/5094759"
+    access: "https://zenodo.org/records/7876731 (zip holding a RAR holding the CSV; bsdtar extracts it)"
+    license: "per row: CC-BY 4.0, PDDL, or CC-BY-NC-ND (Colombia IGAC, Ecuador SIGTIERRAS/MAGAP); NC-ND rows are never committed"
+    status: ingested
+    checked: 2026-11-17
+    status_detail: "geosoil/corpus/sislac.py. WoSIS-2016, CHLSOC and Mexico INEGI rows skipped (already in WoSIS); 28,190 new training sites after dedup (Ecuador, Argentina, Colombia, Bolivia, Venezuela, Uruguay)"
+
+  - id: sodes
+    name: SODES, Spanish soil profile database
+    role: label
+    access: "https://zenodo.org/api/records/5094759/files/SODES_v1_Final.accdb/content"
+    license: CC-BY-4.0
+    status: verified
+    checked: 2026-11-17
+    status_detail: "anonymous; MS Access (access-parser reads it); UTM ETRS coordinates with the zone per province; ~1,700 profiles with clay, 617 with sand; low WoSIS overlap"
+
+  - id: qld_sali
+    name: Queensland SALI Soil Chemistry API
+    role: label
+    access: "https://soil-chem.information.qld.gov.au/odata/SiteLabMethodResults (OData, 1,000-row pages, sequential only)"
+    license: CC-BY-4.0
+    status: verified
+    checked: 2026-11-17
+    status_detail: "anonymous; 8,112 sites / 26k samples with lab texture (2Z2 methods), plus OC (6A1) and pH (4A1); ~46% of sites within 50 m of WoSIS NatSoil, so ~4k new"
+
+  - id: gsbddb_bze_lw
+    name: German agricultural soil inventory (BZE-LW) rows of GSBDDB
+    role: label
+    access: "https://zenodo.org/api/records/7075158/files/GSBDDB.csv/content"
+    license: "CC-BY-4.0 on Zenodo; original Thünen licence not verifiable by script"
+    status: verified
+    checked: 2026-11-17
+    status_detail: "2,857 German farmland sites, 15.5k samples with texture, SOC and BD; BZE-LW is not in WoSIS. Use only the BZE-LW rows (the rest of GSBDDB repeats AfSP, WISE, NatSoil, NCSS)"
+
+  - id: nl_bro_bhrp
+    name: Netherlands BRO soil borehole lab data (BHR-P)
+    role: label
+    access: "https://service.pdok.nl/tno/bro-bodemkundig-booronderzoek/atom/downloads/brobhrpvolledigeset.zip"
+    license: CC0
     status: lead
-    status_detail: "anonymous, but RAR-in-zip and MS Access formats; SISLAC is largely inside WoSIS - deferred"
+    checked: 2026-11-17
+    status_detail: "872 boreholes with lab particle size (non-standard cumulative fractions); 180k borings are field estimates only; likely overlaps WoSIS NL-Alterra"
+
+  - id: csiro_natsoil
+    name: CSIRO NatSoil / ANSIS
+    role: label
+    status: not_pullable
+    checked: 2026-11-17
+    status_detail: "DAP data endpoint is CSIRO-only; ANSIS 2.0 needs an account. NatSoil is in WoSIS (AU-CSIRO)"

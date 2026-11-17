@@ -131,3 +131,25 @@ def test_wosis_drops_ncss_classifies_methods_and_keeps_licence():
     assert soc.loc["wosis:3", "license"].startswith("Attribution-NonCommercial")
     assert labels[labels.target == "ph"].method_id.item() == "wosis/phaq:1:2.5"
     assert (labels.coord_precision_m == 100.0).all()
+
+
+def test_sislac_skips_republished_sources_and_fixes_units():
+    from geosoil.corpus import sislac
+    base = dict(country_code="ECU", perfil_duplicado="f", fecha="01/01/2014", license="CC-BY",
+                ph=6.1, bulk_density=1.3, silt=30.0)
+    rows = [
+        dict(base, profile_id=1, layer_id=1, latitude=-1.0, longitude=-78.0, top=0, bottom=20,
+             source="Harmonized soil database of Ecuador (HESD)", organic_carbon=2.0, clay=30.0, sand=40.0),
+        dict(base, profile_id=2, layer_id=2, latitude=-2.0, longitude=-79.0, top=0, bottom=20,
+             source="WoSIS July 2016 Snapshot", organic_carbon=2.0, clay=30.0, sand=40.0),
+        dict(base, profile_id=3, layer_id=3, latitude=-3.0, longitude=-60.0, top=0, bottom=20,
+             source="SISDELAV", organic_carbon=0.0, clay=0.0, sand=0.0, fecha="01/01/1900"),
+        dict(base, profile_id=4, layer_id=4, latitude=-4.0, longitude=-61.0, top=0, bottom=20,
+             source="ZONISIG", organic_carbon=1.0, clay=30.0, sand=40.0, perfil_duplicado="t"),
+    ]
+    labels, drops = sislac.build(pd.DataFrame(rows))
+    assert labels["site_id"].nunique() == 2                       # WoSIS copy and duplicate flag skipped
+    hesd = labels[labels["value"].notna() & labels["site_id"].str.endswith(":1")]
+    assert hesd.loc[hesd["target"] == "soc", "value"].iloc[0] == pytest.approx(20.0)   # % -> g/kg
+    zero = labels[labels["site_id"].str.endswith(":3")]
+    assert set(zero["target"]) == {"ph", "bd"}                    # 0 = not measured for SOC and texture

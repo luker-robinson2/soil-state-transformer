@@ -19,7 +19,7 @@ import pandas as pd
 from .. import config as C
 from . import common, dedup, harmonize, noise_floor, splits
 
-MODULES = ("kssl", "wosis", "npdb", "brazil", "ossl", "napeshm", "usgs_ds801", "raca")
+MODULES = ("kssl", "wosis", "npdb", "brazil", "sislac", "ossl", "napeshm", "usgs_ds801", "raca")
 
 
 def summarize(c1: pd.DataFrame, log: pd.DataFrame, drops: dict) -> dict:

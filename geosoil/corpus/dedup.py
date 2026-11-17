@@ -19,11 +19,12 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
-PRIORITY = ("kssl_ldm", "canada_npdb", "brazil_soildata", "wosis_2023", "ossl_v1_2", "napeshm", "usgs_ds801")
+PRIORITY = ("kssl_ldm", "canada_npdb", "brazil_soildata", "wosis_2023", "sislac", "ossl_v1_2", "napeshm", "usgs_ds801")
 # source -> higher-priority sources whose records it may contain
 REPUBLISHES = {
     "wosis_2023": {"kssl_ldm", "canada_npdb", "brazil_soildata"},
     "ossl_v1_2": {"kssl_ldm", "wosis_2023", "brazil_soildata"},
+    "sislac": {"wosis_2023", "brazil_soildata"},    # WoSIS holds some of the same national surveys
 }
 HOLDOUT = ("raca",)
 RADIUS_M = 100.0
