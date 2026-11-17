@@ -1,0 +1,159 @@
+{
+  "sites": {
+    "train": 190567,
+    "holdout": 6367,
+    "train_conus": 58388,
+    "near_holdout": 210
+  },
+  "values": 3069706,
+  "train_sites_by_source": {
+    "wosis_2023": 120668,
+    "kssl_ldm": 47347,
+    "brazil_soildata": 9123,
+    "canada_npdb": 8061,
+    "usgs_ds801": 4782,
+    "ossl_v1_2": 494,
+    "napeshm": 92
+  },
+  "train_topsoil_sites_by_target": {
+    "bd": 25526,
+    "clay": 141926,
+    "ph": 124239,
+    "sand": 109929,
+    "soc": 132574
+  },
+  "license_values": {
+    "open": 2424930,
+    "noncommercial": 529559
+  },
+  "dedup": [
+    {
+      "source": "brazil_soildata",
+      "action": "merged",
+      "sites": 76
+    },
+    {
+      "source": "canada_npdb",
+      "action": "merged",
+      "sites": 75
+    },
+    {
+      "source": "kssl_ldm",
+      "action": "merged",
+      "sites": 4993
+    },
+    {
+      "source": "napeshm",
+      "action": "merged",
+      "sites": 1360
+    },
+    {
+      "source": "ossl_v1_2",
+      "action": "dropped",
+      "sites": 1589
+    },
+    {
+      "source": "wosis_2023",
+      "action": "dropped",
+      "sites": 8300
+    },
+    {
+      "source": "wosis_2023",
+      "action": "merged",
+      "sites": 23748
+    }
+  ],
+  "dropped_cross_source_by_keeper": [
+    {
+      "source": "ossl_v1_2",
+      "keeper_source": "brazil_soildata",
+      "sites": 7
+    },
+    {
+      "source": "ossl_v1_2",
+      "keeper_source": "kssl_ldm",
+      "sites": 19
+    },
+    {
+      "source": "ossl_v1_2",
+      "keeper_source": "wosis_2023",
+      "sites": 1563
+    },
+    {
+      "source": "wosis_2023",
+      "keeper_source": "brazil_soildata",
+      "sites": 2767
+    },
+    {
+      "source": "wosis_2023",
+      "keeper_source": "canada_npdb",
+      "sites": 4508
+    },
+    {
+      "source": "wosis_2023",
+      "keeper_source": "kssl_ldm",
+      "sites": 1025
+    }
+  ],
+  "per_source_qa_drops": {
+    "kssl_ldm": {
+      "bad_depth": 17056,
+      "out_of_range": 1808,
+      "no_coordinates": 229253,
+      "kept": 1510202,
+      "input_values": 1758319
+    },
+    "wosis_2023": {
+      "bad_depth": 0,
+      "out_of_range": 4042,
+      "no_coordinates": 0,
+      "kept": 1325631,
+      "input_values": 1329673,
+      "excluded_datasets": {
+        "US-NCSS": 1257056
+      }
+    },
+    "canada_npdb": {
+      "bad_depth": 6294,
+      "out_of_range": 158,
+      "no_coordinates": 0,
+      "kept": 113584,
+      "input_values": 120036
+    },
+    "brazil_soildata": {
+      "bad_depth": 0,
+      "out_of_range": 1,
+      "no_coordinates": 36122,
+      "kept": 119521,
+      "input_values": 214596
+    },
+    "ossl_v1_2": {
+      "bad_depth": 1061,
+      "out_of_range": 0,
+      "no_coordinates": 256,
+      "kept": 26152,
+      "input_values": 27469
+    },
+    "napeshm": {
+      "bad_depth": 0,
+      "out_of_range": 0,
+      "no_coordinates": 0,
+      "kept": 7244,
+      "input_values": 7244
+    },
+    "usgs_ds801": {
+      "bad_depth": 6,
+      "out_of_range": 1,
+      "no_coordinates": 0,
+      "kept": 4782,
+      "input_values": 4789
+    },
+    "raca": {
+      "bad_depth": 27,
+      "out_of_range": 969,
+      "no_coordinates": 481,
+      "kept": 115217,
+      "input_values": 116701
+    }
+  }
+}

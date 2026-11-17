@@ -1,0 +1,67 @@
+"""Build the C1 label set: every open source → per-source tables → dedup → labels_c1.parquet.
+
+    python -m geosoil.corpus.build_c1            # all sources
+    python -m geosoil.corpus.build_c1 --skip wosis
+
+Writes data/processed/labels_<source>.parquet, labels_c1.parquet, dedup_log.parquet and a
+small committed summary at geosoil/results/c1_summary.json.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib
+import json
+
+import pandas as pd
+
+from .. import config as C
+from . import common, dedup
+
+MODULES = ("kssl", "wosis", "npdb", "brazil", "ossl", "napeshm", "usgs_ds801", "raca")
+
+
+def summarize(c1: pd.DataFrame, log: pd.DataFrame, drops: dict) -> dict:
+    sites = c1.drop_duplicates("site_id")
+    conus = sites["lon"].between(-125, -66) & sites["lat"].between(24, 50)
+    top = c1[c1["depth_top"] < 30]
+    train = c1[c1["role"] == "train"]
+    return {
+        "sites": {"train": int((sites["role"] == "train").sum()), "holdout": int((sites["role"] == "holdout").sum()),
+                  "train_conus": int(((sites["role"] == "train") & conus).sum()),
+                  "near_holdout": int(sites.loc[sites["role"] == "train", "near_holdout"].sum())},
+        "values": int(len(c1)),
+        "train_sites_by_source": train.drop_duplicates("site_id")["source"].value_counts().to_dict(),
+        "train_topsoil_sites_by_target": top[top["role"] == "train"].groupby("target")["site_id"].nunique().to_dict(),
+        "license_values": train["license"].str.contains("NonCommercial|NC", regex=True).map(
+            {True: "noncommercial", False: "open"}).value_counts().to_dict(),
+        "dedup": log.groupby(["source", "action"]).size().rename("sites").reset_index().to_dict("records"),
+        "dropped_cross_source_by_keeper": log[log["action"] == "dropped"].groupby(
+            ["source", "keeper_source"]).size().rename("sites").reset_index().to_dict("records"),
+        "per_source_qa_drops": drops,
+    }
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--skip", nargs="*", default=[])
+    a = ap.parse_args()
+    tables, drops = [], {}
+    for name in MODULES:
+        if name in a.skip:
+            continue
+        mod = importlib.import_module(f"geosoil.corpus.{name}")
+        labels, d = mod.load()
+        common.write(labels, d, C.DATA_PROC / f"labels_{mod.SOURCE}.parquet")
+        tables.append(labels)
+        drops[mod.SOURCE] = d
+    c1, log = dedup.build_c1(tables)
+    c1.to_parquet(C.DATA_PROC / "labels_c1.parquet", index=False)
+    log.to_parquet(C.DATA_PROC / "dedup_log.parquet", index=False)
+    summary = summarize(c1, log, drops)
+    (C.RESULTS / "c1_summary.json").write_text(json.dumps(summary, indent=2, default=str))
+    print(json.dumps({k: summary[k] for k in ("sites", "values", "train_sites_by_source",
+                                              "train_topsoil_sites_by_target", "license_values")}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
