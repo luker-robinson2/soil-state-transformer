@@ -12,7 +12,7 @@
 # One-time Alpine setup: conda env + mamba-ssm CUDA kernels, master.parquet, then the GPU smoke test.
 set -euo pipefail
 module purge
-module load miniforge cuda
+module load gcc/11.2.0 miniforge cuda   # system gcc 8.5 cannot compile torch 2.4 headers
 cd "$SLURM_SUBMIT_DIR"
 nvidia-smi -L
 # /home is 2 GB: keep envs and the package cache in /projects.
@@ -23,7 +23,7 @@ if ! conda env list | grep -q '^geosoil '; then
   conda env create -q -f environment-cuda.yml
 fi
 set +u; conda activate geosoil; set -u   # conda activate trips over set -u
-python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d>=1.2" "mamba-ssm>=2.2"
+python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2"   # last releases with prebuilt torch 2.4 wheels
 [ -f data/processed/master.parquet ] || python -m geosoil.data --build
 python -c "import torch, mamba_ssm; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0)); print('mamba-ssm ok')"
 # Can compute nodes reach the internet? Decides whether downloads run here or on dtn.rc.colorado.edu.

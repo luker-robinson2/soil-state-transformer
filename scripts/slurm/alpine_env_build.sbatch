@@ -12,7 +12,7 @@
 # bootstrap only has to run the smoke test when a GPU frees up. No GPU is needed to compile.
 set -euo pipefail
 module purge
-module load miniforge cuda
+module load gcc/11.2.0 miniforge cuda   # system gcc 8.5 cannot compile torch 2.4 headers
 cd "$SLURM_SUBMIT_DIR"
 conda config --add envs_dirs "/projects/$USER/software/conda/envs"
 conda config --add pkgs_dirs "/projects/$USER/software/conda/pkgs"
@@ -22,7 +22,7 @@ if ! conda env list | grep -q '^geosoil '; then
 fi
 set +u; conda activate geosoil; set -u   # conda activate trips over set -u
 export TORCH_CUDA_ARCH_LIST="8.0;9.0" MAX_JOBS=8   # A100 + H200
-python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d>=1.2" "mamba-ssm>=2.2"
+python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2"   # last releases with prebuilt torch 2.4 wheels
 python -c "import torch, mamba_ssm; print('torch', torch.__version__, 'cuda build', torch.version.cuda, 'mamba-ssm ok')"
 [ -f data/processed/master.parquet ] || python -m geosoil.data --build
 echo "ENV OK"
