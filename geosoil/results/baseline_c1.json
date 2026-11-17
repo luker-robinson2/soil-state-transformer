@@ -1,113 +1,183 @@
 {
-  "note": "C1 baseline with all feature groups, Alpine job 35828308 (2026-11-17, run file results/runs/baseline_c1_20261117T1113.json). LightGBM, 5-fold spatial CV on split=train, topsoil. Every group is scored on the SAME rows (rows with any AlphaEarth or terrain value) and includes lon/lat + depth. AlphaEarth = 8-year mean. Radiometrics covers ~37% of sites (US + Australia). R2 rounded.",
+  "note": "C1 baseline with all feature groups, Alpine job 35833568 (2026-11-17; run results/runs/baseline_c1_20261117T1425.json). LightGBM, 5-fold spatial CV, topsoil, same rows for every group, each + lon/lat + depth. New groups: terrain_multiscale (GLO-90, 0.5-20 km), lithology (GLiM 99.6% / SGMC 29% coverage), thermal (MODIS LST), hydrology (HAND), land_use_history (HYDE 3.2.1). Depth to bedrock not yet included (download in progress). Previous all-groups run: SOC 0.549, pH 0.588, sand 0.429, clay 0.363, BD 0.509.",
   "soc": {
     "r2_ceiling": 0.863,
-    "n": 329582,
     "terrain": {
       "r2": 0.48
     },
     "alphaearth": {
       "r2": 0.522
     },
-    "climate": {
-      "r2": 0.508
+    "terrain_multiscale": {
+      "r2": 0.469
     },
     "radiometrics": {
       "r2": 0.437
+    },
+    "lithology": {
+      "r2": 0.448
+    },
+    "thermal": {
+      "r2": 0.503
+    },
+    "hydrology": {
+      "r2": 0.449
+    },
+    "land_use_history": {
+      "r2": 0.459
+    },
+    "climate": {
+      "r2": 0.507
     },
     "terrain+alphaearth": {
       "r2": 0.527
     },
     "all": {
-      "r2": 0.549
+      "r2": 0.552
     }
   },
   "ph": {
     "r2_ceiling": 0.899,
-    "n": 323760,
     "terrain": {
       "r2": 0.517
     },
     "alphaearth": {
       "r2": 0.558
     },
-    "climate": {
-      "r2": 0.551
+    "terrain_multiscale": {
+      "r2": 0.501
     },
     "radiometrics": {
       "r2": 0.474
+    },
+    "lithology": {
+      "r2": 0.496
+    },
+    "thermal": {
+      "r2": 0.549
+    },
+    "hydrology": {
+      "r2": 0.491
+    },
+    "land_use_history": {
+      "r2": 0.488
+    },
+    "climate": {
+      "r2": 0.55
     },
     "terrain+alphaearth": {
       "r2": 0.563
     },
     "all": {
-      "r2": 0.588
+      "r2": 0.601
     }
   },
   "sand": {
     "r2_ceiling": 0.923,
-    "n": 282319,
     "terrain": {
       "r2": 0.338
     },
     "alphaearth": {
       "r2": 0.384
     },
-    "climate": {
-      "r2": 0.362
+    "terrain_multiscale": {
+      "r2": 0.336
     },
     "radiometrics": {
       "r2": 0.344
+    },
+    "lithology": {
+      "r2": 0.349
+    },
+    "thermal": {
+      "r2": 0.35
+    },
+    "hydrology": {
+      "r2": 0.324
+    },
+    "land_use_history": {
+      "r2": 0.323
+    },
+    "climate": {
+      "r2": 0.365
     },
     "terrain+alphaearth": {
       "r2": 0.392
     },
     "all": {
-      "r2": 0.429
+      "r2": 0.453
     }
   },
   "clay": {
     "r2_ceiling": 0.872,
-    "n": 363918,
     "terrain": {
       "r2": 0.277
     },
     "alphaearth": {
       "r2": 0.33
     },
-    "climate": {
-      "r2": 0.295
+    "terrain_multiscale": {
+      "r2": 0.273
     },
     "radiometrics": {
       "r2": 0.251
+    },
+    "lithology": {
+      "r2": 0.268
+    },
+    "thermal": {
+      "r2": 0.296
+    },
+    "hydrology": {
+      "r2": 0.261
+    },
+    "land_use_history": {
+      "r2": 0.253
+    },
+    "climate": {
+      "r2": 0.294
     },
     "terrain+alphaearth": {
       "r2": 0.338
     },
     "all": {
-      "r2": 0.363
+      "r2": 0.387
     }
   },
   "bd": {
     "r2_ceiling": 0.823,
-    "n": 58603,
     "terrain": {
       "r2": 0.427
     },
     "alphaearth": {
       "r2": 0.488
     },
-    "climate": {
-      "r2": 0.42
+    "terrain_multiscale": {
+      "r2": 0.397
     },
     "radiometrics": {
       "r2": 0.34
+    },
+    "lithology": {
+      "r2": 0.354
+    },
+    "thermal": {
+      "r2": 0.439
+    },
+    "hydrology": {
+      "r2": 0.355
+    },
+    "land_use_history": {
+      "r2": 0.38
+    },
+    "climate": {
+      "r2": 0.419
     },
     "terrain+alphaearth": {
       "r2": 0.493
     },
     "all": {
-      "r2": 0.509
+      "r2": 0.516
     }
   }
 }

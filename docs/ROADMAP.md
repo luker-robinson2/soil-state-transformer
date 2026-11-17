@@ -29,7 +29,7 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 - **Measured design constraint.** AlphaEarth must be read a whole 1024² block at a time (37 B per pixel),
   never as scattered points (38 MB per point). Every corpus tier is built from blocks.
 
-**C1 baseline** (LightGBM, spatial CV, lab labels; AlphaEarth 8-year mean + terrain + climate + radiometrics): SOC R² 0.55, pH 0.59, sand 0.43, clay 0.36, BD 0.51. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
+**C1 baseline** (LightGBM, spatial CV, lab labels; all feature groups incl. multi-scale terrain, lithology, LST, HAND, land-use history): SOC R² 0.55, pH 0.60, sand 0.45, clay 0.39, BD 0.52. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
 
 **In progress:**
 - Phase 2 features. Done: AlphaEarth 2017–2025 and terrain for all sites. Built and ready to run: climate normals and radiometrics (`bash scripts/slurm/run_phase2_static.sh <topic>` from the Alpine terminal). Next: the feature-selection report, then the R1 neural bake-off on GPU.

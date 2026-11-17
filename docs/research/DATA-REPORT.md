@@ -91,6 +91,18 @@ dropped rows with no embedding.
 | *Noise-floor ceiling* | *0.86* | *0.90* | *0.92* | *0.87* | *0.82* |
 | Gain of all over terrain + AlphaEarth | +0.02 | +0.03 | **+0.04** | +0.03 | +0.02 |
 
+**Round 2** (job 35833568, 2026-11-17): adds multi-scale terrain, lithology, land-surface temperature, HAND and land-use history.
+
+| Features (+ lon/lat, depth) | SOC | pH | Sand | Clay | BD |
+|---|---|---|---|---|---|
+| Multi-scale terrain only | 0.47 | 0.50 | 0.34 | 0.27 | 0.40 |
+| Lithology only | 0.45 | 0.50 | 0.35 | 0.27 | 0.35 |
+| Land-surface temperature only | 0.50 | 0.55 | 0.35 | 0.30 | 0.44 |
+| HAND only | 0.45 | 0.49 | 0.32 | 0.26 | 0.36 |
+| Land-use history only | 0.46 | 0.49 | 0.32 | 0.25 | 0.38 |
+| **All groups, round 2** | **0.55** | **0.60** | **0.45** | **0.39** | **0.52** |
+| Gain over round 1 (all groups) | +0.003 | +0.013 | **+0.024** | **+0.024** | +0.007 |
+
 Earlier runs, which dropped rows without an embedding: AlphaEarth 2020 SOC 0.53, pH 0.57, sand 0.37,
 clay 0.32, BD 0.48; 8-year mean SOC 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49.
 
