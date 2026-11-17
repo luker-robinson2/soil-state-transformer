@@ -1,5 +1,5 @@
 {
-  "note": "First C1 baseline, Alpine job 35802292 (2026-11-16). LightGBM, 5-fold spatial-block CV on split=train, topsoil 0-30 cm, features + lon/lat + depth, AlphaEarth = 2020 only. SOC in log1p. Values rounded from the run's output on Alpine.",
+  "note": "C1 baseline, Alpine job 35809519 (2026-11-17). LightGBM, 5-fold spatial-block CV on split=train, topsoil 0-30 cm, features + lon/lat + depth. AlphaEarth = per-site mean of 2017-2023 + 2025 (2024 held out), renormalised. SOC in log1p. Values rounded from the run's output on Alpine. The 2020-only run is baseline_c1_ae2020.json.",
   "soc": {
     "r2_ceiling": 0.863,
     "terrain": {
@@ -10,16 +10,16 @@
       "sites": 119836
     },
     "alphaearth": {
-      "r2": 0.531,
-      "rmse": 0.711,
-      "rpiq": 1.75,
-      "n": 299329,
-      "sites": 109507
+      "r2": 0.541,
+      "rmse": 0.704,
+      "rpiq": 1.77,
+      "n": 299338,
+      "sites": 109510
     },
     "terrain+alphaearth": {
-      "r2": 0.522,
-      "rmse": 0.719,
-      "rpiq": 1.73,
+      "r2": 0.527,
+      "rmse": 0.714,
+      "rpiq": 1.74,
       "n": 329582,
       "sites": 120119
     }
@@ -34,16 +34,16 @@
       "sites": 113895
     },
     "alphaearth": {
-      "r2": 0.569,
-      "rmse": 0.827,
-      "rpiq": 2.3,
-      "n": 293768,
-      "sites": 104249
+      "r2": 0.579,
+      "rmse": 0.818,
+      "rpiq": 2.32,
+      "n": 293777,
+      "sites": 104252
     },
     "terrain+alphaearth": {
-      "r2": 0.556,
-      "rmse": 0.84,
-      "rpiq": 2.26,
+      "r2": 0.563,
+      "rmse": 0.833,
+      "rpiq": 2.28,
       "n": 323760,
       "sites": 114590
     }
@@ -58,16 +58,16 @@
       "sites": 99516
     },
     "alphaearth": {
-      "r2": 0.374,
-      "rmse": 20.45,
-      "rpiq": 2.05,
-      "n": 252832,
-      "sites": 89955
+      "r2": 0.397,
+      "rmse": 20.082,
+      "rpiq": 2.09,
+      "n": 252841,
+      "sites": 89958
     },
     "terrain+alphaearth": {
-      "r2": 0.374,
-      "rmse": 20.565,
-      "rpiq": 2.05,
+      "r2": 0.392,
+      "rmse": 20.264,
+      "rpiq": 2.08,
       "n": 282319,
       "sites": 100275
     }
@@ -82,16 +82,16 @@
       "sites": 129502
     },
     "alphaearth": {
-      "r2": 0.319,
-      "rmse": 13.101,
-      "rpiq": 1.56,
-      "n": 334293,
-      "sites": 119909
+      "r2": 0.341,
+      "rmse": 12.886,
+      "rpiq": 1.58,
+      "n": 334302,
+      "sites": 119912
     },
     "terrain+alphaearth": {
-      "r2": 0.322,
-      "rmse": 13.208,
-      "rpiq": 1.57,
+      "r2": 0.338,
+      "rmse": 13.05,
+      "rpiq": 1.59,
       "n": 363918,
       "sites": 130292
     }
@@ -106,16 +106,16 @@
       "sites": 22327
     },
     "alphaearth": {
-      "r2": 0.481,
-      "rmse": 0.209,
-      "rpiq": 1.61,
-      "n": 55501,
-      "sites": 21230
+      "r2": 0.489,
+      "rmse": 0.207,
+      "rpiq": 1.62,
+      "n": 55504,
+      "sites": 21231
     },
     "terrain+alphaearth": {
-      "r2": 0.484,
-      "rmse": 0.213,
-      "rpiq": 1.55,
+      "r2": 0.493,
+      "rmse": 0.211,
+      "rpiq": 1.57,
       "n": 58603,
       "sites": 22394
     }

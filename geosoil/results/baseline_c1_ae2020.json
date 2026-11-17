@@ -1,0 +1,123 @@
+{
+  "note": "First C1 baseline, Alpine job 35802292 (2026-11-16). LightGBM, 5-fold spatial-block CV on split=train, topsoil 0-30 cm, features + lon/lat + depth, AlphaEarth = 2020 only. SOC in log1p. Values rounded from the run's output on Alpine.",
+  "soc": {
+    "r2_ceiling": 0.863,
+    "terrain": {
+      "r2": 0.481,
+      "rmse": 0.748,
+      "rpiq": 1.66,
+      "n": 328782,
+      "sites": 119836
+    },
+    "alphaearth": {
+      "r2": 0.531,
+      "rmse": 0.711,
+      "rpiq": 1.75,
+      "n": 299329,
+      "sites": 109507
+    },
+    "terrain+alphaearth": {
+      "r2": 0.522,
+      "rmse": 0.719,
+      "rpiq": 1.73,
+      "n": 329582,
+      "sites": 120119
+    }
+  },
+  "ph": {
+    "r2_ceiling": 0.899,
+    "terrain": {
+      "r2": 0.515,
+      "rmse": 0.876,
+      "rpiq": 2.17,
+      "n": 321732,
+      "sites": 113895
+    },
+    "alphaearth": {
+      "r2": 0.569,
+      "rmse": 0.827,
+      "rpiq": 2.3,
+      "n": 293768,
+      "sites": 104249
+    },
+    "terrain+alphaearth": {
+      "r2": 0.556,
+      "rmse": 0.84,
+      "rpiq": 2.26,
+      "n": 323760,
+      "sites": 114590
+    }
+  },
+  "sand": {
+    "r2_ceiling": 0.923,
+    "terrain": {
+      "r2": 0.338,
+      "rmse": 21.179,
+      "rpiq": 2.0,
+      "n": 280091,
+      "sites": 99516
+    },
+    "alphaearth": {
+      "r2": 0.374,
+      "rmse": 20.45,
+      "rpiq": 2.05,
+      "n": 252832,
+      "sites": 89955
+    },
+    "terrain+alphaearth": {
+      "r2": 0.374,
+      "rmse": 20.565,
+      "rpiq": 2.05,
+      "n": 282319,
+      "sites": 100275
+    }
+  },
+  "clay": {
+    "r2_ceiling": 0.872,
+    "terrain": {
+      "r2": 0.272,
+      "rmse": 13.623,
+      "rpiq": 1.51,
+      "n": 361612,
+      "sites": 129502
+    },
+    "alphaearth": {
+      "r2": 0.319,
+      "rmse": 13.101,
+      "rpiq": 1.56,
+      "n": 334293,
+      "sites": 119909
+    },
+    "terrain+alphaearth": {
+      "r2": 0.322,
+      "rmse": 13.208,
+      "rpiq": 1.57,
+      "n": 363918,
+      "sites": 130292
+    }
+  },
+  "bd": {
+    "r2_ceiling": 0.823,
+    "terrain": {
+      "r2": 0.422,
+      "rmse": 0.225,
+      "rpiq": 1.47,
+      "n": 58421,
+      "sites": 22327
+    },
+    "alphaearth": {
+      "r2": 0.481,
+      "rmse": 0.209,
+      "rpiq": 1.61,
+      "n": 55501,
+      "sites": 21230
+    },
+    "terrain+alphaearth": {
+      "r2": 0.484,
+      "rmse": 0.213,
+      "rpiq": 1.55,
+      "n": 58603,
+      "sites": 22394
+    }
+  }
+}

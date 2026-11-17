@@ -28,7 +28,7 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 - **Measured design constraint.** AlphaEarth must be read a whole 1024² block at a time (37 B per pixel),
   never as scattered points (38 MB per point). Every corpus tier is built from blocks.
 
-**First C1 baseline** (LightGBM, spatial CV, lab labels, AlphaEarth 2020 + terrain): SOC R² 0.53, pH 0.57, sand 0.37, clay 0.32, BD 0.48. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
+**C1 baseline** (LightGBM, spatial CV, lab labels, 8-year AlphaEarth mean + terrain): SOC R² 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
 
 **In progress:**
 - Phase 2 feature extraction (`geosoil/features/`).
