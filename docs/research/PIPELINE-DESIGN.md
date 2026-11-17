@@ -85,9 +85,10 @@ training tables / Zarr shards for the model                the "gold" side
 | 1 | AlphaEarth embeddings, 64-d, 2017–2025 | S3 COGs (`us-west-2.opendata.source.coop/tge-labs/aef`) | 1024² block | **built** (`geosoil/features/alphaearth.py`) |
 | 2 | Terrain: elevation, slope, aspect, curvature, TPI (100 / 500 m), roughness, relief | Copernicus DEM 30 m COGs on AWS (`copernicus-dem-30m`) | 1° tile (whole tile if ≥10 sites, else windows) | **built** (`geosoil/features/terrain.py`); TWI needs flow accumulation, later |
 | 3 | Climate: 1991–2020 monthly normals (ppt, tmax, tmin, pet, aet, def, soil, vpd, srad) + annual summaries (MAP, MAT, aridity, seasonality) | TerraClimate climatology NetCDF (CC0), staged | containing 4 km cell | **built** (`geosoil/features/climate.py`); monthly time series for the temporal encoder later |
-| 4 | Gamma radiometrics K / U / Th + Th/K, U/Th | USGS NURE Bayesian grids, 2 km (CONUS, public domain); Radmap v4, 100 m (Australia, CC-BY) | containing cell | **built** (`geosoil/features/radiometrics.py`); Canada (OFR 2005-1413) waits on a projection check |
+| 4 | Gamma radiometrics K / U / Th + Th/K, U/Th | USGS NURE Bayesian grids, 2 km (CONUS, public domain); Radmap v4, 100 m (Australia, CC-BY) | containing cell | **built** (`geosoil/features/radiometrics.py`). Canada + Alaska from USGS OFR 2005-1413 (2 km) as a third fallback, projection validated against NURE (R = 6370997 m sphere, not the metadata's Clarke radius; r 0.91 K) |
 | 4b | Multi-scale terrain: DEV, TPI, relief, slope at 0.5/1/2/5/10/20 km + max-DEV scale | Copernicus DEM GLO-90 on AWS (`copernicus-dem-90m`, tileList.txt) | 1° tile + 8 neighbours, summed-area tables | **built** (`geosoil/features/terrain_ms.py`) |
 | 4c | Lithology: GLiM 16 classes (global) + USGS SGMC generalized lithology (US), one-hot | GLiM FileGDB (Hamburg); SGMC FileGDB (ScienceBase) | point-in-polygon | **built** (`lithology.py`) |
+| 4h | Surficial materials: origin family (14 one-hot), ordinal grain size and thickness | USGS DS-425 (Soller et al. 2009), 1:5M, CONUS, public domain | point-in-polygon | **built** (`surficial.py`) |
 | 4d | Land-surface temperature: monthly day/night, diurnal range, amplitude | OpenLandMap MOD11A2 1 km climatology (CC-BY-SA) | containing cell | **built** (`thermal.py`) |
 | 4e | Depth to bedrock | ISRIC / Shangguan 2017, 250 m | containing cell | **built** (`regolith.py`) |
 | 4f | Height above nearest drainage (cell, 270 m mean, 270 m min) | ASF GLO-30 HAND COGs (CC0) | 1° tile | **built** (`hand.py`) |
@@ -111,3 +112,16 @@ python -m geosoil.features.alphaearth status --ntasks 64 --years 2020   # then r
 Throughput from the read-cost run: one block ≈ 7.7 s per reader, 66 MB/s per S3 stream. 64 tasks ×
 16 threads keeps many reads in flight, so one year of C1 (~69k blocks, ~2.6 TB) should take hours, not
 days. The first run will measure the real aggregate rate.
+
+## Lessons from Phase 2 runs
+
+- **Check completeness, not just existence.** A server that closes the connection cleanly mid-file
+  leaves a short file with no error. `common.fetch` now compares against Content-Length /
+  Content-Range and raises with the partial kept. Found when a 2.0 GB Radmap grid had been accepted
+  at 228 MB.
+- **`GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR` only for remote reads.** It speeds up `/vsicurl/` but
+  hides sidecar files (`.hdr`, `.prj`, `.aux.xml`), so local EHdr grids fail to open.
+- **Validate stated projections against an overlapping grid.** Old Geosoft grids can carry the wrong
+  sphere radius. Sample both candidates at a few thousand points, and scan a few-km offset grid to
+  confirm the best fit is at zero shift.
+

@@ -57,7 +57,7 @@ How the labels are processed:
 | **Terrain** | elevation, slope, aspect sin/cos, curvature, TPI 100/500 m, roughness 100 m, relief 500 m | Copernicus DEM GLO-30, AWS | 30 m, ±500 m window | 196.3k sites (31 ocean or unpublished tiles) | Copernicus DEM licence (free, attribution) | `features/terrain.py` |
 | **Climate (annual)** | MAP, MAT, PET, AET, water deficit, soil moisture, VPD, solar radiation, temperature range, aridity (P/PET), rainfall seasonality (CV) | TerraClimate 1991–2020 normals | ~4 km | 99.96% | CC0 | `features/climate.py` |
 | **Climate (monthly)** | 9 variables × 12 months (108 columns) | same | ~4 km | 99.96% | CC0 | same |
-| **Radiometrics** | K %, eU, eTh, Th/K, U/Th, source flag | USGS NURE Bayesian grids (CONUS, 2 km); Radmap v4 (Australia, 100 m) | 2 km / 100 m | 37% (CONUS + Australia) | Public domain / CC-BY 4.0 | `features/radiometrics.py` |
+| **Radiometrics** | K %, eU, eTh, Th/K, U/Th, source flag | USGS NURE Bayesian grids (CONUS, 2 km); Radmap v4 (Australia, 100 m); USGS OFR 2005-1413 (Canada + Alaska, 2 km) | 2 km / 100 m | ~39% (CONUS, Australia, Canada, Alaska) | Public domain / CC-BY 4.0 | `features/radiometrics.py` |
 | **Location** | lon, lat | — | — | all | — | — |
 | **Depth** | interval midpoint | — | — | all | — | — |
 
@@ -134,7 +134,10 @@ Top individual columns by SHAP share:
 - **Drop or demote:** HAND and land-use history show no unique value beyond noise for any target. Keep
   hist_crop_1950 only as a pH probe. 30 m terrain and coordinates add nothing on top of the rest.
 - **Highest-value next step:** extend radiometrics coverage, since Th/K is the top sand feature but
-  covers 37% of sites. Canada (USGS OFR 2005-1413) after a projection check, then other national surveys.
+  covers 37% of sites. **Done 2026-11-17:** Canada and Alaska via USGS OFR 2005-1413 (+~3,350 sites,
+  about +2 points). Also added **surficial materials** (USGS DS-425: till, loess, dune sand, alluvium,
+  with grain size), because bedrock lithology misses the transported deposits most US pedons formed in.
+  Both are measured in round 3.
   Then improve lithology resolution beyond GLiM's 1:3.75M (national geological maps), and the
   bare-soil composite.
 
