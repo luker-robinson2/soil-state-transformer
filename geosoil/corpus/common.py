@@ -20,6 +20,15 @@ RAW = C.REPO / "data" / "raw"
 CACO3_C_FRACTION = 0.12
 
 
+def _expected_size(r, offset: int) -> int | None:
+    """Full file size from Content-Range (resumed) or Content-Length (offset + body)."""
+    cr = r.headers.get("Content-Range")
+    if cr and "/" in cr and cr.rsplit("/", 1)[1].isdigit():
+        return int(cr.rsplit("/", 1)[1])
+    cl = r.headers.get("Content-Length")
+    return offset + int(cl) if cl and cl.isdigit() else None
+
+
 def fetch(url: str, dest: Path) -> Path:
     """Download once into data/raw/<source>/, recording url + sha256 in a sidecar json."""
     dest = Path(dest)
@@ -27,6 +36,7 @@ def fetch(url: str, dest: Path) -> Path:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
+    expected = None
     for attempt in range(6):                     # resume partial downloads (slow servers, dropped links)
         have = tmp.stat().st_size if tmp.exists() else 0
         headers = {"User-Agent": "geosoil-corpus/0.1"}
@@ -35,20 +45,28 @@ def fetch(url: str, dest: Path) -> Path:
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
                 resumed = have and r.status == 206
+                expected = _expected_size(r, have if resumed else 0) or expected
                 with open(tmp, "ab" if resumed else "wb") as f:
                     while chunk := r.read(1 << 20):
                         f.write(chunk)
-            break
         except urllib.error.HTTPError as e:
-            if e.code == 416:                    # already complete
-                break
-            if attempt == 5:
+            if e.code != 416 and attempt == 5:   # 416: nothing left to send
                 raise
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
             if attempt == 5:
                 raise
+        # a server can close the connection cleanly mid-file; only a full-length file counts as done
+        if tmp.exists() and (expected is None or tmp.stat().st_size >= expected):
+            break
+    else:
+        got = tmp.stat().st_size if tmp.exists() else 0
+        raise IOError(f"incomplete download of {url}: {got} of {expected} bytes (partial kept at {tmp})")
     tmp.rename(dest)
-    sha = hashlib.sha256(dest.read_bytes()).hexdigest()
+    h = hashlib.sha256()
+    with open(dest, "rb") as f:
+        while chunk := f.read(1 << 24):
+            h.update(chunk)
+    sha = h.hexdigest()
     meta = dict(url=url, sha256=sha, bytes=dest.stat().st_size,
                 fetched=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     dest.with_suffix(dest.suffix + ".json").write_text(json.dumps(meta, indent=2))

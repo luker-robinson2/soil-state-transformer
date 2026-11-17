@@ -89,3 +89,19 @@ def test_sample_layer_reads_zip_member_with_crs_override(tmp_path):
         np.array([-3000.0, 3000.0, 1000.0]), np.array([4407000.0, 4401000.0, 4500000.0]))
     v = rasters.sample_layer(path, lay, lon, lat)
     assert np.isnan(v[0]) and v[1] == 15.0 and np.isnan(v[2])               # nodata, last cell, off-grid
+
+
+def test_extract_reads_ehdr_sidecars_in_zips(tmp_path):
+    """extract() must not hide the .hdr sidecar (GDAL_DISABLE_READDIR_ON_OPEN applies to remote reads only)."""
+    import zipfile
+    from geosoil.features import rasters
+    (tmp_path / "g.hdr").write_text("ncols 2\nnrows 2\nxllcorner 0\nyllcorner 0\ncellsize 1\n"
+                                    "nodata_value -9999\nbyteorder lsbfirst\n")
+    np.array([[1, 2], [3, 4]], dtype="<f4").tofile(tmp_path / "g.flt")
+    with zipfile.ZipFile(tmp_path / "g.zip", "w") as z:
+        z.write(tmp_path / "g.flt", "g.flt")
+        z.write(tmp_path / "g.hdr", "g.hdr")
+    src = rasters.Source("t", [rasters.Layer("v", str(tmp_path / "g.zip"), member="g.flt", crs="EPSG:4326",
+                                             scale=1.0, offset=0.0)], licence="test")
+    res = rasters.extract(src, pd.DataFrame({"site_id": ["a"], "lon": [1.5], "lat": [0.5]}), out_root=tmp_path / "out")
+    assert res["failed"] == 0

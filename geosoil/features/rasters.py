@@ -128,12 +128,15 @@ def extract(source: Source, sites: pd.DataFrame, out_root: Path = C.DATA_PROC / 
     df = pd.DataFrame({"site_id": sites["site_id"].to_numpy()})
     lon, lat = sites["lon"].to_numpy(float), sites["lat"].to_numpy(float)
     failed, files = [], {}
-    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="5", GDAL_CACHEMAX=2048):
+    with rasterio.Env(GDAL_HTTP_MAX_RETRY="5", GDAL_CACHEMAX=2048):
         for layer in source.layers:
             try:
                 path = _gdal_path(layer, source.name)
                 files[layer.name] = path
-                df[layer.name] = sample_layer(path, layer, lon, lat)
+                # skip directory listings only for remote reads; local formats like EHdr (.flt + .hdr)
+                # find their sidecar files through the listing
+                with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR" if path.startswith("/vsicurl/") else "FALSE"):
+                    df[layer.name] = sample_layer(path, layer, lon, lat)
             except Exception as e:
                 failed.append({"block": layer.name, "error": repr(e)[:300]})
                 df[layer.name] = np.nan
