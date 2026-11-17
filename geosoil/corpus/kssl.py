@@ -18,12 +18,11 @@ import numpy as np
 import pandas as pd
 
 from .. import config as C
-from . import schema
+from . import common
 
 SOURCE = "kssl_ldm"
 LICENSE = "public domain"
-# Carbon in CaCO3 is 12/100 of its mass; KSSL SOC = total C - 0.12 * CaCO3 (%).
-CACO3_C_FRACTION = 0.12
+CACO3_C_FRACTION = common.CACO3_C_FRACTION
 # Without a carbonate measurement, total C is only trusted as organic below this pH.
 CARBONATE_FREE_PH = 7.0
 
@@ -52,7 +51,7 @@ def _method_id(code) -> str:
 
 def sites_table(sites: pd.DataFrame) -> pd.DataFrame:
     """One row per pedon with the best available coordinates and year."""
-    out = pd.DataFrame({"pedon_key": sites["pedon_key"]})
+    out = pd.DataFrame({"site_key": sites["pedon_key"]})
     std_ok = sites["latitude_std_decimal_degrees"].notna() & sites["longitude_std_decimal_degrees"].notna()
     out["lat"] = np.where(std_ok, sites["latitude_std_decimal_degrees"], sites["latitude_decimal_degrees"])
     out["lon"] = np.where(std_ok, sites["longitude_std_decimal_degrees"], sites["longitude_decimal_degrees"])
@@ -67,18 +66,9 @@ def sites_table(sites: pd.DataFrame) -> pd.DataFrame:
 
 
 def _rows(layers: pd.DataFrame, target: str, value: pd.Series, code: pd.Series, family) -> pd.DataFrame:
-    keep = value.notna()
-    fam = code[keep].map(family) if callable(family) else family
-    return pd.DataFrame({
-        "pedon_key": layers.loc[keep, "pedon_key"],
-        "layer_key": layers.loc[keep, "layer_key"],
-        "depth_top": layers.loc[keep, "hzn_top"],
-        "depth_bot": layers.loc[keep, "hzn_bot"],
-        "target": target,
-        "value": value[keep],
-        "method_id": code[keep].map(_method_id),
-        "method_family": fam,
-    })
+    base = pd.DataFrame({"site_key": layers["pedon_key"], "layer_key": layers["layer_key"],
+                         "depth_top": layers["hzn_top"], "depth_bot": layers["hzn_bot"]})
+    return common.long_rows(base, target, value, code.map(_method_id), code.map(family) if callable(family) else family)
 
 
 def layer_values(layers: pd.DataFrame) -> pd.DataFrame:
@@ -111,51 +101,22 @@ def layer_values(layers: pd.DataFrame) -> pd.DataFrame:
 
 def build(sites: pd.DataFrame, layers: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Return the canonical label table and a count of what was dropped and why."""
-    vals = layer_values(layers)
-    n0 = len(vals)
-    drops = {}
+    return common.finalize(layer_values(layers), sites_table(sites),
+                           source=SOURCE, prefix="kssl", license=LICENSE)
 
-    bad_depth = vals["depth_top"].isna() | vals["depth_bot"].isna() | (vals["depth_bot"] <= vals["depth_top"])
-    drops["bad_depth"] = int(bad_depth.sum())
-    vals = vals[~bad_depth]
 
-    in_range = pd.Series(True, index=vals.index)
-    for t, (lo, hi) in schema.VALID_RANGE.items():
-        m = vals["target"] == t
-        in_range &= ~m | vals["value"].between(lo, hi)
-    drops["out_of_range"] = int((~in_range).sum())
-    vals = vals[in_range]
+MIRROR = "https://github.com/brownag/labtaxa/releases/download/2026.07/cached-LDM-SPC.rds"
 
-    site = sites_table(sites)
-    vals = vals.merge(site, on="pedon_key", how="left")
-    no_coord = vals["lat"].isna()
-    drops["no_coordinates"] = int(no_coord.sum())
-    vals = vals[~no_coord]
 
-    vals = vals.drop_duplicates(["layer_key", "target", "method_id"])
-    out = pd.DataFrame({
-        "site_id": "kssl:" + vals["pedon_key"].astype(str),
-        "layer_id": "kssl:" + vals["layer_key"].astype(str),
-        "source": SOURCE,
-        "lon": vals["lon"],
-        "lat": vals["lat"],
-        "coord_source": vals["coord_source"],
-        "coord_precision_m": np.nan,
-        "depth_top": vals["depth_top"],
-        "depth_bot": vals["depth_bot"],
-        "target": vals["target"],
-        "value": vals["value"],
-        "unit": vals["target"].map(C.TARGET_UNITS),
-        "method_id": vals["method_id"],
-        "method_family": vals["method_family"],
-        "year": vals["year"],
-        "license": LICENSE,
-    })
-    out = schema.conform(out)
-    schema.validate(out)
-    drops["kept"] = len(out)
-    drops["input_values"] = n0
-    return out, drops
+def load(raw: Path = common.RAW / "kssl") -> tuple[pd.DataFrame, dict]:
+    """Read the exported CSVs, creating them from the labtaxa mirror if needed (needs Rscript)."""
+    if not (raw / "kssl_layers.csv.gz").exists():
+        import subprocess
+        rds = common.fetch(MIRROR, raw / "cached-LDM-SPC.rds")
+        subprocess.run(["Rscript", str(C.REPO / "data" / "extraction" / "kssl_export.R"), str(rds), str(raw)],
+                       check=True)
+    return build(pd.read_csv(raw / "kssl_sites.csv.gz", low_memory=False),
+                 pd.read_csv(raw / "kssl_layers.csv.gz", low_memory=False))
 
 
 def main() -> None:
@@ -163,14 +124,7 @@ def main() -> None:
     ap.add_argument("--raw", type=Path, default=C.REPO / "data" / "raw" / "kssl")
     ap.add_argument("--out", type=Path, default=C.DATA_PROC / "labels_kssl.parquet")
     a = ap.parse_args()
-    sites = pd.read_csv(a.raw / "kssl_sites.csv.gz", low_memory=False)
-    layers = pd.read_csv(a.raw / "kssl_layers.csv.gz", low_memory=False)
-    labels, drops = build(sites, layers)
-    a.out.parent.mkdir(parents=True, exist_ok=True)
-    labels.to_parquet(a.out, index=False)
-    print(f"{a.out}: {len(labels):,} values, {labels['site_id'].nunique():,} sites")
-    print("dropped:", drops)
-    print(labels.groupby(["target", "method_family"]).size().to_string())
+    common.write(*load(a.raw), a.out)
 
 
 if __name__ == "__main__":
