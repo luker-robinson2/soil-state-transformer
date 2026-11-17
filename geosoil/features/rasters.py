@@ -35,6 +35,8 @@ class Layer:
     valid_range: tuple[float, float] | None = None   # values outside -> NaN
     filename: str | None = None     # local name when the URL path doesn't give a unique one
     subdataset: str | None = None   # NetCDF variable -> GDAL path NETCDF:<file>:<var>
+    member: str | None = None       # file inside a staged zip -> GDAL path /vsizip/<zip>/<member>
+    crs: str | None = None          # overrides a missing or wrong CRS in the file (any pyproj string)
 
 
 @dataclass
@@ -55,6 +57,8 @@ def _gdal_path(layer: Layer, source: str) -> str:
         else:
             local = common.RAW / source / (layer.filename or Path(p.split("?")[0]).name)
             p = str(common.fetch(p, local))
+    if layer.member:
+        return f"/vsizip/{p}/{layer.member}"
     return f"NETCDF:{p}:{layer.subdataset}" if layer.subdataset else p
 
 
@@ -65,8 +69,9 @@ def sample_layer(gdal_path: str, layer: Layer, lon: np.ndarray, lat: np.ndarray)
     from rasterio.transform import rowcol
     out = np.full(len(lon), np.nan, dtype=np.float64)
     with rasterio.open(gdal_path) as ds:
-        if ds.crs and ds.crs.to_epsg() != 4326:
-            x, y = Transformer.from_crs("EPSG:4326", ds.crs, always_xy=True).transform(lon, lat)
+        crs = layer.crs or ds.crs
+        if layer.crs or (crs and crs.to_epsg() != 4326):
+            x, y = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(lon, lat)
         else:
             x, y = lon, lat
             # grids stored 0..360 in longitude
@@ -106,6 +111,15 @@ def sample_layer(gdal_path: str, layer: Layer, lon: np.ndarray, lat: np.ndarray)
     return out
 
 
+def _local_file(gdal_path: str) -> Path:
+    """The staged file behind a GDAL path (NETCDF:<file>:<var>, /vsizip/<zip>/<member>, or plain)."""
+    if gdal_path.startswith("NETCDF:"):
+        return Path(gdal_path.split(":")[1])
+    if gdal_path.startswith("/vsizip/"):
+        return Path(gdal_path[len("/vsizip/"):].rsplit("/", 1)[0])
+    return Path(gdal_path)
+
+
 def extract(source: Source, sites: pd.DataFrame, out_root: Path = C.DATA_PROC / "features") -> dict:
     """Sample every layer of `source` at every site; writes one shard with a provenance manifest."""
     import rasterio
@@ -129,9 +143,7 @@ def extract(source: Source, sites: pd.DataFrame, out_root: Path = C.DATA_PROC / 
     shards.write(df, out, 0, 1, {
         "source": source.name, "licence": source.licence, "citation": source.citation,
         "layers": {l.name: {"path": l.path, "band": l.band, "scale": l.scale, "offset": l.offset} for l in source.layers},
-        "file_sha256": {k: shards.sha256(Path(v.split(":")[1] if v.startswith("NETCDF:") else v))
-                        for k, v in files.items()
-                        if Path(v.split(":")[1] if v.startswith("NETCDF:") else v).exists()},
+        "file_sha256": {k: shards.sha256(_local_file(v)) for k, v in files.items() if _local_file(v).exists()},
         "failed_blocks": failed, "coverage": cover, "sites": int(len(df)),
         "seconds": round(time.time() - t0, 1), "point_support": "containing cell", **source.meta})
     return {"source": source.name, "sites": len(df), "layers": len(source.layers), "failed": len(failed),

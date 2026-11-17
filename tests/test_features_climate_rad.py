@@ -56,3 +56,36 @@ def test_radiometrics_coalesces_regions_and_flags_source():
 def test_radiometrics_uses_unique_local_filenames():
     files = [l.filename for l in radiometrics.source().layers if l.name.startswith("nure_")]
     assert len(set(files)) == 3 and all(f.endswith(".tif") for f in files)
+
+
+def test_radiometrics_falls_back_to_north_american_grid():
+    df = pd.DataFrame({"site_id": ["us", "ca"], "nure_k": [1.7, np.nan], "nure_u": [2.0, np.nan],
+                       "nure_th": [10.0, np.nan], "namrad_k": [9.0, 2.0], "namrad_u": [9.0, 1.0],
+                       "namrad_th": [9.0, 6.0]})
+    d = radiometrics.derive(df).set_index("site_id")
+    assert d.loc["us", "rad_k"] == 1.7 and d.loc["us", "rad_src"] == 1      # NURE wins where present
+    assert d.loc["ca", "rad_th"] == 6.0 and d.loc["ca", "rad_src"] == 3
+    lay = {l.name: l for l in radiometrics.source().layers}
+    assert lay["namrad_k"].member == "NAMrad_K.flt" and "+R=6370997" in lay["namrad_k"].crs
+
+
+def test_sample_layer_reads_zip_member_with_crs_override(tmp_path):
+    import zipfile
+    from geosoil.features import rasters
+    # 4x4 EHdr float grid in spherical TM, no .prj: the Layer supplies the CRS
+    (tmp_path / "g.hdr").write_text("ncols 4\nnrows 4\nxllcorner -4000\nyllcorner 4400000\ncellsize 2000\n"
+                                    "nodata_value -9999\nbyteorder lsbfirst\n")
+    a = np.arange(16, dtype="<f4").reshape(4, 4)
+    a[0, 0] = -9999
+    a.tofile(tmp_path / "g.flt")
+    with zipfile.ZipFile(tmp_path / "g.zip", "w") as z:
+        z.write(tmp_path / "g.flt", "g.flt")
+        z.write(tmp_path / "g.hdr", "g.hdr")
+    lay = rasters.Layer("x", str(tmp_path / "g.zip"), member="g.flt", crs=radiometrics.NAMRAD_CRS, scale=1.0, offset=0.0)
+    path = rasters._gdal_path(lay, "t")
+    assert path == f"/vsizip/{tmp_path}/g.zip/g.flt" and rasters._local_file(path) == tmp_path / "g.zip"
+    from pyproj import Transformer
+    lon, lat = Transformer.from_crs(lay.crs, "EPSG:4326", always_xy=True).transform(
+        np.array([-3000.0, 3000.0, 1000.0]), np.array([4407000.0, 4401000.0, 4500000.0]))
+    v = rasters.sample_layer(path, lay, lon, lat)
+    assert np.isnan(v[0]) and v[1] == 15.0 and np.isnan(v[2])               # nodata, last cell, off-grid
