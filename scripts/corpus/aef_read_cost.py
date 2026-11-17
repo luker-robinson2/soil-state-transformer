@@ -28,7 +28,11 @@ import rasterio
 from pyproj import Transformer
 from rasterio.windows import Window
 
-BASE = "https://data.source.coop/tge-labs/aef/v1/annual"
+# Direct S3 HTTPS is ~10-60x faster than the data.source.coop proxy (66 MB/s vs <4 MB/s from
+# Alpine, 2026-11-16); pass --base to compare.
+S3_BASE = "https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/tge-labs/aef/v1/annual"
+PROXY_BASE = "https://data.source.coop/tge-labs/aef/v1/annual"
+BASE = S3_BASE
 INDEX_URL = f"{BASE}/aef_index.parquet"
 GDAL_ENV = dict(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MULTIRANGE="YES",
                 CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tiff", GDAL_HTTP_MAX_RETRY="3")
@@ -143,7 +147,10 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--index", type=Path, default=Path("data/raw/aef/aef_index.parquet"))
     ap.add_argument("--out", type=Path, default=Path("geosoil/results/aef_read_cost.json"))
+    ap.add_argument("--base", default=S3_BASE, help="tile URL prefix (S3 direct or the source.coop proxy)")
     a = ap.parse_args()
+    global BASE
+    BASE = a.base.rstrip("/")
 
     idx = load_index(a.index)
     read = pd.read_csv if a.points.suffix == ".csv" else pd.read_parquet
@@ -158,7 +165,7 @@ def main() -> None:
                               found.merge(pts, on="site_id").lat.iloc[0], a.year)
 
     result = {
-        "year": a.year, "n_points": a.n, "n_found": int(len(found)),
+        "base": BASE, "year": a.year, "n_points": a.n, "n_found": int(len(found)),
         "n_valid": int(found.valid.sum()),
         "scattered": {"median_bytes": float(found.bytes.median()), "median_seconds": float(found.seconds.median()),
                       "p90_seconds": float(found.seconds.quantile(0.9))},
