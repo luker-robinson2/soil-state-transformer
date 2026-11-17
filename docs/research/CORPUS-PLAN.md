@@ -143,7 +143,7 @@ a home connection, so expect Alpine to be faster.
 | Pattern | Bytes | Seconds |
 |---|---|---|
 | One scattered point | ~38 MB per point-year (one whole 1024² block per band × 64 bands) | ~23 s |
-| A dense block | ~38.5 B per pixel (1M pixels for ~40 MB) | ~20 s |
+| A dense block | ~37–38.5 B per pixel (1M pixels for ~40 MB) | ~20 s at home; **7.7 s on Alpine via direct S3** |
 
 What that implies for each corpus:
 
@@ -153,7 +153,7 @@ What that implies for each corpus:
 | 1e9 pixel-years, dense | ~40 GB | **Cheap** |
 | All 52,340 KSSL sites | They fall in only 18,963 distinct blocks (2.8 per block): 0.7 TB per year, 6.5 TB for 9 years | Feasible as streamed reads on Alpine |
 
-**So every tier is built from whole blocks, never scattered points** (§C).
+**So every tier is built from whole blocks, never scattered points** (§C). Read from `s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/...`, not `data.source.coop`: from Alpine that is 66 MB/s against under 4 MB/s. One reader is capped near 5 MB/s by 64 serial band requests, so run many readers in parallel, or fetch the bands concurrently.
 
 ### B2. Pre-tiled ML datasets (alternative or extra pretraining data)
 

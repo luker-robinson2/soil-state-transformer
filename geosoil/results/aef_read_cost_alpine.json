@@ -1,0 +1,33 @@
+{
+  "base": "https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/tge-labs/aef/v1/annual",
+  "year": 2020,
+  "n_points": 40,
+  "n_found": 40,
+  "n_valid": 40,
+  "scattered": {
+    "median_bytes": 38613883.5,
+    "median_seconds": 7.665208974853158,
+    "p90_seconds": 8.135512303374707
+  },
+  "dense": {
+    "seconds": 7.658353194128722,
+    "bytes": 38584922,
+    "pixels": 1048576,
+    "valid_pixels": 1048576,
+    "bytes_per_valid_pixel": 36.79744911193848
+  },
+  "projection": {
+    "C2_scattered": {
+      "location_years": 18000000.0,
+      "TB_read": 695.049903,
+      "serial_hours": 38326.04487426579
+    },
+    "C4_dense": {
+      "location_years": 1000000000.0,
+      "TB_read": 0.036797449111938475,
+      "serial_hours": 2.028770763113425
+    },
+    "note": "serial_hours assumes one reader; divide by concurrent readers. Scattered points that share a block share its bytes, so C2 TB is an upper bound."
+  },
+  "run": "2026-11-16, Alpine compute node c3cpu-a5-u1-1 (OnDemand Jupyter session), direct S3 HTTPS"
+}

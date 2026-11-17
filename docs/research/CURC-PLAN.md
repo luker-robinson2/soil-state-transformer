@@ -94,7 +94,7 @@ Notes on the table:
   - RTX Pro 6000 needs CUDA >12.8 and H200 needs >12.0. `environment-cuda.yml` pins torch 2.4.1+cu121: fine on A100, but not on RTX Pro.
   - The login nodes throttle heavy work (Arbiter2), so build in `acompile` or inside a job.
 - **Data transfer.** Use `dtn.rc.colorado.edu` (scp/rsync/sftp), or Globus collection "CU Boulder Research Computing".
-  Whether compute nodes have outbound internet is not documented. Test with `curl -I https://cds.climate.copernicus.eu` inside a job. If it fails, downloads run on the transfer node.
+  **Compute nodes have outbound internet** (verified 2026-11-16 from an OnDemand Jupyter node: GitHub, Source Cooperative and S3 all reachable).
 
 ### What "as large as possible on Trailhead" means in GPU-hours
 
