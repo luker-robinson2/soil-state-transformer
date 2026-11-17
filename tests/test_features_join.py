@@ -31,3 +31,19 @@ def test_build_joins_splits_terrain_and_alphaearth():
     df = join.build(labels, splits, terr, ae).set_index("site_id")
     assert df.loc["a", "elevation"] == 100.0 and np.isnan(df.loc["b", "elevation"])
     assert df.loc["b", "A00"] == 0.5 and df.loc["b", "split"] == "test"
+
+
+def test_baseline_groups_pick_up_new_sources_by_prefix():
+    from geosoil import baseline_c1
+    cols = ["elevation", "slope", "A00", "A01", "clim_map", "rad_k", "value"]
+    g = baseline_c1.groups(cols)
+    assert g["climate"] == ["clim_map"] and g["radiometrics"] == ["rad_k"]
+    assert set(g["all"]) == {"elevation", "slope", "A00", "A01", "clim_map", "rad_k"}
+
+
+def test_build_merges_any_static_source():
+    labels = pd.DataFrame({"site_id": ["a"], "target": "ph", "interval": "0-5", "value": [6.0]})
+    splits = pd.DataFrame({"site_id": ["a"], "block": ["x"], "split": ["train"], "fold": [0]})
+    df = join.build(labels, splits, pd.DataFrame(), pd.DataFrame(),
+                    {"climate": pd.DataFrame({"site_id": ["a"], "clim_map": [500.0]})})
+    assert df.loc[0, "clim_map"] == 500.0

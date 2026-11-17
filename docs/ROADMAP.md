@@ -31,7 +31,7 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 **C1 baseline** (LightGBM, spatial CV, lab labels, 8-year AlphaEarth mean + terrain): SOC R² 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
 
 **In progress:**
-- Phase 2 feature extraction (`geosoil/features/`).
+- Phase 2 features. Done: AlphaEarth 2017–2025 and terrain for all sites. Built and ready to run: climate normals and radiometrics (`bash scripts/slurm/run_phase2_static.sh <topic>` from the Alpine terminal). Next: the feature-selection report, then the R1 neural bake-off on GPU.
 - Data requests sent 2026-11-16 to iSDA, BSSL (Demattê), ISRIC, CanSIS and ESDAC.
 
 ## Phases

@@ -39,7 +39,7 @@ training tables / Zarr shards for the model                the "gold" side
    - Every block read can also yield unlabelled pixels for pretraining at no extra cost.
 4. **Scale-aware fan-out.** Coarse sources (ERA5-Land 9 km, SMAP 9 km, MODIS 500 m) are extracted once
    per unique cell and joined to sites. Only 10 m sources are read per pixel.
-5. **One point-sampling function per raster type.** It reprojects points into the raster's CRS, maps
+5. **One point-sampling function per raster type** (`geosoil/features/rasters.py` for every static grid). It reprojects points into the raster's CRS, maps
    nodata to NaN, and documents its point-support policy:
    - 10 m embeddings: the pixel containing the point
    - terrain derivatives: a stated window
@@ -84,8 +84,8 @@ training tables / Zarr shards for the model                the "gold" side
 |---|---|---|---|---|
 | 1 | AlphaEarth embeddings, 64-d, 2017–2025 | S3 COGs (`us-west-2.opendata.source.coop/tge-labs/aef`) | 1024² block | **built** (`geosoil/features/alphaearth.py`) |
 | 2 | Terrain: elevation, slope, aspect, curvature, TPI (100 / 500 m), roughness, relief | Copernicus DEM 30 m COGs on AWS (`copernicus-dem-30m`) | 1° tile (whole tile if ≥10 sites, else windows) | **built** (`geosoil/features/terrain.py`); TWI needs flow accumulation, later |
-| 3 | Climate: monthly series + normals | TerraClimate / ERA5 (ARCO Zarr) | unique grid cell | next |
-| 4 | Gamma radiometrics K / U / Th | USGS NURE grids (CONUS) | one-time download | planned |
+| 3 | Climate: 1991–2020 monthly normals (ppt, tmax, tmin, pet, aet, def, soil, vpd, srad) + annual summaries (MAP, MAT, aridity, seasonality) | TerraClimate climatology NetCDF (CC0), staged | containing 4 km cell | **built** (`geosoil/features/climate.py`); monthly time series for the temporal encoder later |
+| 4 | Gamma radiometrics K / U / Th + Th/K, U/Th | USGS NURE Bayesian grids, 2 km (CONUS, public domain); Radmap v4, 100 m (Australia, CC-BY) | containing cell | **built** (`geosoil/features/radiometrics.py`); Canada (OFR 2005-1413) waits on a projection check |
 | 5 | Sentinel-2 bare-soil + seasonal medians; Sentinel-1 | Planetary Computer / Earth Search STAC | MGRS tile × season | planned |
 | 6 | MODIS NDVI / LST, SMAP | Planetary Computer, `earthaccess` | unique cell | planned |
 | 7 | TESSERA embeddings (2024 only so far) | `geotessera` | tile | planned |
@@ -97,6 +97,7 @@ training tables / Zarr shards for the model                the "gold" side
 sbatch scripts/slurm/corpus_build.sbatch                      # C1 + harmonize + splits + AlphaEarth plan
 YEARS=2020 sbatch scripts/slurm/features_aef.sbatch           # 64 shards; NEIGHBORS=64 unlabelled px per block
 sbatch scripts/slurm/features_terrain.sbatch                  # 16 shards, Copernicus DEM
+sbatch scripts/slurm/features_static.sbatch                   # climate + radiometrics (one shard)
 python -m geosoil.features.alphaearth status --ntasks 64 --years 2020   # then resubmit missing tasks
 ```
 

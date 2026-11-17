@@ -1,6 +1,7 @@
 """Join harmonized labels, fixed splits and feature shards into one training table (Phase 2).
 
-One row per (site, target, interval). Static features (terrain) join on site_id. AlphaEarth
+One row per (site, target, interval). Every static per-site feature source under
+data/processed/features/ (terrain, climate, radiometrics, ...) joins on site_id. AlphaEarth
 joins on site_id: for each site the embedding is averaged over the years extracted so far
 (`ae_years`), excluding the temporal hold-out year, and renormalised to unit length.
 Multi-year sequences come later.
@@ -44,10 +45,18 @@ def alphaearth_mean(feat: Path = FEAT / "alphaearth", holdout_year: int = TEMPOR
     return m.reset_index()
 
 
-def build(labels: pd.DataFrame, splits: pd.DataFrame, terr: pd.DataFrame, ae: pd.DataFrame) -> pd.DataFrame:
+def static_sources(feat: Path = FEAT) -> dict[str, pd.DataFrame]:
+    """Every per-site feature directory except the yearly AlphaEarth one."""
+    return {d.name: read_shards(d) for d in sorted(feat.iterdir()) if d.is_dir() and d.name != "alphaearth"} \
+        if feat.exists() else {}
+
+
+def build(labels: pd.DataFrame, splits: pd.DataFrame, terr: pd.DataFrame, ae: pd.DataFrame,
+          others: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:
     df = labels.merge(splits[["site_id", "block", "split", "fold"]], on="site_id", how="left")
-    if not terr.empty:
-        df = df.merge(terr.drop_duplicates("site_id"), on="site_id", how="left")
+    for tbl in [terr, *((others or {}).values())]:
+        if tbl is not None and not tbl.empty:
+            df = df.merge(tbl.drop_duplicates("site_id"), on="site_id", how="left")
     if not ae.empty:
         df = df.merge(ae, on="site_id", how="left")
     return df
@@ -59,12 +68,14 @@ def main(argv: list[str] | None = None) -> None:
     a = ap.parse_args(argv)
     labels = pd.read_parquet(C.DATA_PROC / "labels_harmonized.parquet")
     splits = pd.read_parquet(C.DATA_PROC / "splits.parquet")
-    terr, ae = read_shards(FEAT / "terrain"), alphaearth_mean()
-    df = build(labels, splits, terr, ae)
+    statics = static_sources()
+    terr, ae = statics.pop("terrain", pd.DataFrame()), alphaearth_mean()
+    df = build(labels, splits, terr, ae, statics)
     df.to_parquet(a.out, index=False)
     print(json.dumps({"rows": len(df), "sites": int(df["site_id"].nunique()),
                       "with_terrain": float(df[list(terrain.FEATURES)].notna().all(axis=1).mean()) if not terr.empty else 0.0,
                       "with_alphaearth": float(df["A00"].notna().mean()) if "A00" in df else 0.0,
+                      "static_sources": ["terrain", *statics],
                       "ae_years": sorted(map(int, df["ae_years"].dropna().unique())) if "ae_years" in df else []},
                      indent=2))
 
