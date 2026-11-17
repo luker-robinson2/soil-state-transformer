@@ -3,6 +3,7 @@
 #SBATCH --account=ucb-general
 #SBATCH --partition=aa100
 #SBATCH --qos=gpu-testing
+#SBATCH --nodes=1
 #SBATCH --gres=gpu:a100_3g.20gb:1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8

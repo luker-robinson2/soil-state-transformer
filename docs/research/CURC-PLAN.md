@@ -78,6 +78,7 @@ Notes on the table:
   - `gpu-testing`: 1 h, billed at 10%, 1 GPU, 5 jobs. **Only on `aa100` (the `a100_3g.20gb` slice) and `ami100`.**
   - `cpu-testing` on `acpu`: 2 nodes or 16 cores, 1 h.
   - `atesting` and the old `testing` QoS were removed in Oct 2026.
+- **Every GPU job must set `--nodes`** (Alpine submission rule, seen 2026-11-16).
 - **Interconnect.** No GPU node has InfiniBand: A100 nodes use 2×25 GbE RoCE, H200/RTX nodes use 100 GbE. Stay on one node. The largest single node is 4× H200 (564 GB of GPU memory). An A100 node holds only **3** GPUs.
 - **Storage:**
 

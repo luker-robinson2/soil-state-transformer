@@ -3,6 +3,7 @@
 #SBATCH --account=ucb-general
 #SBATCH --partition=acpu
 #SBATCH --qos=cpu-normal
+#SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=01:00:00
