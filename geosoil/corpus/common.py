@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,10 +27,26 @@ def fetch(url: str, dest: Path) -> Path:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "geosoil-corpus/0.1"})
-    with urllib.request.urlopen(req) as r, open(tmp, "wb") as f:
-        while chunk := r.read(1 << 20):
-            f.write(chunk)
+    for attempt in range(6):                     # resume partial downloads (slow servers, dropped links)
+        have = tmp.stat().st_size if tmp.exists() else 0
+        headers = {"User-Agent": "geosoil-corpus/0.1"}
+        if have:
+            headers["Range"] = f"bytes={have}-"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=120) as r:
+                resumed = have and r.status == 206
+                with open(tmp, "ab" if resumed else "wb") as f:
+                    while chunk := r.read(1 << 20):
+                        f.write(chunk)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 416:                    # already complete
+                break
+            if attempt == 5:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            if attempt == 5:
+                raise
     tmp.rename(dest)
     sha = hashlib.sha256(dest.read_bytes()).hexdigest()
     meta = dict(url=url, sha256=sha, bytes=dest.stat().st_size,
