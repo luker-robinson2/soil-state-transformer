@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 
 from .. import config as C
+from . import shards
 
 S3 = "https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/tge-labs/aef/v1/annual"
 INDEX_URL = f"{S3}/aef_index.parquet"
@@ -83,13 +84,9 @@ def plan(sites: pd.DataFrame, index: pd.DataFrame, years) -> pd.DataFrame:
     return p.drop_duplicates(["site_id", "year"]).reset_index(drop=True)
 
 
-def _shard_of(key: str, ntasks: int) -> int:
-    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:7], "big") % ntasks
-
-
 def _groups(p: pd.DataFrame, task: int, ntasks: int):
     p = p.assign(key=p["path"] + "#" + p["bx"].astype(str) + "_" + p["by"].astype(str))
-    mine = p[p["key"].map(lambda k: _shard_of(k, ntasks)) == task]
+    mine = p[p["key"].map(lambda k: shards.shard_of(k, ntasks)) == task]
     return list(mine.groupby("key", sort=True))
 
 
@@ -169,43 +166,16 @@ def extract(p: pd.DataFrame, task: int, ntasks: int, threads: int, neighbors: in
     meta = {"task": task, "ntasks": ntasks, "blocks": len(groups), "failed_blocks": failed,
             "site_years": int(len(sites)), "unlabelled_pixels": int(sum(len(u) for u in unl_parts)),
             "seconds": round(time.time() - t0, 1), "threads": threads, "source": S3,
-            "plan_sha256": _sha256(OUT / "plan.parquet") if (OUT / "plan.parquet").exists() else None,
-            "index_sha256": _sha256(C.REPO / "data" / "raw" / "aef" / "aef_index.parquet")
-            if (C.REPO / "data" / "raw" / "aef" / "aef_index.parquet").exists() else None,
-            "code_version": _code_version(), "licence": "CC-BY-4.0, The AlphaEarth Foundations Satellite "
+            "plan_sha256": shards.sha256(OUT / "plan.parquet"),
+            "index_sha256": shards.sha256(C.REPO / "data" / "raw" / "aef" / "aef_index.parquet"),
+            "code_version": shards.code_version(), "licence": "CC-BY-4.0, The AlphaEarth Foundations Satellite "
             "Embedding dataset is produced by Google and Google DeepMind"}
     (out / f"sites-{task:04d}-of-{ntasks:04d}.json").write_text(json.dumps(meta, indent=2))
     return meta
 
 
-def _sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _code_version() -> str:
-    import subprocess
-    try:
-        return subprocess.run(["git", "-C", str(C.REPO), "rev-parse", "--short", "HEAD"],
-                              capture_output=True, text=True, check=True).stdout.strip()
-    except Exception:
-        return "unknown"
-
-
 def status(ntasks: int, out: Path = OUT) -> dict:
-    """Which shards are done, which are missing, and which blocks failed inside done shards."""
-    done, failed = [], []
-    for t in range(ntasks):
-        m = out / f"sites-{t:04d}-of-{ntasks:04d}.json"
-        if (out / f"sites-{t:04d}-of-{ntasks:04d}.parquet").exists() and m.exists():
-            done.append(t)
-            failed += json.loads(m.read_text()).get("failed_blocks", [])
-    missing = [t for t in range(ntasks) if t not in done]
-    return {"ntasks": ntasks, "done": len(done), "missing_tasks": missing, "failed_blocks": len(failed),
-            "resubmit_tasks": ",".join(map(str, missing)) or None}
+    return shards.status(ntasks, out)
 
 
 def _years(spec: str) -> list[int]:

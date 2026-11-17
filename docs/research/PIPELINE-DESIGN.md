@@ -83,7 +83,7 @@ training tables / Zarr shards for the model                the "gold" side
 | # | Source | Access (anonymous) | Unit of work | Status |
 |---|---|---|---|---|
 | 1 | AlphaEarth embeddings, 64-d, 2017–2025 | S3 COGs (`us-west-2.opendata.source.coop/tge-labs/aef`) | 1024² block | **built** (`geosoil/features/alphaearth.py`) |
-| 2 | Terrain: elevation, slope, aspect, curvature, TPI, TWI | Copernicus DEM 30 m COGs on AWS (`copernicus-dem-30m`) | 1° tile | next |
+| 2 | Terrain: elevation, slope, aspect, curvature, TPI (100 / 500 m), roughness, relief | Copernicus DEM 30 m COGs on AWS (`copernicus-dem-30m`) | 1° tile (whole tile if ≥10 sites, else windows) | **built** (`geosoil/features/terrain.py`); TWI needs flow accumulation, later |
 | 3 | Climate: monthly series + normals | TerraClimate / ERA5 (ARCO Zarr) | unique grid cell | next |
 | 4 | Gamma radiometrics K / U / Th | USGS NURE grids (CONUS) | one-time download | planned |
 | 5 | Sentinel-2 bare-soil + seasonal medians; Sentinel-1 | Planetary Computer / Earth Search STAC | MGRS tile × season | planned |
@@ -96,6 +96,7 @@ training tables / Zarr shards for the model                the "gold" side
 ```bash
 sbatch scripts/slurm/corpus_build.sbatch                      # C1 + harmonize + splits + AlphaEarth plan
 YEARS=2020 sbatch scripts/slurm/features_aef.sbatch           # 64 shards; NEIGHBORS=64 unlabelled px per block
+sbatch scripts/slurm/features_terrain.sbatch                  # 16 shards, Copernicus DEM
 python -m geosoil.features.alphaearth status --ntasks 64 --years 2020   # then resubmit missing tasks
 ```
 
