@@ -1,0 +1,23 @@
+{
+  "block_deg": 1.0,
+  "n_folds": 5,
+  "test_every": 10,
+  "temporal_holdout_year": 2024,
+  "sites_by_split": {
+    "train": 176388,
+    "test": 14179,
+    "holdout": 6367
+  },
+  "sites_by_fold": {
+    "0": 31259,
+    "1": 36423,
+    "2": 34663,
+    "3": 33736,
+    "4": 40307
+  },
+  "blocks_by_split": {
+    "train": 6696,
+    "test": 698,
+    "holdout": 1
+  }
+}
