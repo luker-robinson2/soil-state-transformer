@@ -57,7 +57,7 @@ How the labels are processed:
 | **Terrain** | elevation, slope, aspect sin/cos, curvature, TPI 100/500 m, roughness 100 m, relief 500 m | Copernicus DEM GLO-30, AWS | 30 m, ±500 m window | 196.3k sites (31 ocean or unpublished tiles) | Copernicus DEM licence (free, attribution) | `features/terrain.py` |
 | **Climate (annual)** | MAP, MAT, PET, AET, water deficit, soil moisture, VPD, solar radiation, temperature range, aridity (P/PET), rainfall seasonality (CV) | TerraClimate 1991–2020 normals | ~4 km | 99.96% | CC0 | `features/climate.py` |
 | **Climate (monthly)** | 9 variables × 12 months (108 columns) | same | ~4 km | 99.96% | CC0 | same |
-| **Radiometrics** | K %, eU, eTh, Th/K, U/Th, source flag | USGS NURE Bayesian grids (CONUS, 2 km); Radmap v4 (Australia, 100 m) | 2 km / 100 m | CONUS + Australia only **(pending: exact %)** | Public domain / CC-BY 4.0 | `features/radiometrics.py` |
+| **Radiometrics** | K %, eU, eTh, Th/K, U/Th, source flag | USGS NURE Bayesian grids (CONUS, 2 km); Radmap v4 (Australia, 100 m) | 2 km / 100 m | 37% (CONUS + Australia) | Public domain / CC-BY 4.0 | `features/radiometrics.py` |
 | **Location** | lon, lat | — | — | all | — | — |
 | **Depth** | interval midpoint | — | — | all | — | — |
 
@@ -76,13 +76,23 @@ from every block read for the labelled sites, 2017–2025. Stored as int8 with U
 
 LightGBM, 5-fold spatial-block CV, lab labels, topsoil. R² on held-out folds:
 
-| Features | SOC | pH | Sand | Clay | BD |
+Latest run (job 35828308, 2026-11-17). Every group is scored on the **same rows** and includes
+lon/lat + depth. This is why AlphaEarth-alone reads slightly lower here than in earlier runs, which
+dropped rows with no embedding.
+
+| Features (+ lon/lat, depth) | SOC | pH | Sand | Clay | BD |
 |---|---|---|---|---|---|
-| Terrain only | 0.48 | 0.52 | 0.34 | 0.27 | 0.42 |
-| AlphaEarth 2020 only | 0.53 | 0.57 | 0.37 | 0.32 | 0.48 |
-| **AlphaEarth 8-year mean** | **0.54** | **0.58** | **0.40** | **0.34** | **0.49** |
-| + climate + radiometrics, all groups **(pending)** | | | | | |
+| Radiometrics only (37% coverage) | 0.44 | 0.47 | 0.34 | 0.25 | 0.34 |
+| Terrain only | 0.48 | 0.52 | 0.34 | 0.28 | 0.43 |
+| Climate only (annual + monthly normals) | 0.51 | 0.55 | 0.36 | 0.30 | 0.42 |
+| AlphaEarth (8-year mean) only | 0.52 | 0.56 | 0.38 | 0.33 | 0.49 |
+| Terrain + AlphaEarth | 0.53 | 0.56 | 0.39 | 0.34 | 0.49 |
+| **All groups** | **0.55** | **0.59** | **0.43** | **0.36** | **0.51** |
 | *Noise-floor ceiling* | *0.86* | *0.90* | *0.92* | *0.87* | *0.82* |
+| Gain of all over terrain + AlphaEarth | +0.02 | +0.03 | **+0.04** | +0.03 | +0.02 |
+
+Earlier runs, which dropped rows without an embedding: AlphaEarth 2020 SOC 0.53, pH 0.57, sand 0.37,
+clay 0.32, BD 0.48; 8-year mean SOC 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49.
 
 For comparison, the model before C1 (trained on ~3k sites) got lab SOC R² of 0.13–0.22 in-domain, and
 −0.44 when the OpenLandMap-trained model was transferred.
@@ -91,9 +101,14 @@ What the numbers so far say:
 1. **Labels mattered most.** Going from ~3k to ~120k lab sites per target took lab SOC from ~0.2 to 0.54.
 2. **AlphaEarth beats 30 m terrain on every target**, by about +0.05 R².
 3. **Averaging AlphaEarth over years helps a little** (+0.01–0.02), most for sand and clay (+0.02).
-4. **Texture is furthest from its ceiling** (sand 0.40 vs 0.92; clay 0.34 vs 0.87). The surface-dominated
-   inputs don't see parent material or landscape position at the right scale.
-5. **Feature-group importance per target:** drop-group ablation, permutation and SHAP **(pending: job
+4. **Climate is nearly as informative as AlphaEarth on its own** (pH 0.55 vs 0.56; SOC 0.51 vs 0.52), and
+   the two are complementary. Adding climate and radiometrics gives +0.02–0.04 on every target, most for
+   **sand (+0.04)**.
+5. **Radiometrics adds signal where it exists.** It covers only 37% of sites, so its global effect is
+   diluted; its value shows up in the US/Australia subset (feature-selection job).
+6. **Texture is still furthest from its ceiling** (sand 0.43 vs 0.92; clay 0.36 vs 0.87). The inputs
+   still don't see parent material or landscape position at the right scale.
+7. **Feature-group importance per target:** drop-group ablation, permutation and SHAP **(pending: job
    35829185)**.
 
 ## 5. What the literature says is useful (and what we're missing)

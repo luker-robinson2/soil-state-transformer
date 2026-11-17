@@ -1,123 +1,113 @@
 {
-  "note": "C1 baseline, Alpine job 35809519 (2026-11-17). LightGBM, 5-fold spatial-block CV on split=train, topsoil 0-30 cm, features + lon/lat + depth. AlphaEarth = per-site mean of 2017-2023 + 2025 (2024 held out), renormalised. SOC in log1p. Values rounded from the run's output on Alpine. The 2020-only run is baseline_c1_ae2020.json.",
+  "note": "C1 baseline with all feature groups, Alpine job 35828308 (2026-11-17, run file results/runs/baseline_c1_20261117T1113.json). LightGBM, 5-fold spatial CV on split=train, topsoil. Every group is scored on the SAME rows (rows with any AlphaEarth or terrain value) and includes lon/lat + depth. AlphaEarth = 8-year mean. Radiometrics covers ~37% of sites (US + Australia). R2 rounded.",
   "soc": {
     "r2_ceiling": 0.863,
+    "n": 329582,
     "terrain": {
-      "r2": 0.481,
-      "rmse": 0.748,
-      "rpiq": 1.66,
-      "n": 328782,
-      "sites": 119836
+      "r2": 0.48
     },
     "alphaearth": {
-      "r2": 0.541,
-      "rmse": 0.704,
-      "rpiq": 1.77,
-      "n": 299338,
-      "sites": 109510
+      "r2": 0.522
+    },
+    "climate": {
+      "r2": 0.508
+    },
+    "radiometrics": {
+      "r2": 0.437
     },
     "terrain+alphaearth": {
-      "r2": 0.527,
-      "rmse": 0.714,
-      "rpiq": 1.74,
-      "n": 329582,
-      "sites": 120119
+      "r2": 0.527
+    },
+    "all": {
+      "r2": 0.549
     }
   },
   "ph": {
     "r2_ceiling": 0.899,
+    "n": 323760,
     "terrain": {
-      "r2": 0.515,
-      "rmse": 0.876,
-      "rpiq": 2.17,
-      "n": 321732,
-      "sites": 113895
+      "r2": 0.517
     },
     "alphaearth": {
-      "r2": 0.579,
-      "rmse": 0.818,
-      "rpiq": 2.32,
-      "n": 293777,
-      "sites": 104252
+      "r2": 0.558
+    },
+    "climate": {
+      "r2": 0.551
+    },
+    "radiometrics": {
+      "r2": 0.474
     },
     "terrain+alphaearth": {
-      "r2": 0.563,
-      "rmse": 0.833,
-      "rpiq": 2.28,
-      "n": 323760,
-      "sites": 114590
+      "r2": 0.563
+    },
+    "all": {
+      "r2": 0.588
     }
   },
   "sand": {
     "r2_ceiling": 0.923,
+    "n": 282319,
     "terrain": {
-      "r2": 0.338,
-      "rmse": 21.179,
-      "rpiq": 2.0,
-      "n": 280091,
-      "sites": 99516
+      "r2": 0.338
     },
     "alphaearth": {
-      "r2": 0.397,
-      "rmse": 20.082,
-      "rpiq": 2.09,
-      "n": 252841,
-      "sites": 89958
+      "r2": 0.384
+    },
+    "climate": {
+      "r2": 0.362
+    },
+    "radiometrics": {
+      "r2": 0.344
     },
     "terrain+alphaearth": {
-      "r2": 0.392,
-      "rmse": 20.264,
-      "rpiq": 2.08,
-      "n": 282319,
-      "sites": 100275
+      "r2": 0.392
+    },
+    "all": {
+      "r2": 0.429
     }
   },
   "clay": {
     "r2_ceiling": 0.872,
+    "n": 363918,
     "terrain": {
-      "r2": 0.272,
-      "rmse": 13.623,
-      "rpiq": 1.51,
-      "n": 361612,
-      "sites": 129502
+      "r2": 0.277
     },
     "alphaearth": {
-      "r2": 0.341,
-      "rmse": 12.886,
-      "rpiq": 1.58,
-      "n": 334302,
-      "sites": 119912
+      "r2": 0.33
+    },
+    "climate": {
+      "r2": 0.295
+    },
+    "radiometrics": {
+      "r2": 0.251
     },
     "terrain+alphaearth": {
-      "r2": 0.338,
-      "rmse": 13.05,
-      "rpiq": 1.59,
-      "n": 363918,
-      "sites": 130292
+      "r2": 0.338
+    },
+    "all": {
+      "r2": 0.363
     }
   },
   "bd": {
     "r2_ceiling": 0.823,
+    "n": 58603,
     "terrain": {
-      "r2": 0.422,
-      "rmse": 0.225,
-      "rpiq": 1.47,
-      "n": 58421,
-      "sites": 22327
+      "r2": 0.427
     },
     "alphaearth": {
-      "r2": 0.489,
-      "rmse": 0.207,
-      "rpiq": 1.62,
-      "n": 55504,
-      "sites": 21231
+      "r2": 0.488
+    },
+    "climate": {
+      "r2": 0.42
+    },
+    "radiometrics": {
+      "r2": 0.34
     },
     "terrain+alphaearth": {
-      "r2": 0.493,
-      "rmse": 0.211,
-      "rpiq": 1.57,
-      "n": 58603,
-      "sites": 22394
+      "r2": 0.493
+    },
+    "all": {
+      "r2": 0.509
     }
   }
 }
