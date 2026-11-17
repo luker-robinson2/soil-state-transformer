@@ -67,7 +67,7 @@ PR with a test.
 | 2.3 | ✅ 11-17: feature-selection report run (`results/feature_selection.json`). AlphaEarth has the largest unique value for all targets; radiometrics are uniquely useful for sand; climate is heavily used but redundant (annual ≈ monthly ≈ part of AlphaEarth); location adds nothing; 30 m terrain adds little. The report was built (`geosoil/feature_selection.py`): grouped permutation ΔR², SHAP share and drop-group ablation per target inside the fixed spatial folds; queued after the climate/radiometrics baseline (`scripts/slurm/feature_selection.sbatch`). | C | `acpu` | `results/feature_selection.md` |
 | 2.4 | Temporal granularity test: normals vs monthly vs weekly patches | job | `aa100` | table |
 | 2.5 | External baselines: AlphaEarth, TESSERA, Galileo, Presto embeddings + linear probe on C1 | job | `aa100` | baseline table |
-| 2.6 | Model code: patch embedding, Transformer backbone, method heads, modality dropout, checkpoint/requeue, DDP | C | laptop + `gpu-testing` | PRs with tests |
+| 2.6 | 🔄 11-17: **C1 trainer built** (`geosoil/train_c1.py`: residual MLP, five targets with a masked loss, same rows and spatial folds as LightGBM, optional fold-built neighbour features; `scripts/slurm/train_c1.sbatch` on an H200 slice). Still to do: patch embedding, Transformer backbone over AlphaEarth sequences, method heads, modality dropout, checkpoint/requeue, DDP | C | laptop + `gpu-testing` | PRs with tests |
 | 2.7 | **R1** (~30M): GRU / Transformer / Mamba-2 at equal FLOPs; Galileo init vs scratch; 3 seeds | job | `aa100` | R1 report |
 | 2.8 | NAIRR application (monthly deadline the 15th; aim for 01-15) and/or Ascent with R1 job numbers | L (C drafts) | web | submitted |
 

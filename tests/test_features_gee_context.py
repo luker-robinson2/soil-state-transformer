@@ -27,3 +27,13 @@ def test_context_similarity_and_frame_layout():
     g = groups.feature_groups(list(out.columns) + ["bs_b4"])
     assert len(g["alphaearth_context"]) == 130 and g["bare_soil"] == ["bs_b4"]
     assert "A00" not in g["alphaearth_context"]
+
+
+def test_state_keys_migrate_and_plans_are_found(tmp_path):
+    import json
+    (tmp_path / "ee_tasks.json").write_text(json.dumps({"3": {"task": "T1", "asset": "a", "ntasks": 79},
+                                                         "12:0": {"task": "T2", "asset": "b", "ntasks": 12}}))
+    pd.DataFrame({"site_id": ["x"], "task": [0]}).to_parquet(tmp_path / "ee_plan_12.parquet")
+    st = G._load_state(tmp_path)
+    assert set(st) == {"79:3", "12:0"}
+    assert list(G._plans(tmp_path)) == [12]

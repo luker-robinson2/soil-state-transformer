@@ -17,5 +17,5 @@ cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
 export OMP_NUM_THREADS=16
 python -m geosoil.features.join
-python -m geosoil.baseline_c1
+python -m geosoil.baseline_c1 ${NEIGHBOURS:+--neighbours}   # NEIGHBOURS=1 also scores neighbour features
 echo "BASELINE OK"

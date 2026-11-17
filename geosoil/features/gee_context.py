@@ -162,43 +162,66 @@ def to_frame(part: str, raw: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def _plan(sites: pd.DataFrame, chunk: int):
-    ntasks = max(1, int(np.ceil(len(sites) / chunk)))
-    task_of = sites["site_id"].astype(str).map(lambda k: shards.shard_of(k, ntasks))
-    return ntasks, task_of
+def _load_state(out: Path) -> dict:
+    f = out / "ee_tasks.json"
+    state = json.loads(f.read_text()) if f.exists() else {}
+    # older runs keyed tasks by index only; key by "<ntasks>:<task>" so several plans can share a directory
+    return {(k if ":" in k else f"{v['ntasks']}:{k}"): v for k, v in state.items()}
+
+
+def _plans(out: Path) -> dict[int, pd.DataFrame]:
+    """Every submitted plan in a run directory: ntasks -> (site_id, task)."""
+    return {int(f.stem.rsplit("_", 1)[1]): pd.read_parquet(f) for f in sorted(out.glob("ee_plan_*.parquet"))}
 
 
 def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: int = 0) -> dict:
-    """Start one Earth Engine batch export per missing shard (no interactive time limit)."""
+    """Start Earth Engine batch exports: retry failed tasks of earlier plans, then plan any new sites.
+
+    Each plan records which sites each task covers (ee_plan_<ntasks>.parquet), so adding labels later
+    exports only the new sites, and shard names never collide between plans.
+    """
     ee = init_ee()
     images = {"bs": bare_soil_image(ee)} if part == "bare_soil" else {"ae": alphaearth_image(ee)}
     out = out_root / part
     out.mkdir(parents=True, exist_ok=True)
-    state_f = out / "ee_tasks.json"
-    state = json.loads(state_f.read_text()) if state_f.exists() else {}
+    state, plans = _load_state(out), _plans(out)
     for folder in (f"projects/{PROJECT}/assets", ASSET_DIR):
         try:
             ee.data.createAsset({"type": "FOLDER"}, folder)
         except Exception:
             pass                                       # exists
-    ntasks, task_of = _plan(sites, chunk)
+    sites = sites.assign(site_id=sites["site_id"].astype(str))
+    covered = set().union(*(set(p["site_id"]) for p in plans.values())) if plans else set()
+    new = sites[~sites["site_id"].isin(covered)]
+    if len(new):
+        n = max(1, int(np.ceil(len(new) / chunk)))
+        while n in plans:                              # distinct ntasks -> distinct shard names
+            n += 1
+        plan = pd.DataFrame({"site_id": new["site_id"].to_numpy(),
+                             "task": new["site_id"].map(lambda k: shards.shard_of(k, n)).to_numpy()})
+        plan.to_parquet(out / f"ee_plan_{n}.parquet", index=False)
+        plans[n] = plan
     live = {t["id"]: t["state"] for t in ee.data.getTaskList()} if state else {}
-    todo = [t for t in range(ntasks) if not shards.shard_path(out, t, ntasks).exists()
-            and live.get(state.get(str(t), {}).get("task"), "FAILED") in ("FAILED", "CANCELLED")]
+    todo = [(n, t) for n, plan in plans.items() for t in sorted(plan["task"].unique())
+            if not shards.shard_path(out, int(t), n).exists()
+            and live.get(state.get(f"{n}:{t}", {}).get("task"), "FAILED") in ("FAILED", "CANCELLED")]
     if limit:
         todo = todo[:limit]
-    for t in todo:
-        asset = f"{ASSET_DIR}/{part}_{ntasks}_{t:04d}"
+    coords = sites.set_index("site_id")[["lon", "lat"]]
+    for n, t in todo:
+        ids = plans[n].loc[plans[n]["task"] == t, "site_id"]
+        sub = coords.reindex(ids).dropna().reset_index()
+        asset = f"{ASSET_DIR}/{part}_{n}_{int(t):04d}"
         try:
             ee.data.deleteAsset(asset)                 # a failed earlier attempt may have left a partial
         except Exception:
             pass
-        task = ee.batch.Export.table.toAsset(collection=chunk_image(ee, part, images, sites[task_of == t]),
-                                             description=f"geosoil_{part}_{t:04d}", assetId=asset)
+        task = ee.batch.Export.table.toAsset(collection=chunk_image(ee, part, images, sub),
+                                             description=f"geosoil_{part}_{n}_{int(t):04d}", assetId=asset)
         task.start()
-        state[str(t)] = {"task": task.id, "asset": asset, "ntasks": ntasks}
-        state_f.write_text(json.dumps(state, indent=1))
-    return {"part": part, "submitted": len(todo), "ntasks": ntasks}
+        state[f"{n}:{t}"] = {"task": task.id, "asset": asset, "ntasks": n}
+        (out / "ee_tasks.json").write_text(json.dumps(state, indent=1))
+    return {"part": part, "new_sites": int(len(new)), "submitted": len(todo), "plans": sorted(plans)}
 
 
 def collect(part: str, out_root: Path) -> dict:
@@ -206,18 +229,18 @@ def collect(part: str, out_root: Path) -> dict:
     import urllib.request
     ee = init_ee()
     out = out_root / part
-    state = json.loads((out / "ee_tasks.json").read_text())
+    state = _load_state(out)
     tasks = {t["id"]: t for t in ee.data.getTaskList()}
     counts, errors = {}, []
-    for t, info in state.items():
-        ntasks, t = info["ntasks"], int(t)
+    for key, info in state.items():
+        ntasks, t = info["ntasks"], int(key.split(":")[1])
         if shards.shard_path(out, t, ntasks).exists():
             counts["collected"] = counts.get("collected", 0) + 1
             continue
         st = tasks.get(info["task"], {}).get("state", "UNKNOWN")
         counts[st] = counts.get(st, 0) + 1
         if st == "FAILED":
-            errors.append({"block": t, "error": tasks[info["task"]].get("error_message", "")[:200]})
+            errors.append({"block": key, "error": tasks[info["task"]].get("error_message", "")[:200]})
         if st != "COMPLETED":
             continue
         url = ee.FeatureCollection(info["asset"]).getDownloadURL(filetype="csv")

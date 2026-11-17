@@ -45,15 +45,23 @@ protocol: same rows, same spatial folds, drop-group ΔR² across 3 seeds. An ite
 
 | # | Item | Why | Status | Where |
 |---|---|---|---|---|
-| I1 | **Neighbouring-label features**: values and distances of the nearest training-fold sites | Soil is strongly spatially autocorrelated. Hengl et al. 2018 (RFsp) and most DSM studies find this the largest cheap gain. Must be built inside each fold, with training rows excluding their own spatial block so they see the same neighbour distances the test fold does. | in progress | `geosoil/features/neighbours.py` |
-| I2 | **C1 neural trainer** (step 2.6) | The old `train.py` targets the first OpenLandMap pipeline. A tabular network will roughly tie LightGBM; its value is the path to pretraining on the 39.7M unlabelled AlphaEarth pixel-years and the per-year sequence. | planned | `geosoil/train_c1.py` |
-| I3 | **Spatial context for AlphaEarth**: embedding means and spread in windows around each site | Multi-scale terrain earned its place the same way; one pixel misses the surrounding landscape. | in progress (Earth Engine) | `geosoil/features/gee_context.py` |
-| I4 | **More texture labels outside the US** | Non-US sites lack radiometrics and surficial maps, and sand/clay are furthest from their ceilings. | researching pullable sources; LUCAS/iSDA/BSSL requests pending | `data/corpus/sources.yaml` |
-| I5 | **Bare-soil reflectance composite** (Sentinel-2, multi-year, vegetation masked; Demattê et al. 2018, 2020) | The strongest remote texture signal in the literature, and global. Needs Earth Engine, which the project now has (`geo-soil-foundational-model`). | in progress (Earth Engine) | `geosoil/features/gee_context.py` |
+| I1 | **Neighbouring-label features**: values and distances of the nearest training-fold sites | Soil is strongly spatially autocorrelated. Hengl et al. 2018 (RFsp) and most DSM studies find this the largest cheap gain. Must be built inside each fold, with training rows excluding their own spatial block so they see the same neighbour distances the test fold does. | **built**; local check vs location+depth alone: SOC 0.33→0.40, pH 0.27→0.45, sand 0.13→0.31, clay 0.12→0.22, BD 0.23→0.33. Full test on top of all features: `NEIGHBOURS=1 sbatch scripts/slurm/baseline_c1.sbatch` | `geosoil/features/neighbours.py` |
+| I2 | **C1 neural trainer** (step 2.6) | The old `train.py` targets the first OpenLandMap pipeline. A tabular network will roughly tie LightGBM; its value is the path to pretraining on the 39.7M unlabelled AlphaEarth pixel-years and the per-year sequence. | **built** (residual MLP, multi-target masked loss, 3 seeds, with and without neighbours); run with `sbatch scripts/slurm/train_c1.sbatch` (H200 slice) | `geosoil/train_c1.py` |
+| I3 | **Spatial context for AlphaEarth**: embedding means and spread in windows around each site | Multi-scale terrain earned its place the same way; one pixel misses the surrounding landscape. | **running**: 91 Earth Engine exports, 500 m and 3 km context plus site-vs-context similarity; trial 100% coverage | `geosoil/features/gee_context.py` |
+| I4 | **More texture labels outside the US** | Non-US sites lack radiometrics and surficial maps, and sand/clay are furthest from their ceilings. | **SISLAC ingested** (+28,190 Latin American training sites; C1 now 218,757). Verified next: SODES (Spain), Queensland SALI (~4k), German BZE-LW (2.9k). LUCAS/iSDA/BSSL/WoSIS requests pending | `geosoil/corpus/sislac.py`, `data/corpus/sources.yaml` |
+| I5 | **Bare-soil reflectance composite** (Sentinel-2, multi-year, vegetation masked; Demattê et al. 2018, 2020) | The strongest remote texture signal in the literature, and global. Needs Earth Engine, which the project now has (`geo-soil-foundational-model`). | **running**: 91 Earth Engine exports (79 + a 12-task top-up for the SISLAC sites); trial: 84% of sites have bare-soil reflectance | `geosoil/features/gee_context.py` |
 
 **Earth Engine.** The project `geo-soil-foundational-model` is registered for noncommercial use. Auth
 locally with `gcloud auth login` (or `earthengine authenticate`); the extractors take a token from
-gcloud. Sampling is server-side, so these extractors run from a laptop or Alpine alike.
+gcloud. Sampling runs as batch exports to table assets under `projects/geo-soil-foundational-model/assets/geosoil`
+(interactive calls time out on multi-year composites), four at a time per project:
+`python -m geosoil.features.gee_context --part <bare_soil|alphaearth_context> submit|collect`. Submits are
+incremental: new labels export only their own sites.
+
+**After the Earth Engine exports and new labels land, rerun on Alpine:** `corpus_build.sbatch` (C1 with
+SISLAC; needs `bsdtar`), AlphaEarth/terrain/static extraction for the 28k new sites, copy the two
+`data/processed/features/{bare_soil,alphaearth_context}` directories over, then `NEIGHBOURS=1
+baseline_c1.sbatch`, `feature_selection.sbatch` and `train_c1.sbatch`.
 
 ## Phases
 
