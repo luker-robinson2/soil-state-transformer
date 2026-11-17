@@ -9,6 +9,10 @@ Columns (all prefixed clim_):
   annual    clim_map (mm), clim_mat (degC), clim_pet, clim_aet, clim_def (mm/yr), clim_soil (mm, mean),
             clim_vpd (kPa, mean), clim_srad (W/m2, mean), clim_trange (degC, warmest - coldest month),
             clim_ai (aridity index = map / pet), clim_ppt_cv (precipitation seasonality, CV of months)
+  water     clim_p_minus_pet (mm/yr, signed), clim_wet_months (months with ppt > pet): pH switches
+            from alkaline to acid where MAP exceeds PET (Slessarev et al. 2016, Nature 540:567)
+  growth    clim_gdd5 (growing degree days above 5 degC, from monthly means x days in month),
+            clim_frost_months (months with mean tmin < 0 degC)
 
     python -m geosoil.features.static --source climate
 """
@@ -23,6 +27,7 @@ URL = ("http://thredds.northwestknowledge.net:8080/thredds/fileServer/TERRACLIMA
        "TerraClimate_19912020_{var}.nc")
 VARS = ("ppt", "tmax", "tmin", "pet", "aet", "def", "soil", "vpd", "srad")
 SUMS = ("ppt", "pet", "aet", "def")              # annual totals; the rest are annual means
+DAYS = np.array([31, 28.25, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
 
 
 def _months(df: pd.DataFrame, var: str) -> pd.DataFrame:
@@ -42,6 +47,14 @@ def derive(df: pd.DataFrame) -> pd.DataFrame:
     ppt = _months(df, "ppt")
     out["clim_ai"] = out["clim_map"] / out["clim_pet"].where(out["clim_pet"] > 0)
     out["clim_ppt_cv"] = ppt.std(axis=1) / ppt.mean(axis=1).where(ppt.mean(axis=1) > 0)
+    pet = _months(df, "pet").to_numpy()
+    out["clim_p_minus_pet"] = out["clim_map"] - out["clim_pet"]
+    wet = (ppt.to_numpy() > pet).sum(axis=1).astype(float)
+    out["clim_wet_months"] = np.where(np.isfinite(ppt.to_numpy()).all(axis=1) & np.isfinite(pet).all(axis=1), wet, np.nan)
+    out["clim_gdd5"] = np.nansum(np.clip(tmean - 5.0, 0, None) * DAYS, axis=1)
+    out["clim_gdd5"] = np.where(np.isfinite(tmean).any(axis=1), out["clim_gdd5"], np.nan)
+    tmin = _months(df, "tmin").to_numpy()
+    out["clim_frost_months"] = np.where(np.isfinite(tmin).any(axis=1), (tmin < 0).sum(axis=1).astype(float), np.nan)
     return pd.concat([df, pd.DataFrame(out, index=df.index)], axis=1)
 
 

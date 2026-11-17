@@ -28,6 +28,11 @@ def test_climate_annual_summaries():
     assert d["clim_mat"] == pytest.approx(np.mean([(a + b) / 2 for a, b in zip(tmax, tmin)]))
     assert d["clim_trange"] == pytest.approx(22.0)
     assert d["clim_ppt_cv"] == pytest.approx(np.std(ppt, ddof=1) / np.mean(ppt))
+    assert d["clim_p_minus_pet"] == pytest.approx(0.0)
+    assert d["clim_wet_months"] == 6                        # 90 mm months exceed 50 mm PET
+    tmean = np.array([(a + b) / 2 for a, b in zip(tmax, tmin)])
+    assert d["clim_gdd5"] == pytest.approx(np.sum(np.clip(tmean - 5, 0, None) * climate.DAYS))
+    assert d["clim_frost_months"] == int((np.array(tmin) < 0).sum())
 
 
 def test_climate_layers_cover_every_variable_and_month():
