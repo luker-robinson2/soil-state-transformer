@@ -108,8 +108,78 @@ What the numbers so far say:
    diluted; its value shows up in the US/Australia subset (feature-selection job).
 6. **Texture is still furthest from its ceiling** (sand 0.43 vs 0.92; clay 0.36 vs 0.87). The inputs
    still don't see parent material or landscape position at the right scale.
-7. **Feature-group importance per target:** drop-group ablation, permutation and SHAP **(pending: job
-   35829185)**.
+7. **Feature-group importance** (job 35829185; drop-group = unique contribution, permutation = how much
+   the model leans on the group):
+   - **AlphaEarth has the largest unique contribution for every target** (drop-group +0.024 to +0.056).
+   - **Radiometrics matter uniquely for sand** (+0.014 ± 0.006, the second-largest unique sand
+     contribution), even at 37% coverage. Where present they carry heavy weight (permutation 0.20).
+   - **Climate is used heavily but is redundant.** Shuffling the monthly normals costs 0.25–0.49 R², yet
+     dropping them costs at most 0.010: annual normals and AlphaEarth carry the same information. Keep one
+     form (monthly, for the temporal encoder), but don't expect more climate to help.
+   - **Depth is big for SOC (+0.085) and BD (+0.022).** Topsoil SOC falls steeply with depth.
+   - **Location adds nothing** (≤ 0.002). Good: the model isn't leaning on coordinates as a spatial proxy.
+   - **Terrain at 30 m and ±500 m adds little uniquely** (≤ 0.008). That supports building coarse-scale
+     terrain context rather than more fine-scale derivatives.
+
+**soc** (all groups R² 0.539 ± 0.030, n 150,000)
+
+| group | drop-group ΔR² | permutation ΔR² | SHAP share |
+|---|---|---|---|
+| depth | +0.085 ± 0.009 | 0.157 | 0.10 |
+| alphaearth | +0.027 ± 0.005 | 0.099 | 0.26 |
+| climate_monthly | +0.006 ± 0.003 | 0.488 | 0.47 |
+| terrain | +0.005 ± 0.003 | 0.022 | 0.05 |
+| location | +0.001 ± 0.001 | 0.010 | 0.01 |
+| radiometrics | +0.001 ± 0.002 | 0.007 | 0.02 |
+| climate_annual | +0.000 ± 0.002 | 0.042 | 0.08 |
+
+**ph** (all groups R² 0.579 ± 0.036, n 150,000)
+
+| group | drop-group ΔR² | permutation ΔR² | SHAP share |
+|---|---|---|---|
+| alphaearth | +0.024 ± 0.004 | 0.126 | 0.30 |
+| depth | +0.004 ± 0.002 | 0.007 | 0.01 |
+| climate_monthly | +0.004 ± 0.004 | 0.309 | 0.40 |
+| radiometrics | +0.002 ± 0.003 | 0.009 | 0.02 |
+| terrain | +0.001 ± 0.003 | 0.016 | 0.04 |
+| location | +0.000 ± 0.003 | 0.007 | 0.01 |
+| climate_annual | +0.000 ± 0.001 | 0.197 | 0.21 |
+
+**sand** (all groups R² 0.423 ± 0.019, n 150,000)
+
+| group | drop-group ΔR² | permutation ΔR² | SHAP share |
+|---|---|---|---|
+| alphaearth | +0.030 ± 0.005 | 0.146 | 0.35 |
+| radiometrics | +0.014 ± 0.006 | 0.199 | 0.15 |
+| climate_monthly | +0.007 ± 0.004 | 0.254 | 0.37 |
+| terrain | +0.006 ± 0.003 | 0.033 | 0.06 |
+| location | +0.002 ± 0.002 | 0.023 | 0.03 |
+| climate_annual | +0.002 ± 0.003 | 0.015 | 0.03 |
+| depth | +0.000 ± 0.004 | 0.002 | 0.01 |
+
+**clay** (all groups R² 0.353 ± 0.011, n 150,000)
+
+| group | drop-group ΔR² | permutation ΔR² | SHAP share |
+|---|---|---|---|
+| alphaearth | +0.044 ± 0.004 | 0.163 | 0.36 |
+| depth | +0.011 ± 0.004 | 0.022 | 0.04 |
+| climate_monthly | +0.010 ± 0.009 | 0.222 | 0.38 |
+| terrain | +0.008 ± 0.002 | 0.053 | 0.07 |
+| radiometrics | +0.005 ± 0.005 | 0.038 | 0.05 |
+| location | +0.001 ± 0.005 | 0.052 | 0.07 |
+| climate_annual | +0.000 ± 0.004 | 0.019 | 0.04 |
+
+**bd** (all groups R² 0.502 ± 0.038, n 58,603)
+
+| group | drop-group ΔR² | permutation ΔR² | SHAP share |
+|---|---|---|---|
+| alphaearth | +0.056 ± 0.016 | 0.189 | 0.34 |
+| depth | +0.022 ± 0.004 | 0.047 | 0.05 |
+| terrain | +0.002 ± 0.001 | 0.027 | 0.07 |
+| radiometrics | +0.001 ± 0.004 | 0.017 | 0.04 |
+| climate_annual | -0.002 ± 0.002 | 0.019 | 0.05 |
+| climate_monthly | -0.002 ± 0.007 | 0.342 | 0.43 |
+| location | -0.003 ± 0.007 | 0.015 | 0.03 |
 
 ## 5. What the literature says is useful (and what we're missing)
 

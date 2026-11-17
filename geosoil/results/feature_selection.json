@@ -1,0 +1,250 @@
+{
+  "note": "Feature-group importance, Alpine job 35829185 (2026-11-17; run file results/runs/feature_selection_20261117T1135.json). LightGBM, 5-fold spatial CV, topsoil, 150k rows per target (BD: all 58.6k). Per group: [drop_group dR2, its fold sd, permutation dR2, SHAP share]. drop_group = R2 lost when retrained without the group (unique contribution); permutation = R2 lost when the group is shuffled in a fixed model (includes what correlated groups could replace).",
+  "results": {
+    "soc": {
+      "r2": 0.539,
+      "sd": 0.03,
+      "n": 150000,
+      "g": {
+        "location": [
+          0.001,
+          0.001,
+          0.01,
+          0.01
+        ],
+        "depth": [
+          0.085,
+          0.009,
+          0.157,
+          0.1
+        ],
+        "terrain": [
+          0.005,
+          0.003,
+          0.022,
+          0.05
+        ],
+        "alphaearth": [
+          0.027,
+          0.005,
+          0.099,
+          0.26
+        ],
+        "climate_annual": [
+          0,
+          0.002,
+          0.042,
+          0.08
+        ],
+        "climate_monthly": [
+          0.006,
+          0.003,
+          0.488,
+          0.47
+        ],
+        "radiometrics": [
+          0.001,
+          0.002,
+          0.007,
+          0.02
+        ]
+      }
+    },
+    "ph": {
+      "r2": 0.579,
+      "sd": 0.036,
+      "n": 150000,
+      "g": {
+        "location": [
+          0,
+          0.003,
+          0.007,
+          0.01
+        ],
+        "depth": [
+          0.004,
+          0.002,
+          0.007,
+          0.01
+        ],
+        "terrain": [
+          0.001,
+          0.003,
+          0.016,
+          0.04
+        ],
+        "alphaearth": [
+          0.024,
+          0.004,
+          0.126,
+          0.3
+        ],
+        "climate_annual": [
+          0,
+          0.001,
+          0.197,
+          0.21
+        ],
+        "climate_monthly": [
+          0.004,
+          0.004,
+          0.309,
+          0.4
+        ],
+        "radiometrics": [
+          0.002,
+          0.003,
+          0.009,
+          0.02
+        ]
+      }
+    },
+    "sand": {
+      "r2": 0.423,
+      "sd": 0.019,
+      "n": 150000,
+      "g": {
+        "location": [
+          0.002,
+          0.002,
+          0.023,
+          0.03
+        ],
+        "depth": [
+          0,
+          0.004,
+          0.002,
+          0.01
+        ],
+        "terrain": [
+          0.006,
+          0.003,
+          0.033,
+          0.06
+        ],
+        "alphaearth": [
+          0.03,
+          0.005,
+          0.146,
+          0.35
+        ],
+        "climate_annual": [
+          0.002,
+          0.003,
+          0.015,
+          0.03
+        ],
+        "climate_monthly": [
+          0.007,
+          0.004,
+          0.254,
+          0.37
+        ],
+        "radiometrics": [
+          0.014,
+          0.006,
+          0.199,
+          0.15
+        ]
+      }
+    },
+    "clay": {
+      "r2": 0.353,
+      "sd": 0.011,
+      "n": 150000,
+      "g": {
+        "location": [
+          0.001,
+          0.005,
+          0.052,
+          0.07
+        ],
+        "depth": [
+          0.011,
+          0.004,
+          0.022,
+          0.04
+        ],
+        "terrain": [
+          0.008,
+          0.002,
+          0.053,
+          0.07
+        ],
+        "alphaearth": [
+          0.044,
+          0.004,
+          0.163,
+          0.36
+        ],
+        "climate_annual": [
+          0,
+          0.004,
+          0.019,
+          0.04
+        ],
+        "climate_monthly": [
+          0.01,
+          0.009,
+          0.222,
+          0.38
+        ],
+        "radiometrics": [
+          0.005,
+          0.005,
+          0.038,
+          0.05
+        ]
+      }
+    },
+    "bd": {
+      "r2": 0.502,
+      "sd": 0.038,
+      "n": 58603,
+      "g": {
+        "location": [
+          -0.003,
+          0.007,
+          0.015,
+          0.03
+        ],
+        "depth": [
+          0.022,
+          0.004,
+          0.047,
+          0.05
+        ],
+        "terrain": [
+          0.002,
+          0.001,
+          0.027,
+          0.07
+        ],
+        "alphaearth": [
+          0.056,
+          0.016,
+          0.189,
+          0.34
+        ],
+        "climate_annual": [
+          -0.002,
+          0.002,
+          0.019,
+          0.05
+        ],
+        "climate_monthly": [
+          -0.002,
+          0.007,
+          0.342,
+          0.43
+        ],
+        "radiometrics": [
+          0.001,
+          0.004,
+          0.017,
+          0.04
+        ]
+      }
+    }
+  }
+}

@@ -86,6 +86,7 @@ training tables / Zarr shards for the model                the "gold" side
 | 2 | Terrain: elevation, slope, aspect, curvature, TPI (100 / 500 m), roughness, relief | Copernicus DEM 30 m COGs on AWS (`copernicus-dem-30m`) | 1° tile (whole tile if ≥10 sites, else windows) | **built** (`geosoil/features/terrain.py`); TWI needs flow accumulation, later |
 | 3 | Climate: 1991–2020 monthly normals (ppt, tmax, tmin, pet, aet, def, soil, vpd, srad) + annual summaries (MAP, MAT, aridity, seasonality) | TerraClimate climatology NetCDF (CC0), staged | containing 4 km cell | **built** (`geosoil/features/climate.py`); monthly time series for the temporal encoder later |
 | 4 | Gamma radiometrics K / U / Th + Th/K, U/Th | USGS NURE Bayesian grids, 2 km (CONUS, public domain); Radmap v4, 100 m (Australia, CC-BY) | containing cell | **built** (`geosoil/features/radiometrics.py`); Canada (OFR 2005-1413) waits on a projection check |
+| 4b | Multi-scale terrain: DEV, TPI, relief, slope at 0.5/1/2/5/10/20 km + max-DEV scale | Copernicus DEM GLO-90 on AWS (`copernicus-dem-90m`, tileList.txt) | 1° tile + 8 neighbours, summed-area tables | **built** (`geosoil/features/terrain_ms.py`) |
 | 5 | Sentinel-2 bare-soil + seasonal medians; Sentinel-1 | Planetary Computer / Earth Search STAC | MGRS tile × season | planned |
 | 6 | MODIS NDVI / LST, SMAP | Planetary Computer, `earthaccess` | unique cell | planned |
 | 7 | TESSERA embeddings (2024 only so far) | `geotessera` | tile | planned |
