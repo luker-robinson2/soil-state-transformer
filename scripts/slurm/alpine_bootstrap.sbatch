@@ -23,7 +23,7 @@ if ! conda env list | grep -q '^geosoil '; then
   conda env create -q -f environment-cuda.yml
 fi
 set +u; conda activate geosoil; set -u   # conda activate trips over set -u
-python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2"   # last releases with prebuilt torch 2.4 wheels
+python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2" "transformers==4.44.2"   # prebuilt torch 2.4 wheels; mamba 2.2.2 needs pre-4.46 transformers
 [ -f data/processed/master.parquet ] || python -m geosoil.data --build
 python -c "import torch, mamba_ssm; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0)); print('mamba-ssm ok')"
 # Can compute nodes reach the internet? Decides whether downloads run here or on dtn.rc.colorado.edu.

@@ -22,7 +22,7 @@ if ! conda env list | grep -q '^geosoil '; then
 fi
 set +u; conda activate geosoil; set -u   # conda activate trips over set -u
 export TORCH_CUDA_ARCH_LIST="8.0;9.0" MAX_JOBS=8   # A100 + H200
-python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2"   # last releases with prebuilt torch 2.4 wheels
+python -c "import mamba_ssm" 2>/dev/null || pip install -q --no-build-isolation "causal-conv1d==1.4.0" "mamba-ssm==2.2.2" "transformers==4.44.2"   # prebuilt torch 2.4 wheels; mamba 2.2.2 needs pre-4.46 transformers
 python -c "import torch, mamba_ssm; print('torch', torch.__version__, 'cuda build', torch.version.cuda, 'mamba-ssm ok')"
 [ -f data/processed/master.parquet ] || python -m geosoil.data --build
 echo "ENV OK"

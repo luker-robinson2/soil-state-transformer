@@ -1,7 +1,7 @@
 # CUDA environment for GeoSoil on CU Alpine (NVIDIA A100, partition aa100).
 # Build: module load miniforge; conda env create -f environment-cuda.yml; conda activate geosoil
 # Then (needs a CUDA toolchain loaded — `module load cuda`):
-#   pip install --no-build-isolation causal-conv1d==1.4.0 mamba-ssm==2.2.2   (prebuilt torch 2.4 wheels; on Alpine also `module load gcc/11.2.0`)
+#   pip install --no-build-isolation causal-conv1d==1.4.0 mamba-ssm==2.2.2 transformers==4.44.2   (prebuilt torch 2.4 wheels; on Alpine also `module load gcc/11.2.0`)
 # (mamba-ssm compiles a CUDA kernel; ensure nvcc CUDA major matches the torch cu12 build.)
 name: geosoil
 channels: [conda-forge]
