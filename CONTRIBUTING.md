@@ -8,7 +8,9 @@ Computing (Alpine). The plan lives in [`docs/research/`](docs/research/):
 | [CURC-PLAN.md](docs/research/CURC-PLAN.md) | Cluster access, partitions, allocations, policy |
 | [SCALING-PLAN.md](docs/research/SCALING-PLAN.md) | Model ladder R0–R4, compute, overfitting guards |
 | [CORPUS-PLAN.md](docs/research/CORPUS-PLAN.md) | Every large soil dataset, how to get it, sampling, feature selection |
+| [ROADMAP.md](docs/ROADMAP.md) | **Start here:** current state, phases, what unlocks each phase, how to resume |
 | [EXECUTION-PLAN.md](docs/research/EXECUTION-PLAN.md) | Step-by-step phases 0–5 with gates |
+| [PIPELINE-DESIGN.md](docs/research/PIPELINE-DESIGN.md) | How the data and feature pipeline is built |
 
 Pick a step from EXECUTION-PLAN.md. Each step lands as one pull request.
 

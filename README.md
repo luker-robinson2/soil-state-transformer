@@ -21,7 +21,8 @@ hybrid. The evolution of the Soil State Transformer below.
 
 **Next: an open soil foundation model on CU Alpine.** The plan for scaling GeoSoil (corpus, model
 ladder, compute, feature selection) is in [`docs/research/`](docs/research/): start with
-[SCALING-PLAN.md](docs/research/SCALING-PLAN.md). To help, see [CONTRIBUTING.md](CONTRIBUTING.md).
+[SCALING-PLAN.md](docs/research/SCALING-PLAN.md). The phased roadmap and what gates each phase is
+[docs/ROADMAP.md](docs/ROADMAP.md). To help, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
