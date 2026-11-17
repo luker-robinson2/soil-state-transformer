@@ -83,3 +83,21 @@ def test_status_reports_missing_tasks(tmp_path):
     (tmp_path / "sites-0000-of-0002.json").write_text('{"failed_blocks": [{"block": "k"}]}')
     s = A.status(2, tmp_path)
     assert s["done"] == 1 and s["missing_tasks"] == [1] and s["failed_blocks"] == 1
+
+
+def test_transient_failures_are_retried_before_being_recorded(tile, tmp_path, monkeypatch):
+    p = A.plan(pd.DataFrame([_site("a", 3, 5), _site("b", 20, 30)]), tile, [2020])
+    calls = {}
+    real = A.extract_group
+
+    def flaky(g, neighbors, seed=0):
+        key = g.iloc[0].bx
+        calls[key] = calls.get(key, 0) + 1
+        if key == 1 and calls[key] < 3:
+            raise OSError("Could not resolve host")
+        return real(g, neighbors, seed)
+
+    monkeypatch.setattr(A, "extract_group", flaky)
+    monkeypatch.setattr(A, "RETRY_BACKOFF_S", 0)
+    meta = A.extract(p, 0, 1, threads=2, neighbors=0, out=tmp_path)
+    assert meta["failed_blocks"] == [] and meta["site_years"] == 2 and calls[1] == 3

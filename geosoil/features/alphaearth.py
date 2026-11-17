@@ -40,6 +40,8 @@ OUT = C.DATA_PROC / "features" / "alphaearth"
 GDAL_ENV = dict(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tiff",
                 GDAL_HTTP_MAX_RETRY="5", GDAL_HTTP_RETRY_DELAY="2", GDAL_HTTP_MULTIPLEX="YES",
                 GDAL_HTTP_VERSION="2", VSI_CACHE="FALSE")
+RETRY_ROUNDS = 3                 # extra passes over failed blocks before recording them
+RETRY_BACKOFF_S = 30
 MAX_COORD_PRECISION_M = 1000.0   # a 10 m embedding is meaningless for sites placed to >1 km
 
 
@@ -146,17 +148,25 @@ def extract(p: pd.DataFrame, task: int, ntasks: int, threads: int, neighbors: in
     groups = _groups(p, task, ntasks)
     t0 = time.time()
     site_parts, unl_parts, failed = [], [], []
+    todo = groups
     with rasterio.Env(**GDAL_ENV):
-        with ThreadPoolExecutor(threads) as ex:
-            futs = {ex.submit(extract_group, g, neighbors): k for k, g in groups}
-            for f, k in futs.items():
-                try:
-                    s, u = f.result()
-                    site_parts.append(s)
-                    if u is not None:
-                        unl_parts.append(u)
-                except Exception as e:                                  # fail loud, keep the rest
-                    failed.append({"block": k, "error": repr(e)[:300]})
+        for attempt in range(RETRY_ROUNDS + 1):        # transient DNS/HTTP errors get retried
+            failed, retry = [], []
+            with ThreadPoolExecutor(threads) as ex:
+                futs = {ex.submit(extract_group, g, neighbors): (k, g) for k, g in todo}
+                for f, (k, g) in futs.items():
+                    try:
+                        s, u = f.result()
+                        site_parts.append(s)
+                        if u is not None:
+                            unl_parts.append(u)
+                    except Exception as e:                              # fail loud, keep the rest
+                        failed.append({"block": k, "error": repr(e)[:300], "attempts": attempt + 1})
+                        retry.append((k, g))
+            if not retry or attempt == RETRY_ROUNDS:
+                break
+            time.sleep(RETRY_BACKOFF_S * (attempt + 1))    # each round uses fresh threads, so fresh handles
+            todo = retry
     sites = pd.concat(site_parts, ignore_index=True) if site_parts else pd.DataFrame()
     tmp = shard.with_suffix(".tmp")
     sites.to_parquet(tmp, index=False)
