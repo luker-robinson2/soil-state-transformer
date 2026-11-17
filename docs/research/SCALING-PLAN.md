@@ -111,7 +111,7 @@ over embedding prefixes.
   - KSSL → LUCAS and US → Brazil transfer
   - RaCA held out entirely
   - area-of-applicability masks (Meyer & Pebesma 2021)
-- **Noise floor:** KSSL lab replicates. Never report skill above it.
+- **Noise floor** (`geosoil/results/noise_floor.json`, co-located KSSL pedons): topsoil R² ceilings are SOC 0.87, pH 0.90, clay 0.87, sand 0.92, BD 0.82. Never report skill above these; treat skill near them as suspected leakage.
 
 **Rules:**
 - **Rung gate:** keep the larger rung only if the probe improves by at least 0.02 R² on lab SOC, or on

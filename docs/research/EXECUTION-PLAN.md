@@ -49,10 +49,10 @@ PR with a test.
 | 1.5 | ✅ 11-16: OSSL v1.2 lab values without KSSL/LUCAS (2.1k sites). Spectra not pulled yet. | C | `labels_ossl_v1_2.parquet` |
 | 1.6 | ✅ 11-16: RaCA hold-out (6.4k sites, 33k lab SOC, 82k measured BD; ~1 km coordinates). None of its lab samples appear in KSSL. **Doubles as the STAT 5010 final-project data (due 12-04).** | C + L | `labels_raca.parquet` |
 | 1.7 | LUCAS: LUCAS-MEGA isn't shared by its authors. LUCAS 2022 waits on the ESDAC reply (public ~Q1 2027). | C | local parquet, gitignored |
-| 1.8 | Harmonization: method IDs, per-method offsets, depth splines to 0–5 / 5–15 / 15–30 / 30–60 / 60–100 cm | C | `labels_harmonized.parquet` |
+| 1.8 | ✅ 11-16 (`geosoil/corpus/harmonize.py`): thickness-weighted averaging onto 0–5 / 5–15 / 15–30 / 30–60 / 60–100 / 100–200 cm, keeping an interval only at ≥50% coverage. One method per target, conversions fitted on KSSL paired layers: pH CaCl₂→H₂O (n 212k, R² 0.96); Walkley-Black→dry combustion ×1.019 (n 8.8k; KSSL Walkley-Black is already corrected); oven-dry→third-bar BD (n 78k, R² 0.69). `method_family` and `converted` are kept so a model can learn offsets. 2.49M rows. An equal-area spline is a possible later upgrade. | C | `labels_harmonized.parquet`, `results/harmonization.json` |
 | 1.9 | ✅ 11-16: dedup (`geosoil/corpus/dedup.py`) and the one-shot builder `python -m geosoil.corpus.build_c1`. **C1 = 190,567 training sites (58k CONUS) + 6,367 hold-out; 3.07M values.** 25 tests. | C | `labels_c1.parquet`, `dedup_log.parquet`, `results/c1_summary.json` |
-| 1.10 | Fixed splits: 1° spatial blocks + hold-out year | C | `splits.parquet` |
-| 1.11 | Noise floor from KSSL lab replicates per target | C | `results/noise_floor.json` |
+| 1.10 | ✅ 11-16 (`geosoil/corpus/splits.py`): 1° blocks hashed, so assignments stay stable as data grows. Train 176,388 sites in 5 folds (31k–40k each), test 14,179 (1 in 10 blocks), RaCA hold-out 6,367; `near_holdout` carried through. Temporal hold-out year for satellite inputs: 2024. | C | `splits.parquet`, `results/splits_summary.json` |
+| 1.11 | ✅ 11-16 (`geosoil/corpus/noise_floor.py`): KSSL publishes no replicates in our tables, so the floor comes from distinct pedons within 30 m at the same depth and method (lab error + sub-30 m variation). Topsoil R² ceiling: SOC 0.87, pH 0.90, clay 0.87, sand 0.92, BD 0.82 (3.7k–14.6k pairs). Placeholder coordinates (more than 3 pedons on one point) are skipped. | C | `results/noise_floor.json` |
 
 **Gate 1:** the real deduplicated count is known (estimate ~300k global). If it's under 100k, push the
 §A2 requests harder before scaling the model.

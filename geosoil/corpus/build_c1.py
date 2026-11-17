@@ -3,8 +3,10 @@
     python -m geosoil.corpus.build_c1            # all sources
     python -m geosoil.corpus.build_c1 --skip wosis
 
-Writes data/processed/labels_<source>.parquet, labels_c1.parquet, dedup_log.parquet and a
-small committed summary at geosoil/results/c1_summary.json.
+Writes data/processed/labels_<source>.parquet, labels_c1.parquet, dedup_log.parquet, then
+runs harmonization, splits and the noise floor (labels_harmonized.parquet, splits.parquet).
+Small committed summaries land in geosoil/results/ (c1_summary, harmonization, splits_summary,
+noise_floor).
 """
 from __future__ import annotations
 
@@ -15,7 +17,7 @@ import json
 import pandas as pd
 
 from .. import config as C
-from . import common, dedup
+from . import common, dedup, harmonize, noise_floor, splits
 
 MODULES = ("kssl", "wosis", "npdb", "brazil", "ossl", "napeshm", "usgs_ds801", "raca")
 
@@ -61,6 +63,8 @@ def main() -> None:
     (C.RESULTS / "c1_summary.json").write_text(json.dumps(summary, indent=2, default=str))
     print(json.dumps({k: summary[k] for k in ("sites", "values", "train_sites_by_source",
                                               "train_topsoil_sites_by_target", "license_values")}, indent=2))
+    for step in (harmonize, splits, noise_floor):
+        step.main([])
 
 
 if __name__ == "__main__":
