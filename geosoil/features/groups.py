@@ -15,6 +15,7 @@ PREFIXES = {                                  # group -> column prefix
     "terrain_multiscale": "tms_",
     "radiometrics": "rad_",
     "lithology": "litho_",
+    "surficial": "surf_",
     "thermal": "lst_",
     "regolith": "regolith_",
     "hydrology": "hydro_",

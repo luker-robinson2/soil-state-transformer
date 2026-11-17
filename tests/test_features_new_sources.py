@@ -80,3 +80,19 @@ def test_landuse_cell_area_and_history():
     assert np.isnan(d.loc[1, "hist_years_since_conv"]) and d.loc[1, "hist_crop_years"] == 0
     assert d.loc[2].isna().all()
     assert LU.member("cropland", 1950) == "baseline/asc/1950AD_lu/cropland1950AD.asc"
+
+
+def test_surficial_parses_origin_grain_and_thickness():
+    from geosoil.features import surficial as S
+    assert S.origin(11) == "alluvial" and S.origin(311) == "eolian_loess" and S.origin(331) == "eolian_sand"
+    assert S.origin(451) == "glaciofluvial" and S.origin(422) == "glacial_till" and S.origin(985) == "volcanic"
+    assert S.origin(999) == "water" and S.origin(930) == "residual" and S.origin(702) == "organic"
+    assert S.grain("Glacial till sediments, mostly clayey, thick") == 0.0
+    assert S.grain("Eolian sediments, mostly loess, thin") == 1.0
+    assert S.grain("Proglacial sediments, mostly coarse-grained, discontinuous") == 2.0
+    assert np.isnan(S.grain("Residual materials developed in bedrock, thin"))
+    assert S.thickness("Alluvial sediments, thick") == 2.0 and S.thickness("Colluvial sediments, discontinuous") == 0.0
+    e = S.encode(pd.Series([422, np.nan]), pd.Series(["Glacial till sediments, mostly silty, thick", np.nan]))
+    assert e.loc[0, "surf_glacial_till"] == 1.0 and e.loc[0, "surf_alluvial"] == 0.0
+    assert e.loc[0, "surf_grain"] == 1.0 and e.loc[0, "surf_thick"] == 2.0 and e.loc[1].isna().all()
+    assert groups.feature_groups(["surf_grain", "litho_glim_su"])["surficial"] == ["surf_grain"]
