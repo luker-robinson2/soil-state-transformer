@@ -35,6 +35,7 @@ sources:
     loader: geosoil/corpus/wosis.py
     notes: CONUS slice on disk as alphaearth-soc/future_work/data/wosis_conus.csv (37,311 rows); overlaps NCSS
     requested: "2026-11-16 (email to wosis@isric.org: license reading, restricted-provider contacts, next snapshot)"
+    reply: "2026-11-16 bounced: wosis@isric.org only accepts internal senders; resend via the ISRIC web contact form"
     status_detail: "152,716 sites, 1.33M values after dropping US-NCSS (= KSSL); 120,668 sites kept after dedup"
   - id: ossl_v1_2
     name: Open Soil Spectral Library v1.2
@@ -237,6 +238,7 @@ sources:
     status: ingested
     checked: 2026-11-16
     requested: "2026-11-16 (email to aafc.cansis-siscan.aac@agr.gc.ca for full holdings)"
+    reply: "2026-11-17 declined for now; an updated NPDB release is in progress; they invite gap reports and a check-back in a few months"
     loader: geosoil/corpus/npdb.py
     status_detail: "8,136 pedons, 113.6k values"
   - id: tern_federator

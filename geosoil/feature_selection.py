@@ -11,6 +11,8 @@ Three measures per (target, group):
               correlated group can stand in for.
   shap_share  share of mean |SHAP| (LightGBM pred_contrib) on the held-out fold.
   drop_group  R2 lost when the model is retrained without the group (--drop-group; slower).
+  top_columns the 25 individual columns with the largest mean |SHAP| share (which AlphaEarth
+              dimensions, climate months, lithology classes ... drive each target).
               This is the decision measure: keep a group if dropping it costs more than the
               fold-to-fold noise for at least one target (CORPUS-PLAN.md section D).
 
@@ -33,6 +35,7 @@ from .features import terrain
 from .metrics import metrics
 
 TOPSOIL = ("0-5", "5-15", "15-30")
+TOP_COLUMNS = 25
 
 
 def feature_groups(columns) -> dict[str, list[str]]:
@@ -58,6 +61,7 @@ def importance(d: pd.DataFrame, y: np.ndarray, groups: dict[str, list[str]], dro
     rng = np.random.default_rng(seed)
     folds = sorted(d["fold"].unique())
     base, perm, shap, drop = [], {g: [] for g in groups}, {g: [] for g in groups}, {g: [] for g in groups}
+    col_shap = np.zeros(len(cols))
     for k in folds:
         tr, va = (d["fold"] != k).to_numpy(), (d["fold"] == k).to_numpy()
         m = _model(seed).fit(X[tr], y[tr])
@@ -65,6 +69,7 @@ def importance(d: pd.DataFrame, y: np.ndarray, groups: dict[str, list[str]], dro
         base.append(r0)
         contrib = np.abs(m.predict(X[va], pred_contrib=True)[:, :-1]).mean(axis=0)
         total = contrib.sum() or 1.0
+        col_shap += contrib / total / len(folds)
         for g, ii in idx.items():
             Xp = X[va].copy()
             Xp[:, ii] = Xp[rng.permutation(len(Xp))][:, ii]          # shuffle the group's rows jointly
@@ -75,6 +80,9 @@ def importance(d: pd.DataFrame, y: np.ndarray, groups: dict[str, list[str]], dro
                 md = _model(seed).fit(X[tr][:, keep], y[tr])
                 drop[g].append(r0 - _r2(y[va], md.predict(X[va][:, keep])))
     out = {"r2_all": float(np.mean(base)), "r2_all_sd": float(np.std(base)), "groups": {}}
+    top = np.argsort(col_shap)[::-1][:TOP_COLUMNS]
+    group_of = {c: g for g, v in groups.items() for c in v}
+    out["top_columns"] = [{"column": cols[i], "group": group_of[cols[i]], "shap_share": float(col_shap[i])} for i in top]
     for g in groups:
         out["groups"][g] = {"n_cols": len(groups[g]),
                             "perm_drop": float(np.mean(perm[g])), "perm_drop_sd": float(np.std(perm[g])),
@@ -92,6 +100,9 @@ def markdown(res: dict) -> str:
         for g, v in sorted(r["groups"].items(), key=lambda kv: -kv[1].get("drop_group", kv[1]["perm_drop"])):
             dg = f"{v['drop_group']:.3f} ± {v['drop_group_sd']:.3f}" if "drop_group" in v else "–"
             lines.append(f"| {g} | {v['n_cols']} | {v['perm_drop']:.3f} ± {v['perm_drop_sd']:.3f} | {dg} | {v['shap_share']:.2f} |")
+        if r.get("top_columns"):
+            lines += ["", "Top columns by SHAP share: " + ", ".join(
+                f"{c['column']} ({c['shap_share']:.3f})" for c in r["top_columns"][:12])]
         lines.append("")
     return "\n".join(lines)
 

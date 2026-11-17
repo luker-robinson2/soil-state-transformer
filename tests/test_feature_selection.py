@@ -25,4 +25,5 @@ def test_informative_group_outranks_noise_group():
     assert t["perm_drop"] > 0.5 and abs(noise["perm_drop"]) < 0.05
     assert t["drop_group"] > 0.5 and abs(noise["drop_group"]) < 0.05
     assert t["shap_share"] > 0.8
+    assert r["top_columns"][0]["column"] == "elevation" and r["top_columns"][0]["group"] == "terrain"
     assert "| terrain |" in FS.markdown({"x": {**r, "r2_ceiling": 0.9}})
