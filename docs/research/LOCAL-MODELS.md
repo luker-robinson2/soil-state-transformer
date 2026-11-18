@@ -111,6 +111,27 @@ everywhere, but a blend is also an ensemble of two models, so part of its gain m
 locality. The next run adds a control: the global model blended with a model trained on a random subset of the
 same size. Only the margin over that control counts as regional information.
 
+### Edaphic zones (round 5, job 35871203)
+
+Zones by k-means on 16 principal components of the site covariates, scored on the 1° folds:
+
+| | Global | Zone as feature | Per-zone models (k=8) | Blend (k=8) | **Leave one zone out (k=8)** |
+|---|---|---|---|---|---|
+| SOC | 0.539 | 0.540 | 0.533 | 0.548 | **0.448** |
+| pH | 0.608 | 0.608 | 0.602 | 0.615 | **0.489** |
+| Sand | 0.425 | 0.426 | 0.425 | 0.440 | **0.244** |
+| Clay | 0.376 | 0.375 | 0.370 | 0.389 | **0.248** |
+| BD | 0.473 | 0.471 | 0.455 | 0.479 | **0.322** |
+
+- Per-zone models lose to the global model, and lose more with more zones (k=16, 32). The zone as a feature adds
+  nothing: the trees already split on the covariates the zones are built from.
+- The blend gains (+0.004 to +0.015) match the regional blend and are probably ensembling; the control decides.
+- **Transfer to an unseen pedo-climate is the real weakness:** holding out a whole zone costs 0.09 (SOC) to 0.18
+  (sand) R². The model interpolates well inside the environments it has seen and extrapolates poorly outside them.
+  Data acquisition should therefore weight new sites by how under-sampled their environment is, not just count them.
+- So T2 becomes a distillation and serving tier (small per-zone students of the global model), not separately trained
+  models; and zone coverage becomes a data-acquisition target.
+
 ## Plan
 
 1. **Measure** (now): the scale curve, skill by distance, and regional vs global at R = 150 and 400 km.
