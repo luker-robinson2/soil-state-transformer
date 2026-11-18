@@ -141,6 +141,40 @@ Top individual columns by SHAP share:
   Then improve lithology resolution beyond GLiM's 1:3.75M (national geological maps), and the
   bare-soil composite.
 
+**Round 3** (baseline job 35844337, feature selection 35844338, 2026-11-17; `geosoil/results/round3_summary.json`).
+Adds Canada/Alaska radiometrics, the restored Australian K grid, surficial materials (USGS DS-425) and depth to
+bedrock. Same 190k-site label set as round 2.
+
+| | SOC | pH | Sand | Clay | BD |
+|---|---|---|---|---|---|
+| Round 2, all groups | 0.552 | 0.601 | 0.453 | 0.387 | 0.516 |
+| **Round 3, all groups** | **0.555** | **0.602** | **0.458** | **0.391** | **0.514** |
+
+Unique contribution (drop-group ΔR², mean of 3 seeds; ± is about 0.002–0.006):
+
+| Group | SOC | pH | Sand | Clay | BD |
+|---|---|---|---|---|---|
+| AlphaEarth | **+0.021** | **+0.013** | **+0.015** | **+0.026** | **+0.037** |
+| Depth | **+0.082** | +0.005 | +0.001 | +0.009 | **+0.022** |
+| Lithology | +0.003 | +0.005 | **+0.014** | **+0.012** | +0.002 |
+| Radiometrics (now 47% of sites) | +0.001 | +0.002 | +0.007 | +0.005 | +0.003 |
+| Land-surface temperature | +0.003 | +0.004 | 0.000 | +0.006 | −0.001 |
+| Monthly climate | +0.004 | +0.003 | +0.005 | +0.005 | −0.001 |
+| Surficial materials (new) | +0.002 | 0.000 | +0.002 | +0.002 | 0.000 |
+| Depth to bedrock (new) | 0.000 | 0.000 | −0.002 | 0.000 | −0.001 |
+| HAND, land-use history, annual climate, 30 m terrain | ≤ +0.001 | ≤ 0 | ≤ 0 | ≤ +0.001 | ≤ 0 |
+
+**Decisions from round 3:**
+- The static map layers are saturating: the four new sources together moved texture by about +0.005,
+  which is within seed noise. Each new geology layer mostly repeats lithology, radiometrics and climate.
+- **Drop from the default set:** depth to bedrock, HAND, land-use history (keep `hist_crop_1950` as a pH
+  probe), annual climate (redundant with monthly), 30 m terrain. This removes about 40 columns at no cost.
+- **Keep:** AlphaEarth, depth, lithology, radiometrics, LST, monthly climate, multi-scale terrain;
+  surficial materials stays on probation until a US-only texture run.
+- **Where the gains are now:** new labels (SISLAC, +28k sites, round 4), neighbouring-label features
+  (round 4; locally +0.07–0.18 over location alone), and the two Earth Engine features that observe
+  something new, bare-soil reflectance and AlphaEarth landscape context (round 5).
+
 Earlier runs, which dropped rows without an embedding: AlphaEarth 2020 SOC 0.53, pH 0.57, sand 0.37,
 clay 0.32, BD 0.48; 8-year mean SOC 0.54, pH 0.58, sand 0.40, clay 0.34, BD 0.49.
 
