@@ -46,6 +46,50 @@ et al. 2017 (Ecography 40:913) on block CV for spatially structured data.
   in the right class, which R² alone does not show.
 - **Held-out axes:** by block scale (above), leave-one-zone-out once zones exist, and leave-one-region-out.
 
+## First results (round 4, 2026-11-17; `geosoil/results/local_eval_round4.json`)
+
+Same rows and features (all groups, 150k rows per target), cross-validated at three block sizes. The median
+distance from a validation site to the nearest training site is in brackets.
+
+| | 1° (~31 km) | 0.25° (~12 km) | 0.05° (~5 km) | 0.05° + neighbours |
+|---|---|---|---|---|
+| SOC | 0.536 | 0.560 | 0.579 | 0.586 |
+| pH | 0.601 | 0.623 | 0.644 | 0.651 |
+| Sand | 0.412 | 0.459 | 0.495 | 0.513 |
+| Clay | 0.365 | 0.418 | 0.462 | 0.473 |
+| BD | 0.471 | 0.504 | 0.529 | 0.540 |
+
+R² by distance to the nearest training site (0.05° folds):
+
+| | 0–1 km | 1–5 km | 5–25 km | 25–100 km | 100–300 km |
+|---|---|---|---|---|---|
+| SOC | **0.71** | 0.62 | 0.52 | 0.49 | 0.51 |
+| pH | 0.57 | 0.61 | 0.67 | 0.68 | 0.55 |
+| Sand | **0.57** | 0.51 | 0.49 | 0.38 | 0.28 |
+| Clay | **0.54** | 0.51 | 0.42 | 0.38 | 0.29 |
+| BD | **0.62** | 0.55 | 0.51 | 0.50 | 0.46 |
+
+Radius models (0.25° folds; only cells with ≥ 1,500 training rows within R, which is 15–30% of rows):
+
+| | Global | Regional only | 50/50 blend |
+|---|---|---|---|
+| SOC, 150 km | 0.646 | 0.642 | **0.656** |
+| pH, 400 km | 0.436 | 0.416 | **0.439** |
+| Sand, 400 km | 0.451 | 0.462 | **0.470** |
+| Clay, 150 km | 0.490 | 0.500 | **0.514** |
+| BD, 150 km | 0.364 | 0.386 | **0.411** |
+
+What this says:
+- **Nearby labels are worth a lot, most of all for texture.** Moving from ~31 km to ~5 km from the nearest
+  label adds +0.04 (pH, SOC, BD) to +0.10 (clay) R². Within 1 km, SOC reaches 0.71 and BD 0.62. This is the
+  evidence for the local tier (T3).
+- **Neighbour features start to help below ~10 km** (+0.007 to +0.018 at 5 km), and add nothing at 1° blocks.
+- **pH is the exception:** it is hardest to predict right next to other labels (0.57 within 1 km vs 0.68 at
+  25–100 km). The likely cause is management, such as liming, varying between neighbouring fields; this is not yet
+  tested.
+- **A regional model on its own is no better than the global one; blended with it, it is better everywhere**
+  (+0.003 for pH to +0.047 for BD). T1 should be a correction on top of T0, which is plan step 2 below.
+
 ## Plan
 
 1. **Measure** (now): the scale curve, skill by distance, and regional vs global at R = 150 and 400 km.
