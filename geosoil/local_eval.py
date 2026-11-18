@@ -84,8 +84,10 @@ def regional(d: pd.DataFrame, y: np.ndarray, global_pred: np.ndarray, cols: list
     lat, lon = d["lat"].to_numpy(float), d["lon"].to_numpy(float)
     cell = block_id(d["lon"], d["lat"], ANCHOR_DEG).to_numpy()
     res = {}
+    rng = np.random.default_rng(seed)
     for R in radii:
         local = np.full(len(d), np.nan)
+        control = np.full(len(d), np.nan)       # same-size random subset: separates locality from plain ensembling
         n_models = 0
         for k in sorted(d[fold_col].unique()):
             va_all = (d[fold_col] == k).to_numpy()
@@ -104,11 +106,14 @@ def regional(d: pd.DataFrame, y: np.ndarray, global_pred: np.ndarray, cols: list
                                       random_state=seed, verbose=-1)
                 m.fit(X[near], y[near])
                 local[va] = m.predict(X[va])
+                rand = rng.choice(tr_idx, size=len(near), replace=False)
+                control[va] = lgb.LGBMRegressor(**m.get_params()).fit(X[rand], y[rand]).predict(X[va])
                 n_models += 1
         s = ~np.isnan(local)
         res[f"{R}km"] = {"models": n_models, "rows_scored": int(s.sum()), "share_of_rows": round(float(s.mean()), 3),
                          "global": metrics(y[s], global_pred[s]), "regional": metrics(y[s], local[s]),
-                         "blend": metrics(y[s], 0.5 * (local[s] + global_pred[s]))}
+                         "blend": metrics(y[s], 0.5 * (local[s] + global_pred[s])),
+                         "blend_random_control": metrics(y[s], 0.5 * (control[s] + global_pred[s]))}
     return res
 
 

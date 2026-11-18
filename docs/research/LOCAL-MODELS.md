@@ -93,6 +93,24 @@ What this says:
 - **A regional model on its own is no better than the global one; blended with it, it is better everywhere**
   (+0.003 for pH to +0.047 for BD). T1 should be a correction on top of T0, which is plan step 2 below.
 
+### Regional correction (round 5, job 35871129)
+
+Plan step 2, learning the global model's honest residuals per region, does **not** beat the plain blend:
+
+| (0.25° folds) | Global | Residual correction | 50/50 blend |
+|---|---|---|---|
+| SOC, 400 km | 0.659 | 0.659 | **0.671** |
+| pH, 400 km | 0.454 | 0.447 | **0.459** |
+| Sand, 400 km | 0.457 | 0.469 | **0.476** |
+| Clay, 150 km | 0.503 | 0.489 | **0.521** |
+| BD, 150 km | 0.358 | 0.286 | **0.394** |
+| CEC, 400 km | 0.447 | 0.454 | **0.466** |
+
+The correction helps sand and CEC only, and overfits where regional data are thin (BD at 150 km). The blend wins
+everywhere, but a blend is also an ensemble of two models, so part of its gain may be plain ensembling rather than
+locality. The next run adds a control: the global model blended with a model trained on a random subset of the
+same size. Only the margin over that control counts as regional information.
+
 ## Plan
 
 1. **Measure** (now): the scale curve, skill by distance, and regional vs global at R = 150 and 400 km.

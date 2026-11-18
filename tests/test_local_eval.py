@@ -70,3 +70,19 @@ def test_regional_correction_learns_a_regional_offset(monkeypatch):
                               ["A00"], "fold_025", radii=(80,))
     assert r["80km"]["rows_scored"] > 0
     assert r["80km"]["corrected"]["r2"] > r["80km"]["global"]["r2"]
+
+
+def test_regional_blend_reports_a_random_subset_control(monkeypatch):
+    pytest.importorskip("lightgbm")
+    from geosoil import local_eval as L
+    monkeypatch.setattr(L, "MIN_LOCAL_ROWS", 100)
+    monkeypatch.setattr(L, "MIN_CELL_ROWS", 20)
+    rng = np.random.default_rng(3)
+    n = 1500
+    d = pd.DataFrame({"site_id": [f"s{i}" for i in range(n)], "lon": rng.uniform(-100, -96, n),
+                      "lat": rng.uniform(40, 42, n), "depth_mid": 2.5, "A00": rng.normal(size=n)})
+    d["fold_025"] = rng.integers(0, 5, n)
+    y = np.where(d["lon"] < -98, 1.0, -1.0) * d["A00"].to_numpy() + rng.normal(0, 0.1, n)
+    r = L.regional(d, y, np.zeros(n), ["A00"], "fold_025", radii=(60,))["60km"]
+    assert "blend_random_control" in r
+    assert r["blend"]["r2"] > r["blend_random_control"]["r2"]          # locality, not just a second model
