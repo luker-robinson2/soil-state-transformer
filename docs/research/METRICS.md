@@ -54,3 +54,33 @@ data. Digital-soil-mapping validation literature: Wadoux et al. 2021 (Ecological
 Pebesma 2021, 2022; Lin 1989 (CCC); Duan 1983 (smearing); Nadeau & Bengio 2003; Gneiting & Raftery 2007.
 Operational soil-mapping practice reached the same place: class agreement as the headline, skill measured against
 lab error rather than R², and stated intervals checked for coverage.
+
+## Round 7 scorecard (what the suite showed)
+
+`geosoil/results/scorecard_round7.json`. 95% intervals come from resampling 1° blocks; SOC, OM, CEC and bases are on
+the log scale.
+
+| Target | RMSE [95% CI] | R² [95% CI] | Lin's CCC | Floor skill | Weighted κ |
+|---|---|---|---|---|---|
+| SOC | 0.673 [0.660, 0.687] log | 0.553 [0.520, 0.584] | 0.708 | 0.63 | 0.69 |
+| pH | 0.790 [0.778, 0.802] | 0.618 [0.600, 0.636] | 0.761 | 0.68 | 0.75 |
+| Sand | 18.3 [18.0, 18.6] % | 0.469 [0.445, 0.487] | 0.629 | 0.51 | 0.52 |
+| Clay | 12.4 [12.1, 12.6] % | 0.398 [0.379, 0.417] | 0.559 | 0.44 | 0.55 |
+| BD | 0.218 [0.213, 0.224] g/cm³ | 0.505 [0.484, 0.527] | 0.671 | 0.59 | 0.60 |
+| CEC | 0.571 [0.557, 0.584] log | 0.385 [0.356, 0.413] | 0.550 | 0.44 | — |
+| K | 0.276 [0.265, 0.286] log | 0.436 [0.415, 0.460] | 0.609 | 0.51 | — |
+
+What it says that R² alone did not:
+
+- **No bias, good calibration, under-dispersed on purpose.** Bias and scale together are under 0.3% of the MSE
+  for every target, and the calibration slope is 1.00–1.05. All remaining error is unexplained signal. CCC sits
+  well below r because MSE-optimal predictions shrink toward the mean. Maps that must show realistic spread
+  (class maps) need a different estimator, not a better one.
+- **Floor skill 0.44–0.68.** Even pH, the best target, captures two thirds of the error reduction that repeat
+  lab measurements would allow.
+- **The same model scores very differently by region.** SOC R² is 0.60 in South America, 0.51 in CONUS, 0.39 in
+  Canada (RMSE nearly double) and 0.20–0.21 in South Asia and Russia. Clay R² is 0.12 in Mexico and Central
+  America.
+- **Paired tests settle the method question.** On standard-method rows, training on standard-method rows only
+  lowers MSE by 1.4–1.7% for CEC, K, Ca and Mg. Each block sign-flip test gives p ≤ 0.013 and each CI excludes 0.
+  The raw R² (Mg 0.469 vs 0.529) looked like a 6-point jump only because the row sets differ.

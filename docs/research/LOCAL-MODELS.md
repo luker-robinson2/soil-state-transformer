@@ -161,3 +161,22 @@ labels are dense, not a residual correction and not plain ensembling.
 
 This repository uses public data and published methods only. Product-specific zone delineation or sampling
 design from any commercial platform is out of scope here and must not be reproduced; see CONTRIBUTING.md.
+
+## Selective tiers (round 7, `geosoil/tiers.py`)
+
+The rule is nested: use the regional blend in a held-out 0.25° cell only if its local training density meets a
+threshold chosen on the other folds. Gains are MSE reductions vs global, with 95% cell-bootstrap intervals.
+
+- **150 km:** significant for SOC (4.9% [3.7, 6.0]), pH (2.1%), sand (3.8%), clay (4.1%), CEC (3.4%) and K (5.8%).
+  BD reaches 7.7% but is noisy (p = 0.08).
+- **400 km:** weaker for clay, BD and pH, where the interval includes 0.
+- **Locality:** the blend beats the same-size random-subset control by 5–16% on blended cells, so the gain comes
+  from locality, not from averaging two models.
+- **The selected rule blends in 84–100% of evaluated cells.** These cells are already the ones dense enough for
+  a regional model, so density hardly discriminates among them.
+
+Serving rule:
+- 150 km regional blend wherever a regional model can be fitted (enough labels within the radius).
+- Global model everywhere else.
+- Sand may use 400 km.
+- Never the residual correction or per-zone models, both of which lost.
