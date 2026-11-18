@@ -34,7 +34,10 @@ et al. 2017 (Ecography 40:913) on block CV for spatially structured data.
   - `scales`: the global model at each block scale, with and without neighbour features
   - `distance`: out-of-fold R² by distance to training
   - `regional`: radius models per 2° anchor cell, scored beside the global model and a 50/50 blend on the same rows
-- `scripts/slurm/local_eval.sbatch` runs all three on Alpine.
+- `scripts/slurm/local_eval.sbatch` runs all three on Alpine; `--parts correction` runs the regional tier as a
+  correction on the global model (honest inner-CV residuals; plan step 2).
+- `geosoil/zones.py` (T2): zones by k-means on PCA of robust-scaled site covariates (k = 8, 16, 32); per-zone models,
+  zone-as-feature, the blend, and leave-one-zone-out transfer (k = 8), all on the 1° folds. `scripts/slurm/zones.sbatch`.
 
 ## Metrics every tier reports
 
