@@ -12,6 +12,7 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 | [CURC-PLAN.md](research/CURC-PLAN.md) | Alpine partitions, limits, allocations, policy |
 | [PIPELINE-DESIGN.md](research/PIPELINE-DESIGN.md) | How the data and feature pipeline is built |
 | [LOCAL-MODELS.md](research/LOCAL-MODELS.md) | Model tiers (global, regional, edaphic zones, local) and how each is evaluated |
+| [METRICS.md](research/METRICS.md) | How models are evaluated: why R² alone misleads, the metric suite, block-bootstrap CIs, paired tests |
 | [DATA-REPORT.md](research/DATA-REPORT.md) | What data goes into the model, where it comes from, and what has proven useful |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Ground rules: public data, lab truth, licences, scrub check |
 

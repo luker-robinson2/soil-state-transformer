@@ -27,6 +27,11 @@ from .features import terrain
 from .metrics import class_agreement, conformal_coverage, metrics
 
 TOPSOIL = ("0-5", "5-15", "15-30")
+# Standard-method families per target (harmonize.py: converted pH 8.2 CEC and Mehlich-3 K count as canonical).
+# --canonical-only restricts labels to these, to test whether mixed extraction methods are hurting a target.
+CANONICAL = {"cec": {"cec_ph7", "cec_sum_cations_ph82"}, "k": {"nh4oac_ph7", "mehlich3"},
+             "ca": {"nh4oac_ph7"}, "mg": {"nh4oac_ph7"}}
+OOF_COLS = ["site_id", "block", "fold", "interval", "source", "method_family"]
 BASE = ["depth_mid", "lon", "lat"]
 
 
@@ -106,8 +111,12 @@ def main(argv: list[str] | None = None) -> None:
     runs = C.RESULTS / "runs"
     runs.mkdir(exist_ok=True)
     out = runs / f"baseline_c1_{pd.Timestamp.now():%Y%m%dT%H%M}.json"
-    for t in C.TARGETS:
+    canon = set(filter(None, a.canonical_only.split(",")))
+    oof_dir = runs / f"oof_{out.stem.split('_', 2)[-1]}"
+    for t in (a.targets.split(",") if a.targets else C.TARGETS):
         dt = df[df["target"] == t]
+        if t in canon and "method_family" in dt:
+            dt = dt[dt["method_family"].isin(CANONICAL[t])]
         if a.max_rows and len(dt) > a.max_rows:
             dt = dt.sample(a.max_rows, random_state=0)
         key = f"{t}/topsoil_0_30/{'log1p' if t in C.LOG_TARGETS else 'raw'}"
@@ -118,7 +127,16 @@ def main(argv: list[str] | None = None) -> None:
         runs_ = [(g, cols, False) for g, cols in gs.items()]
         if a.neighbours:                                             # roadmap I1: alone and on top of all
             runs_ += [("neighbours", [], True), ("all+neighbours", gs["all"], True)]
+        if a.groups:
+            runs_ = [r for r in runs_ if r[0] in set(a.groups.split(","))]
         for g, cols, nb in runs_:
+            if g == "all":                                # keep out-of-fold predictions: geosoil/scorecard.py
+                res[t][g], d, y, pred = cv_scores(dt, t, cols, neighbours=nb, return_pred=True)
+                oof_dir.mkdir(exist_ok=True)
+                o = d[[c for c in OOF_COLS if c in d]].copy()
+                o["target"], o["y"], o["pred"] = t, y, pred
+                o.to_parquet(oof_dir / f"{t}.parquet", index=False)
+                continue
             res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
             r = res[t][g]
             print(f"{t:5s} {g:20s} R2 {r['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {r['n']}  "

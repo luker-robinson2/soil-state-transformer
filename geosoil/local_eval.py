@@ -84,6 +84,7 @@ def regional(d: pd.DataFrame, y: np.ndarray, global_pred: np.ndarray, cols: list
     lat, lon = d["lat"].to_numpy(float), d["lon"].to_numpy(float)
     cell = block_id(d["lon"], d["lat"], ANCHOR_DEG).to_numpy()
     res = {}
+    cells = []                               # per-cell records: where does the blend help? (selective tiers)
     rng = np.random.default_rng(seed)
     for R in radii:
         local = np.full(len(d), np.nan)
@@ -109,11 +110,17 @@ def regional(d: pd.DataFrame, y: np.ndarray, global_pred: np.ndarray, cols: list
                 rand = rng.choice(tr_idx, size=len(near), replace=False)
                 control[va] = lgb.LGBMRegressor(**m.get_params()).fit(X[rand], y[rand]).predict(X[va])
                 n_models += 1
+                cells.append({"radius_km": R, "fold": int(k), "cell": str(c), "n_local_train": int(len(near)),
+                              "n_val": int(len(va)), "var_val": float(np.var(y[va])),
+                              "mse_global": float(np.mean((global_pred[va] - y[va]) ** 2)),
+                              "mse_blend": float(np.mean((0.5 * (local[va] + global_pred[va]) - y[va]) ** 2)),
+                              "mse_control": float(np.mean((0.5 * (control[va] + global_pred[va]) - y[va]) ** 2))})
         s = ~np.isnan(local)
         res[f"{R}km"] = {"models": n_models, "rows_scored": int(s.sum()), "share_of_rows": round(float(s.mean()), 3),
                          "global": metrics(y[s], global_pred[s]), "regional": metrics(y[s], local[s]),
                          "blend": metrics(y[s], 0.5 * (local[s] + global_pred[s])),
                          "blend_random_control": metrics(y[s], 0.5 * (control[s] + global_pred[s]))}
+    res["cells"] = cells
     return res
 
 
