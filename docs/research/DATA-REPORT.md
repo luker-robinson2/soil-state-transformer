@@ -373,3 +373,18 @@ from SOC almost everywhere and needs nothing of its own. Next sources: France RM
 CEC), LUCAS 2018 measured BD, LUCAS K (train-only), China forest profiles (BD), ICRISAT Karnataka, Tellus
 Ireland; then an ANSIS account (Australia); then requests to Sweden, Germany (forests), South Africa, Morocco
 and Nepal.
+
+### Area of applicability (round 7)
+
+`geosoil/coverage.py` (Meyer & Pebesma 2021) on 8,792 random land points: **18% of land lies outside the area of
+applicability**, i.e. its climate, land-surface temperature and lithology are farther from any training site than
+the training sites are from each other across spatial folds. By continent: Asia 30%, Africa 28%, South America 11%,
+Oceania 8%, North America 7%, Europe 5%.
+
+Geographic sparsity and environmental novelty are not the same thing. Russia has almost no labels but only 5% of
+it is outside the area (its environments resemble Canada and Scandinavia), so labels there mostly tighten
+existing estimates. The environmentally new places are the humid tropics of South and Southeast Asia (India 42%,
+Myanmar 65%, Indonesia 69%, Papua New Guinea 77%), the Sahel and Sahara margins (Niger, Mauritania, Sudan, Chad),
+Arabia and Pakistan, Madagascar, and the Andes (Peru 35%, Chile 44%). For agricultural soils the priorities are
+India, Southeast Asia, the Sahel and Madagascar. ICRISAT Karnataka (open, about 93k village-level samples) is the
+cheapest step into the largest gap.

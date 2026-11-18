@@ -1,0 +1,9 @@
+{"source": "geosoil.coverage on Alpine job 35923360, round-7 training table (329,006 sites), 168 climate/LST/GLiM features, 20 PCs (94.5% variance)",
+ "threshold_di": 12.0, "land_points": 8792, "share_land_outside_aoa": 0.182,
+ "by_continent": {"Asia": [2142, 0.30, 9.49], "Africa": [1927, 0.28, 9.38], "South America": [1096, 0.11, 5.66],
+                  "North America": [1532, 0.07, 4.75], "Europe": [1386, 0.05, 5.36], "Oceania": [535, 0.08, 5.42]},
+ "by_continent_fields": "[land_points, share_outside_aoa, mean_di]",
+ "top_countries_share_outside": {"India": 0.42, "Indonesia": 0.69, "Saudi Arabia": 0.69, "Algeria": 0.50, "Sudan": 0.54,
+   "Greenland": 0.55, "Libya": 0.50, "Russia": 0.05, "China": 0.08, "Niger": 0.65, "Mauritania": 0.65, "Chad": 0.44,
+   "Kazakhstan": 0.18, "Myanmar": 0.65, "Peru": 0.35, "Egypt": 0.43, "Pakistan": 0.55, "Mongolia": 0.26, "Mali": 0.36,
+   "Papua New Guinea": 0.77, "Chile": 0.44, "Madagascar": 0.59}}
