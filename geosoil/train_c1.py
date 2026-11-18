@@ -177,7 +177,8 @@ def main(argv: list[str] | None = None) -> None:
     a = ap.parse_args(argv)
     import torch
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    w, feats = wide_table(pd.read_parquet(a.table))
+    from .baseline_c1 import load_topsoil
+    w, feats = wide_table(load_topsoil(a.table, train_only=True))
     if a.max_rows and len(w) > a.max_rows:
         w = w.sample(a.max_rows, random_state=0).reset_index(drop=True)
     n_params = sum(p.numel() for p in build_model(len(feats) * 2 + 25 * a.neighbours, 5, a.width, a.depth).parameters())

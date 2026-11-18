@@ -112,8 +112,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--drop-group", action="store_true")
     ap.add_argument("--max-rows", type=int, default=150_000, help="rows per target (0 = all)")
     a = ap.parse_args(argv)
-    df = pd.read_parquet(C.DATA_PROC / "train_c1.parquet")
-    df = df[df["interval"].isin(TOPSOIL) & (df["split"] == "train")].copy()
+    from .baseline_c1 import load_topsoil
+    df = load_topsoil(train_only=True)
     df["depth_mid"] = (df["depth_top"] + df["depth_bot"]) / 2
     floor = json.loads((C.RESULTS / "noise_floor.json").read_text())["targets"]
     groups = feature_groups(df.columns)

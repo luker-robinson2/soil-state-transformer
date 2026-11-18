@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=48G
+#SBATCH --mem=128G
 #SBATCH --time=06:00:00
 #SBATCH --output=logs/baseline_c1_%j.out
 # Join labels + splits + features, then the LightGBM spatial-CV baseline on lab labels.

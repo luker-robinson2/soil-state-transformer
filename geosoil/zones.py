@@ -97,8 +97,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--max-rows", type=int, default=150_000)
     ap.add_argument("--table", default=str(C.DATA_PROC / "train_c1.parquet"))
     a = ap.parse_args(argv)
-    df = pd.read_parquet(a.table)
-    df = df[df["interval"].isin(TOPSOIL)].copy()
+    from .baseline_c1 import load_topsoil
+    df = load_topsoil(a.table)
     df["depth_mid"] = (df["depth_top"] + df["depth_bot"]) / 2
     cols_all = groups(df.columns)["all"]
     # zones from site covariates (one row per site), excluding depth and coordinates

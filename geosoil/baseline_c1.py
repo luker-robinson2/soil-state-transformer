@@ -30,6 +30,20 @@ TOPSOIL = ("0-5", "5-15", "15-30")
 BASE = ["depth_mid", "lon", "lat"]
 
 
+def load_topsoil(path=None, train_only: bool = False) -> pd.DataFrame:
+    """Topsoil rows of the training table, read with a parquet filter and float32 features.
+
+    Reading the whole table and filtering afterwards needed >48 GB once the corpus passed 300k sites with landscape
+    context (2026-11-18 OOM); the filter and float32 keep it to a fraction of that.
+    """
+    filters = [("interval", "in", list(TOPSOIL))] + ([("split", "==", "train")] if train_only else [])
+    df = pd.read_parquet(path or C.DATA_PROC / "train_c1.parquet", filters=filters)
+    keep64 = {"lon", "lat", "value", "depth_top", "depth_bot"}
+    f64 = [c for c in df.columns if df[c].dtype == "float64" and c not in keep64]
+    df[f64] = df[f64].astype("float32")
+    return df.reset_index(drop=True)
+
+
 def groups(columns) -> dict[str, list[str]]:
     """Each modality alone, terrain + AlphaEarth, and everything (location and depth are always added)."""
     from .features.groups import feature_groups
@@ -83,8 +97,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--max-rows", type=int, default=0, help="subsample rows per target (speed)")
     ap.add_argument("--neighbours", action="store_true", help="also score fold-built neighbouring-label features")
     a = ap.parse_args(argv)
-    df = pd.read_parquet(C.DATA_PROC / "train_c1.parquet")
-    df = df[df["interval"].isin(TOPSOIL)].copy()
+    df = load_topsoil()
     df["depth_mid"] = (df["depth_top"] + df["depth_bot"]) / 2
     floor = json.loads((C.RESULTS / "noise_floor.json").read_text())["targets"]
     res = {}
