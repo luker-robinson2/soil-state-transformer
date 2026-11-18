@@ -171,6 +171,25 @@ Unique contribution (drop-group ΔR², mean of 3 seeds; ± is about 0.002–0.00
 | Depth to bedrock (new) | 0.000 | 0.000 | −0.002 | 0.000 | −0.001 |
 | HAND, land-use history, annual climate, 30 m terrain | ≤ +0.001 | ≤ 0 | ≤ 0 | ≤ +0.001 | ≤ 0 |
 
+**Round 5** (job 35869865, 2026-11-18; `geosoil/results/round5_summary.json`). Labels now include SISLAC
+(the compendium joins in round 6); adds the AlphaEarth landscape context (embedding means within 500 m and 3 km,
+and site-vs-context similarity) and scores the five new targets. Every target's 90% interval covers 0.90.
+
+| | SOC | pH | Sand | Clay | BD | OM | CEC | K | Ca | Mg |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Round 4, all groups | 0.543 | 0.602 | 0.425 | 0.373 | 0.467 | – | – | – | – | – |
+| **Round 5, all groups** | **0.548** | **0.611** | **0.441** | **0.389** | **0.471** | 0.553 | 0.405 | 0.491 | 0.546 | 0.471 |
+| AlphaEarth context alone | 0.524 | 0.590 | 0.403 | 0.358 | 0.442 | 0.530 | 0.376 | 0.465 | 0.520 | 0.441 |
+| AlphaEarth (site pixel) alone | 0.511 | 0.558 | 0.355 | 0.318 | 0.445 | 0.518 | 0.348 | 0.458 | 0.502 | 0.424 |
+| Ceiling | 0.86 | 0.90 | 0.92 | 0.87 | 0.82 | – | 0.89 | 0.83 | 0.91 | 0.88 |
+
+- **Landscape context is the first real gain since round 2:** +0.016 sand and clay, +0.009 pH. On its own it beats
+  the site's own embedding by +0.03 to +0.05 for texture, pH and CEC. Soil follows the surrounding landscape;
+  one 10 m pixel misses that.
+- **Class agreement:** sand lands in the lab value's class 58% of the time and within one class 98%; clay 44% / 91%;
+  SOC 45% / 89%; BD 46% / 90%; pH 30% / 73% (pH classes are only 0.5 units wide).
+- **New targets:** CEC is the hardest (0.41 of 0.89), the bases sit at 0.47–0.55.
+
 **Decisions from round 3:**
 - The static map layers are saturating: the four new sources together moved texture by about +0.005,
   which is within seed noise. Each new geology layer mostly repeats lithology, radiometrics and climate.
