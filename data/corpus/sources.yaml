@@ -423,6 +423,24 @@ sources:
     checked: 2026-11-18
     status_detail: "geosoil/corpus/nspd.py. Hor_lab sheet, LandPKS skipped; Schwarzeck coordinates unshifted (match the WoSIS/NAMSOTER copies); CEC Effective skipped. 2,659 sites, 50% gap fill"
 
+  - id: rmqs
+    name: France RMQS1 (soil quality monitoring network), first campaign
+    role: label
+    access: "https://entrepot.recherche.data.gouv.fr/api/access/datafile/122620?format=original"
+    license: "Etalab Open Licence 2.0"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/rmqs.py. 2,167 sites on the 16 km grid (theoretical nodes, 1 km precision); Metson CEC and NH4OAc K/Ca/Mg (standard methods); outranks WoSIS 2023, which holds RMQS1 without bases. Host timed out on 2026-11-18; build reuses the last parquet"
+
+  - id: lucas_bd2018
+    name: LUCAS 2018 topsoil bulk density (measured rows only)
+    role: label
+    access: "https://zenodo.org/records/10211884"
+    license: "CC-BY-4.0 (Zenodo record; values from EU LUCAS, train-only, never redistributed)"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/lucas_bd2018.py. 5,163 measured 0-20 cm BD sites (13,782 model-predicted rows dropped)"
+
   - id: wosis_latest
     name: WoSIS latest (ISRIC live WFS), datasets not in the 2023 snapshot
     role: label

@@ -20,7 +20,7 @@ from .. import config as C
 from . import common, dedup, harmonize, noise_floor, splits
 
 MODULES = ("kssl", "wosis", "npdb", "brazil", "sislac", "olm_compendium", "ossl", "napeshm", "usgs_ds801",
-           "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "raca")
+           "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "rmqs", "lucas_bd2018", "raca")
 
 
 def summarize(c1: pd.DataFrame, log: pd.DataFrame, drops: dict) -> dict:
@@ -53,8 +53,20 @@ def main() -> None:
         if name in a.skip:
             continue
         mod = importlib.import_module(f"geosoil.corpus.{name}")
-        labels, d = mod.load()
-        common.write(labels, d, C.DATA_PROC / f"labels_{mod.SOURCE}.parquet")
+        dest = C.DATA_PROC / f"labels_{mod.SOURCE}.parquet"
+        try:
+            labels, d = mod.load()
+        except OSError as e:                      # a host is down: reuse the last build of this source, else skip
+            if not dest.exists():
+                print(f"SKIP {name}: {e} (no earlier build)", flush=True)
+                drops[mod.SOURCE] = {"skipped": str(e)[:200]}
+                continue
+            print(f"REUSE {name}: {e}; using {dest.name}", flush=True)
+            labels, d = pd.read_parquet(dest), {"reused_after": str(e)[:200]}
+            tables.append(labels)
+            drops[mod.SOURCE] = d
+            continue
+        common.write(labels, d, dest)
         tables.append(labels)
         drops[mod.SOURCE] = d
     c1, log = dedup.build_c1(tables)
