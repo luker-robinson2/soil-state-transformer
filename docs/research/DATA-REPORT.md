@@ -190,6 +190,23 @@ and site-vs-context similarity) and scores the five new targets. Every target's 
   SOC 45% / 89%; BD 46% / 90%; pH 30% / 73% (pH classes are only 0.5 units wide).
 - **New targets:** CEC is the hardest (0.41 of 0.89), the bases sit at 0.47–0.55.
 
+**Round 7** (job 35882824, 2026-11-18; `geosoil/results/round7_summary.json`). 330k site records: adds the
+OpenLandMap compendium, nine national/research sources and the Flanders coordinate fix; landscape context everywhere.
+
+| | SOC | pH | Sand | Clay | BD | OM | CEC | K | Ca | Mg |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Round 5 | 0.548 | 0.611 | 0.441 | 0.389 | 0.471 | 0.553 | 0.405 | 0.491 | 0.546 | 0.471 |
+| **Round 7** | **0.553** | **0.618** | **0.469** | **0.398** | **0.505** | **0.557** | 0.385 | 0.436 | 0.529 | 0.469 |
+| Rows, round 5 → 7 | 383k→488k | 324k→433k | 352k→472k | 433k→529k | 75k→125k | 387k→492k | 251k→329k | 138k→259k | 136k→252k | 138k→251k |
+
+- **New, more diverse labels help texture and BD most:** sand +0.028, BD +0.034, on larger and harder test sets.
+- **CEC and K dropped** (−0.020, −0.055), with Ca slightly down, while their rows nearly doubled. Most added CEC and
+  base labels come from sources whose extraction method is unrecorded or different (compendium mg/kg conversions,
+  NH4Cl in FIA, Cohex in ICRAF, sum-of-bases CEC), entered as `unknown` families. That mixes methods into one
+  label. Next: score these targets on the canonical families only (pH-7 CEC, NH4OAc bases), and keep the
+  other families as auxiliary inputs or a separate head.
+- Neural MLP (round 7) still trails LightGBM by 0.03–0.04.
+
 **Decisions from round 3:**
 - The static map layers are saturating: the four new sources together moved texture by about +0.005,
   which is within seed noise. Each new geology layer mostly repeats lithology, radiometrics and climate.

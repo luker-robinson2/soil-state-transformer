@@ -132,6 +132,14 @@ Zones by k-means on 16 principal components of the site covariates, scored on th
 - So T2 becomes a distillation and serving tier (small per-zone students of the global model), not separately trained
   models; and zone coverage becomes a data-acquisition target.
 
+### Regional blend control (round 7, job 35874901): the gain is locality
+
+Blending the global model with a model trained on a random subset of the same size makes it **worse** for every
+target; blending with the regional model makes it better. The difference is regional information:
+SOC +0.020, pH +0.024, sand +0.059, clay +0.056, BD +0.092, CEC +0.049 (0.25° folds, 150 or 400 km; full table in
+`geosoil/results/round7_summary.json`). T1 is therefore a blend of the global model with a radius model where
+labels are dense, not a residual correction and not plain ensembling.
+
 ## Plan
 
 1. **Measure** (now): the scale curve, skill by distance, and regional vs global at R = 150 and 400 km.
