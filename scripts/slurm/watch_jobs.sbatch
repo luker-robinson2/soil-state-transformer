@@ -13,4 +13,4 @@
 #   TOPIC=<ntfy-topic> sbatch scripts/slurm/watch_jobs.sbatch     (resubmit daily, or chain with --dependency)
 set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
-exec bash scripts/slurm/watch_jobs.sh "${TOPIC:?set TOPIC}" "${IDS:-/projects/$USER/.geosoil_watch_ids}" "${INTERVAL:-8}"
+exec bash scripts/slurm/watch_jobs.sh "${TOPIC:?set TOPIC}" "${IDS:-/projects/$USER/.geosoil_watch_ids}" "${HOURS:-23}"
