@@ -170,3 +170,9 @@ def test_olm_compendium_keeps_only_new_sources_and_converts_bases():
     assert pt["ca"] == pytest.approx(10.0) and pt["mg"] == pytest.approx(2.0) and pt["k"] == pytest.approx(1.0)
     cn = set(labels.loc[labels["site_id"].str.contains("CNSOCS"), "target"])
     assert cn == {"sand", "clay", "ph"}                            # China SOCS: texture and pH only
+
+
+def test_flanders_coordinates_are_reprojected_with_epsg_31370():
+    from geosoil.corpus import geofix
+    lon, lat = geofix.flanders_31300_to_31370(np.array([4.477618]), np.array([51.473316]))
+    assert lon[0] == pytest.approx(4.48817, abs=2e-5) and lat[0] == pytest.approx(51.47332, abs=2e-5)

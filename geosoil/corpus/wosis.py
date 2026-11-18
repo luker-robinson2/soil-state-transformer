@@ -20,13 +20,14 @@ from pathlib import Path
 import pandas as pd
 
 from .. import config as C
-from . import common
+from . import common, geofix
 
 SOURCE = "wosis_2023"
 URL = "https://files.isric.org/public/wosis_snapshot/WoSIS_2023_December.zip"
 RAW = common.RAW / "wosis" / "WoSIS_2023_December.zip"
 # dataset_id codes already covered by a directly ingested source
 EXCLUDE_DATASETS = {"US-NCSS"}
+FLANDERS_DATASET = "BE-VASPDB"
 # property -> (target, method family or None to classify from method_options)
 PROPERTIES = {
     "orgc": ("soc", None),
@@ -67,7 +68,9 @@ def _ratio(text) -> str:
 def property_rows(df: pd.DataFrame, prop: str) -> pd.DataFrame:
     target, family = PROPERTIES[prop]
     df = df[~df["dataset_id"].isin(EXCLUDE_DATASETS)]
-    base = pd.DataFrame({"site_key": df["profile_id"].astype(str), "layer_key": df["layer_id"].astype(str),
+    sk = df["profile_id"].astype(str)
+    sk = sk.where(df["dataset_id"] != FLANDERS_DATASET, sk + geofix.SUFFIX)
+    base = pd.DataFrame({"site_key": sk, "layer_key": df["layer_id"].astype(str),
                          "depth_top": common.num(df["upper_depth"]), "depth_bot": common.num(df["lower_depth"])},
                         index=df.index)
     opts = df["method_options"]
@@ -89,9 +92,16 @@ def property_rows(df: pd.DataFrame, prop: str) -> pd.DataFrame:
 def build(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, dict]:
     vals = pd.concat([property_rows(df, p) for p, df in tables.items()], ignore_index=True)
     allrows = pd.concat([df[~df["dataset_id"].isin(EXCLUDE_DATASETS)] for df in tables.values()])
+    lon, lat = common.num(allrows["longitude"]), common.num(allrows["latitude"])
+    site_key = allrows["profile_id"].astype(str)
+    fl = (allrows["dataset_id"] == FLANDERS_DATASET).to_numpy()
+    if fl.any():                                     # EPSG:31300 vs 31370 error in the Flanders set (geofix.py)
+        lon, lat = lon.copy(), lat.copy()
+        lon.loc[fl], lat.loc[fl] = geofix.flanders_31300_to_31370(lon[fl], lat[fl])
+        site_key = site_key.where(~fl, site_key + geofix.SUFFIX)
     sites = pd.DataFrame({
-        "site_key": allrows["profile_id"].astype(str),
-        "lon": common.num(allrows["longitude"]), "lat": common.num(allrows["latitude"]),
+        "site_key": site_key,
+        "lon": lon, "lat": lat,
         "coord_source": "longitude/latitude",
         "coord_precision_m": allrows["positional_uncertainty"].map(UNCERTAINTY_M),
         "year": pd.to_datetime(allrows["date"], errors="coerce").dt.year,

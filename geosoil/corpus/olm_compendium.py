@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 
 from .. import config as C
-from . import common
+from . import common, geofix
 
 SOURCE = "olm_compendium"
 URL = "https://zenodo.org/api/records/19731002/files/sol_chem.pnts_horizons.rds/content"
@@ -55,11 +55,16 @@ MG_PER_CMOL = {"k": 391.0, "ca": 200.4, "mg": 121.5}
 def build(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     df = df[df["source_db"].isin(SOURCES)].copy()
     lon, lat = common.num(df["longitude_decimal_degrees"]), common.num(df["latitude_decimal_degrees"])
+    fl = (df["source_db"] == "Vlaanderen").to_numpy()
+    if fl.any():                                     # EPSG:31300 vs 31370 error in the Flanders set (geofix.py)
+        lon, lat = lon.copy(), lat.copy()
+        lon.loc[fl], lat.loc[fl] = geofix.flanders_31300_to_31370(lon[fl], lat[fl])
     # some sources carry no usable site key (one key for every row): key sites by coordinates instead
     coord_key = df["source_db"] + "/" + lon.round(5).astype(str) + "_" + lat.round(5).astype(str)
     weak = df.groupby("source_db")["site_key"].transform("nunique") <= 1
     site_key = np.where(weak | df["site_key"].isna(), coord_key, df["source_db"] + "/" + df["site_key"].astype(str))
     site_key = pd.Series(site_key, index=df.index)
+    site_key = site_key.where(~fl, site_key + geofix.SUFFIX)
     layer_key = site_key + "/" + df["hzn_top"].astype(str) + "-" + df["hzn_bot"].astype(str) + "/" + \
         df.groupby(site_key).cumcount().astype(str)
     base = pd.DataFrame({"site_key": site_key, "layer_key": layer_key,
