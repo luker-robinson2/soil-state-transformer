@@ -65,3 +65,10 @@ def test_topup_picks_a_task_count_no_shard_uses(tmp_path):
         (tmp_path / "y2017-2025" / f"sites-0000-of-{n:04d}.parquet").touch()
     assert topup.free_ntasks(tmp_path, 16) == 18
     assert topup.free_ntasks(tmp_path, 4) == 4
+
+
+def test_reserved_task_counts_are_skipped_before_any_shard_exists(tmp_path):
+    from geosoil.features import topup
+    assert topup.reserve(tmp_path, 18) == 18
+    assert topup.free_ntasks(tmp_path, 18) == 19          # a running top-up with no shards yet still blocks 18
+    assert topup.reserve(tmp_path, 18) == 19
