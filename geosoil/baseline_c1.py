@@ -79,6 +79,11 @@ def main(argv: list[str] | None = None) -> None:
     df["depth_mid"] = (df["depth_top"] + df["depth_bot"]) / 2
     floor = json.loads((C.RESULTS / "noise_floor.json").read_text())["targets"]
     res = {}
+    # Runs land in results/runs/ (gitignored) so cluster jobs never dirty the git checkout;
+    # copy a run to results/baseline_c1.json deliberately when it becomes the reference.
+    runs = C.RESULTS / "runs"
+    runs.mkdir(exist_ok=True)
+    out = runs / f"baseline_c1_{pd.Timestamp.now():%Y%m%dT%H%M}.json"
     for t in C.TARGETS:
         dt = df[df["target"] == t]
         if a.max_rows and len(dt) > a.max_rows:
@@ -93,13 +98,8 @@ def main(argv: list[str] | None = None) -> None:
             runs_ += [("neighbours", [], True), ("all+neighbours", gs["all"], True)]
         for g, cols, nb in runs_:
             res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
-            print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}")
-    # Runs land in results/runs/ (gitignored) so cluster jobs never dirty the git checkout;
-    # copy a run to results/baseline_c1.json deliberately when it becomes the reference.
-    runs = C.RESULTS / "runs"
-    runs.mkdir(exist_ok=True)
-    out = runs / f"baseline_c1_{pd.Timestamp.now():%Y%m%dT%H%M}.json"
-    out.write_text(json.dumps(res, indent=2))
+            print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}", flush=True)
+        out.write_text(json.dumps(res, indent=2))   # after every target: a walltime kill keeps what finished
     print(f"wrote {out}")
 
 
