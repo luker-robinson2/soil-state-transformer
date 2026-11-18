@@ -20,7 +20,7 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 **Done:**
 - **Targets.** SOC, pH, sand, clay, bulk density, and since 2026-11-17 organic matter, CEC and exchangeable
   K/Ca/Mg (see DATA-REPORT §1).
-- **Labels (C1).** 219,232 training sites since SISLAC and the new targets (2026-11-17); originally 190,567 deduplicated lab-measured training sites (58k CONUS) plus 6,367 RaCA hold-out
+- **Labels (C1).** 286,083 training sites since the OpenLandMap compendium (2026-11-18; 219,232 after SISLAC); originally 190,567 deduplicated lab-measured training sites (58k CONUS) plus 6,367 RaCA hold-out
   sites, from 8 sources pulled without accounts. They are harmonized to standard depths, split into fixed
   spatial folds, and have a measured noise floor (topsoil R² ceilings 0.82–0.92).
   Rebuild: `python -m geosoil.corpus.build_c1`.

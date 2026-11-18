@@ -326,6 +326,15 @@ sources:
     checked: 2026-11-17
     status_detail: "geosoil/corpus/sislac.py. WoSIS-2016, CHLSOC and Mexico INEGI rows skipped (already in WoSIS); 28,190 new training sites after dedup (Ecuador, Argentina, Colombia, Bolivia, Venezuela, Uruguay)"
 
+  - id: olm_compendium
+    name: OpenLandMap SoilSamples v1.1 compendium (Hengl et al. 2026), lab horizons only
+    role: label
+    access: "https://zenodo.org/records/19731002 (sol_chem.pnts_horizons.rds, 90 MB; R export data/extraction/olm_compendium_export.R)"
+    license: "CC-BY-4.0 for the compilation; per source upstream, several unclear (train-only, never committed)"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/olm_compendium.py. Only sources we lack: Netherlands BIS (SOC), Quebec forest texture, China SOCS (texture/pH), USGS NGS, Mexico SAGARPA (CEC, K/Ca/Mg), Portugal INFOSOLO (CEC, bases), Croatia, Slovenia, Iran, Guatemala, Canada forest/subarctic, Alaska. Excluded: LandPKS (hand texture), GLanCE (pseudo-samples), LUCAS, Russia EGRPR, China SOTER (WoSIS copy). +66,851 training sites after dedup."
+
   - id: sodes
     name: SODES, Spanish soil profile database
     role: label

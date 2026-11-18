@@ -153,3 +153,20 @@ def test_sislac_skips_republished_sources_and_fixes_units():
     assert hesd.loc[hesd["target"] == "soc", "value"].iloc[0] == pytest.approx(20.0)   # % -> g/kg
     zero = labels[labels["site_id"].str.endswith(":3")]
     assert set(zero["target"]) == {"ph", "bd"}                    # 0 = not measured for SOC and texture
+
+
+def test_olm_compendium_keeps_only_new_sources_and_converts_bases():
+    from geosoil.corpus import olm_compendium as O
+    base = dict(site_obsdate="2001-06-01", hzn_top=0, hzn_bot=20, clay_total=20.0, sand_total=40.0,
+                organic_carbon=12.0, ph_h2o=6.5, ph_cacl2=np.nan, cec_nh4_ph_7=15.0, sum_of_cations_cec_pH_8_2=np.nan,
+                ca_ext=2004.0, mg_ext=243.0, k_ext=391.0, bulk_density_oven_dry=1.3)
+    rows = [dict(base, site_key="p1", source_db="Portugal.INFOSOLO", longitude_decimal_degrees=-8.0, latitude_decimal_degrees=40.0, layer_key=1),
+            dict(base, site_key="n1", source_db="USDA_NCSS", longitude_decimal_degrees=-100.0, latitude_decimal_degrees=40.0, layer_key=2),
+            dict(base, site_key="h1", source_db="LandPKS", longitude_decimal_degrees=10.0, latitude_decimal_degrees=10.0, layer_key=3),
+            dict(base, site_key="c1", source_db="CNSOCS", longitude_decimal_degrees=110.0, latitude_decimal_degrees=30.0, layer_key=4)]
+    labels, _ = O.build(pd.DataFrame(rows))
+    assert labels["site_id"].nunique() == 2                       # NCSS (ours already) and LandPKS (hand texture) skipped
+    pt = labels[labels["site_id"].str.contains("Portugal")].set_index("target")["value"]
+    assert pt["ca"] == pytest.approx(10.0) and pt["mg"] == pytest.approx(2.0) and pt["k"] == pytest.approx(1.0)
+    cn = set(labels.loc[labels["site_id"].str.contains("CNSOCS"), "target"])
+    assert cn == {"sand", "clay", "ph"}                            # China SOCS: texture and pH only
