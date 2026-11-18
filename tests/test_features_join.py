@@ -56,3 +56,12 @@ def test_topup_finds_only_unfeatured_sites():
     out = topup.new_sites(labels, pd.DataFrame({"site_id": ["a", "c"]}))
     assert out["site_id"].tolist() == ["b"]
     assert topup.new_sites(labels, pd.DataFrame())["site_id"].tolist() == ["a", "b", "c"]
+
+
+def test_topup_picks_a_task_count_no_shard_uses(tmp_path):
+    from geosoil.features import topup
+    (tmp_path / "y2017-2025").mkdir()
+    for n in (16, 17):
+        (tmp_path / "y2017-2025" / f"sites-0000-of-{n:04d}.parquet").touch()
+    assert topup.free_ntasks(tmp_path, 16) == 18
+    assert topup.free_ntasks(tmp_path, 4) == 4
