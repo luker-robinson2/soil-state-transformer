@@ -25,6 +25,7 @@ per chunk of sites under projects/<project>/assets/geosoil, then downloads them 
 
     python -m geosoil.features.gee_context --part bare_soil submit      # start the exports
     python -m geosoil.features.gee_context --part bare_soil collect     # rerun until all are collected
+    python -m geosoil.features.gee_context --part alphaearth_context interactive   # light parts: direct requests
 """
 from __future__ import annotations
 
@@ -256,10 +257,61 @@ def collect(part: str, out_root: Path) -> dict:
     return {"part": part, **counts, "errors": errors[:3]}
 
 
+def interactive(sites: pd.DataFrame, part: str, out_root: Path, workers: int = 10, sub: int = 250) -> dict:
+    """Fill missing shards of the existing plans with direct requests instead of batch exports.
+
+    Only for parts light enough to finish inside the interactive time limit (alphaearth_context:
+    ~35 s per 250 sites). Bare-soil composites over 7 years must use batch exports.
+    Interactive requests do not queue behind the project's four concurrent batch tasks.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    ee = init_ee()
+    images = {"ae": alphaearth_image(ee)} if part == "alphaearth_context" else {"bs": bare_soil_image(ee)}
+    out = out_root / part
+    coords = sites.assign(site_id=sites["site_id"].astype(str)).set_index("site_id")[["lon", "lat"]]
+    todo = [(n, int(t), plan.loc[plan["task"] == t, "site_id"]) for n, plan in _plans(out).items()
+            for t in sorted(plan["task"].unique()) if not shards.shard_path(out, int(t), n).exists()]
+
+    def work(n, t, ids):
+        chunk = coords.reindex(ids).dropna().reset_index()
+        parts = []
+        for i in range(0, len(chunk), sub):
+            for attempt in range(4):
+                try:
+                    fc = chunk_image(ee, part, images, chunk.iloc[i:i + sub])
+                    parts.append(pd.DataFrame([f["properties"] for f in fc.getInfo()["features"]]))
+                    break
+                except Exception:
+                    if attempt == 3:
+                        raise
+                    import time
+                    time.sleep(10 * 2 ** attempt)
+        df = to_frame(part, pd.concat(parts, ignore_index=True))
+        shards.write(df, out, t, n, {
+            "source": part, "project": PROJECT, "mode": "interactive",
+            "years": YEARS if part == "bare_soil" else AE_YEARS,
+            "licence": "Sentinel-2: Copernicus open licence; AlphaEarth: CC-BY 4.0 (Google)",
+            "sites": int(len(df)), "failed_blocks": [],
+            "coverage": round(float(df.iloc[:, 1:].notna().any(axis=1).mean()), 4)})
+        return t
+
+    done, failed = 0, []
+    with ThreadPoolExecutor(workers) as pool:
+        futs = {pool.submit(work, n, t, ids): (n, t) for n, t, ids in todo}
+        for f in as_completed(futs):
+            try:
+                f.result()
+                done += 1
+            except Exception as e:
+                failed.append({"block": f"{futs[f][0]}:{futs[f][1]}", "error": repr(e)[:200]})
+            print(f"{part}: {done}/{len(todo)} shards, {len(failed)} failed", flush=True)
+    return {"part": part, "written": done, "failed": len(failed), "errors": failed[:3]}
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--part", choices=PARTS, required=True)
-    ap.add_argument("action", choices=("submit", "collect"))
+    ap.add_argument("action", choices=("submit", "collect", "interactive"))
     ap.add_argument("--labels", type=Path, default=C.DATA_PROC / "labels_c1.parquet")
     ap.add_argument("--out-root", type=Path, default=C.DATA_PROC / "features")
     ap.add_argument("--chunk", type=int, default=CHUNK)
@@ -268,6 +320,9 @@ def main(argv: list[str] | None = None) -> None:
     if a.action == "submit":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
         res = submit(sites, a.part, a.out_root, a.chunk, a.limit)
+    elif a.action == "interactive":
+        sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
+        res = interactive(sites, a.part, a.out_root)
     else:
         res = collect(a.part, a.out_root)
     print(json.dumps(res, indent=2, default=str))
