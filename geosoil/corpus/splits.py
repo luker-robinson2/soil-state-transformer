@@ -10,7 +10,13 @@ site) is carried through so RaCA-scored runs can exclude them.
 The temporal hold-out for the satellite features is the latest year both embedding
 sources cover (TEMPORAL_HOLDOUT_YEAR); it applies to inputs, not to these label splits.
 
-Output: data/processed/splits.parquet (site_id, block, split, fold, near_holdout).
+Finer folds for the local and regional model tiers (docs/research/LOCAL-MODELS.md): inside the training
+split, each site also gets a fold at 0.25° (~25 km) and 0.05° (~5 km) blocks, `fold_025` and `fold_005`. The
+test blocks stay the 1° ones, so the held-out set is the same whichever scale a run cross-validates at.
+Smaller blocks put validation sites closer to training sites, so their scores answer "how well does the model
+do with labels nearby", not "how well does it extrapolate"; report them as such.
+
+Output: data/processed/splits.parquet (site_id, block, split, fold, fold_025, fold_005, near_holdout).
 """
 from __future__ import annotations
 
@@ -26,6 +32,7 @@ from .. import config as C
 BLOCK_DEG = 1.0
 N_FOLDS = 5
 TEST_EVERY = 10          # 1 in 10 blocks is test
+FINE_SCALES = {"fold_025": 0.25, "fold_005": 0.05}   # column -> block size in degrees
 TEMPORAL_HOLDOUT_YEAR = 2024   # TESSERA covers 2024 only so far; AlphaEarth 2017-2025
 
 
@@ -46,10 +53,13 @@ def assign(sites: pd.DataFrame) -> pd.DataFrame:
     h = out["block"].map(_hash)
     out["split"] = np.where(h % TEST_EVERY == 0, "test", "train")
     out["fold"] = np.where(out["split"] == "train", (h // TEST_EVERY) % N_FOLDS, -1).astype(int)
+    for col, deg in FINE_SCALES.items():
+        hf = block_id(sites["lon"], sites["lat"], deg).map(lambda b, d=deg: _hash(f"{d}:{b}")).values
+        out[col] = np.where(out["split"] == "train", hf % N_FOLDS, -1).astype(int)
     if "role" in sites:
         hold = (sites["role"] == "holdout").values
         out.loc[hold, "split"] = "holdout"
-        out.loc[hold, "fold"] = -1
+        out.loc[hold, ["fold", *FINE_SCALES]] = -1
     out["near_holdout"] = sites["near_holdout"].fillna(False).astype(bool).values if "near_holdout" in sites else False
     return out.reset_index(drop=True)
 

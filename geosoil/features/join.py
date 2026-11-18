@@ -53,7 +53,8 @@ def static_sources(feat: Path = FEAT) -> dict[str, pd.DataFrame]:
 
 def build(labels: pd.DataFrame, splits: pd.DataFrame, terr: pd.DataFrame, ae: pd.DataFrame,
           others: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:
-    df = labels.merge(splits[["site_id", "block", "split", "fold"]], on="site_id", how="left")
+    keep = ["site_id", "block", "split", "fold", *[c for c in ("fold_025", "fold_005") if c in splits]]
+    df = labels.merge(splits[keep], on="site_id", how="left")
     for tbl in [terr, *((others or {}).values())]:
         if tbl is not None and not tbl.empty:
             df = df.merge(tbl.drop_duplicates("site_id"), on="site_id", how="left")

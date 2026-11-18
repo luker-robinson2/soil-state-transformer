@@ -44,16 +44,21 @@ def groups(columns) -> dict[str, list[str]]:
     return {k: v for k, v in out.items() if v}
 
 
-def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0, neighbours: bool = False) -> dict:
-    """Spatial-CV score. neighbours=True adds fold-built neighbouring-label features (features/neighbours.py)."""
+def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0, neighbours: bool = False,
+              fold_col: str = "fold", return_pred: bool = False):
+    """Spatial-CV score. neighbours=True adds fold-built neighbouring-label features (features/neighbours.py).
+
+    fold_col picks the block scale (fold = 1°, fold_025, fold_005; see corpus/splits.py). With return_pred the
+    out-of-fold predictions and the scored rows come back too (local_eval.py bins them by distance).
+    """
     import lightgbm as lgb
     from .features import neighbours as NB
     d = df[(df["target"] == target) & (df["split"] == "train")].dropna(subset=["value"]).reset_index(drop=True)
     y = np.log1p(d["value"].to_numpy()) if target in C.LOG_TARGETS else d["value"].to_numpy()
     X = d[BASE + cols].to_numpy(np.float32)
     pred = np.full(len(d), np.nan)
-    for k in sorted(d["fold"].unique()):
-        tr, va = (d["fold"] != k).to_numpy(), (d["fold"] == k).to_numpy()
+    for k in sorted(d[fold_col].unique()):
+        tr, va = (d[fold_col] != k).to_numpy(), (d[fold_col] == k).to_numpy()
         Xtr, Xva = X[tr], X[va]
         if neighbours:
             ytr = y[tr]
@@ -66,7 +71,7 @@ def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0, nei
         pred[va] = m.predict(Xva)
     out = metrics(y, pred)
     out["n"], out["sites"] = int(len(d)), int(d["site_id"].nunique())
-    return out
+    return (out, d, y, pred) if return_pred else out
 
 
 def main(argv: list[str] | None = None) -> None:
