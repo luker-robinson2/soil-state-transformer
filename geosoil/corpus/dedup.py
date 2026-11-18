@@ -28,6 +28,10 @@ REPUBLISHES = {
     # a compilation: only sources we lack are loaded, but some of them also reached WoSIS (e.g. SOTER China/Iran)
     "olm_compendium": {"kssl_ldm", "wosis_2023", "brazil_soildata", "canada_npdb", "sislac"},
 }
+# Gap-fill sources: a duplicate site keeps the targets its keeper lacks instead of being dropped whole. The
+# compendium carries exchangeable K/Ca/Mg and CEC at ~30k sites whose WoSIS copy has neither (2026-11-18).
+# A kept remainder is co-located with its keeper, so both always fall in the same 1° block and fold.
+GAP_FILL = {"olm_compendium"}
 HOLDOUT = ("raca",)
 RADIUS_M = 100.0
 HOLDOUT_RADIUS_M = 1000.0
@@ -60,7 +64,7 @@ def merge_same_coordinates(labels: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataF
 
 
 def drop_cross_source(labels: pd.DataFrame, priority=PRIORITY, radius_m: float = RADIUS_M,
-                      republishes=REPUBLISHES):
+                      republishes=REPUBLISHES, gap_fill=GAP_FILL):
     """Keep the highest-priority copy of sites that appear in more than one source."""
     s = _sites(labels)
     rank = {src: i for i, src in enumerate(priority)}
@@ -70,6 +74,13 @@ def drop_cross_source(labels: pd.DataFrame, priority=PRIORITY, radius_m: float =
     nbrs, dists = tree.query_radius(_rad(s), r=radius_m / EARTH_R, return_distance=True)
     kept = np.zeros(len(s), dtype=bool)
     rows = []
+    targets = {}
+    if gap_fill:   # explicit sets: groupby().agg(set) returns lists for pandas' string dtype
+        pairs = labels.loc[labels["source"].isin(set(gap_fill) | {k for v in republishes.values() for k in v}),
+                           ["site_id", "target"]].drop_duplicates()
+        for sid, t in zip(pairs["site_id"].astype(str), pairs["target"].astype(str)):
+            targets.setdefault(sid, set()).add(t)
+    partial = set()                                       # (site_id, target) rows dropped from gap-fill sites
     src, top, bot = s["source"].to_numpy(), s["top"].to_numpy(), s["bot"].to_numpy()
     for i in range(len(s)):
         hit = None
@@ -82,12 +93,23 @@ def drop_cross_source(labels: pd.DataFrame, priority=PRIORITY, radius_m: float =
             kept[i] = True
         else:
             j, d = hit
-            rows.append(dict(site_id=s.at[i, "site_id"], source=src[i], action="dropped",
-                             keeper_site_id=s.at[j, "site_id"], keeper_source=src[j],
+            sid, kid = s.at[i, "site_id"], s.at[j, "site_id"]
+            extra = targets.get(sid, set()) - targets.get(kid, set()) if src[i] in gap_fill else set()
+            if extra:
+                partial |= {(sid, t) for t in targets[sid] - extra}
+                rows.append(dict(site_id=sid, source=src[i], action="gap_fill", keeper_site_id=kid, keeper_source=src[j],
+                                 distance_m=float(d * EARTH_R), reason=f"kept {sorted(extra)}, which the keeper lacks"))
+                continue
+            rows.append(dict(site_id=sid, source=src[i], action="dropped",
+                             keeper_site_id=kid, keeper_source=src[j],
                              distance_m=float(d * EARTH_R), reason=f"within {radius_m:g} m of a site in a source it republishes"))
     log = pd.DataFrame(rows, columns=["site_id", "source", "action", "keeper_site_id", "keeper_source",
                                       "distance_m", "reason"])
-    return labels[~labels["site_id"].isin(set(log["site_id"]))], log
+    gone = set(log.loc[log["action"] == "dropped", "site_id"])
+    keep = ~labels["site_id"].isin(gone)
+    if partial:
+        keep &= ~pd.Series(list(zip(labels["site_id"], labels["target"])), index=labels.index).isin(partial)
+    return labels[keep], log
 
 
 def flag_near_holdout(train: pd.DataFrame, holdout: pd.DataFrame, radius_m: float = HOLDOUT_RADIUS_M) -> pd.Series:

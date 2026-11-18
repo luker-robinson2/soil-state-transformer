@@ -1,9 +1,11 @@
 """OpenLandMap SoilSamples v1.1 (Hengl et al. 2026; Zenodo 19731002, CC-BY 4.0) → canonical labels.
 
 A compilation of lab-measured soil horizons from many national and research databases (not model predictions).
-Only the source databases we do not already ingest are kept (SOURCES), so nothing is counted twice; sources that
-republish ours (USDA NCSS, RaCA, SISLAC, NatSoil, AfSP, NPDB, iSDA, WISE, Brazil, Chile SOCDB, INEGI, ISCN …)
-are skipped, as is China SOTER (76% of its sites sit within 1 km of a WoSIS site: the same profiles with shifted
+Source databases we lack are loaded in full (SOURCES). AfSP, WISE and Mexico INEGI, which reach us through WoSIS,
+are loaded for CEC and exchangeable K/Ca/Mg only, because WoSIS 2023 has no exchangeable bases; dedup keeps a
+duplicate site's targets that its WoSIS copy lacks (dedup.GAP_FILL). Skipped: sources that fully republish ours
+(USDA NCSS, RaCA, SISLAC, NPDB, iSDA spectral predictions, Brazil, Chile SOCDB, ISCN), Netherlands BIS (its OC is a
+regression on loss on ignition), USGS NGS (the USGS DS-801 survey we already load), China SOTER (76% of its sites sit within 1 km of a WoSIS site: the same profiles with shifted
 coordinates), and LandPKS (app users' hand-texture estimates, not lab data), GLanCE (pseudo-samples), LUCAS
 (JRC terms) and Russia EGRPR (the compendium warns its locations may be synthetic). Dedup still runs against
 WoSIS and the others (dedup.REPUBLISHES), because some national sets also reached WoSIS.
@@ -34,12 +36,18 @@ RAW = common.RAW / "olm_compendium"
 CC = "CC-BY-4.0 (OpenLandMap SoilSamples)"
 UNCLEAR = CC + "; upstream licence unclear, train-only"
 SOURCES = {   # source_db -> licence text
-    "Vlaanderen": CC + "; Flemish open data licence", "QuebecTEX": CC, "CNSOCS": CC, "Mexico-SAGARPA": CC,
-    "Portugal.INFOSOLO": CC, "Slovenia.SPDB": UNCLEAR, "Croatian_Soil_Pedon": UNCLEAR, "ScotlandNSIS1": CC + "; OS open data",
-    "Iran_SPDB": UNCLEAR, "Canada_CUFS": CC, "NAMSOTER": CC, "CostaRica": CC,
-    "Netherlands.BIS": CC, "Canada_subarctic": CC, "Alaska_interior": CC, "Guatemala_GTMSOC": CC, "GEMAS_2009": CC,
-    "USGS.NGS": CC,
+    "QuebecTEX": CC, "CNSOCS": CC + "; upstream CC-BY", "Mexico-SAGARPA": CC + "; upstream CC0",
+    "Portugal.INFOSOLO": UNCLEAR, "Slovenia.SPDB": UNCLEAR, "Croatian_Soil_Pedon": UNCLEAR, "Iran_SPDB": UNCLEAR,
+    "CSIRO_NatSoil": CC + "; upstream CC-BY (CSIRO metadata)", "Guatemala_GTMSOC": CC + "; upstream CC-BY",
+    "Canada_subarctic": CC, "Alaska_interior": CC, "CostaRica": CC, "NAMSOTER": CC, "Canada_CUFS": CC,
+    "ScotlandNSIS1": CC + "; OS open data", "Vlaanderen": CC + "; Flemish open data licence", "GEMAS_2009": CC,
+    # republished in WoSIS, which has no exchangeable bases: loaded for CEC and K/Ca/Mg only (gap fill)
+    "AfSPDB": CC, "ISRIC_WISE": CC, "MexicoINEGI": CC,
 }
+GAP_ONLY = {"AfSPDB", "ISRIC_WISE", "MexicoINEGI"}
+# per-source exclusions found on checking (2026-11-18 data scout pass 2): Croatian "k" is AL-extractable K, not
+# exchangeable; Slovenian "CEC" is a sum of bases; Croatian/Slovenian OC is converted from humus
+DROP = {"Croatian_Soil_Pedon": {"k", "soc"}, "Slovenia.SPDB": {"cec", "soc"}}
 TEXTURE_PH_ONLY = {"CNSOCS"}
 MG_PER_CMOL = {"k": 391.0, "ca": 200.4, "mg": 121.5}
 
@@ -57,17 +65,20 @@ def build(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     base = pd.DataFrame({"site_key": site_key, "layer_key": layer_key,
                          "depth_top": common.num(df["hzn_top"]), "depth_bot": common.num(df["hzn_bot"])})
     full = ~df["source_db"].isin(TEXTURE_PH_ONLY)
+    ok = lambda target: ~df["source_db"].map(lambda sdb: target in DROP.get(sdb, set()) or
+                                            (sdb in GAP_ONLY and target not in {"cec", "k", "ca", "mg"})).astype(bool)
     col = lambda c: common.num(df[c]) if c in df else pd.Series(np.nan, index=df.index)
     parts = [
-        common.long_rows(base, "sand", col("sand_total"), "olm/sand_total", "unknown"),
-        common.long_rows(base, "clay", col("clay_total"), "olm/clay_total", "unknown"),
-        common.long_rows(base, "ph", col("ph_h2o"), "olm/ph_h2o", "ph_h2o"),
-        common.long_rows(base, "ph", col("ph_cacl2"), "olm/ph_cacl2", "ph_cacl2"),
-        common.long_rows(base, "soc", col("organic_carbon").where(full & (col("organic_carbon") > 0)), "olm/organic_carbon", "unknown"),
-        common.long_rows(base, "bd", col("bulk_density_oven_dry").where(full), "olm/bulk_density_oven_dry", "bd_oven_dry"),
-        common.long_rows(base, "cec", col("cec_nh4_ph_7").where(full), "olm/cec_nh4_ph_7", "cec_ph7"),
-        common.long_rows(base, "cec", col("sum_of_cations_cec_pH_8_2").where(full), "olm/cec_ph8.2", "cec_sum_cations_ph82"),
-        *[common.long_rows(base, el, (col(f"{el}_ext") / f).where(full & (col(f"{el}_ext") > 0)), f"olm/{el}_ext", "unknown")
+        common.long_rows(base, "sand", col("sand_total").where(ok("sand")), "olm/sand_total", "unknown"),
+        common.long_rows(base, "clay", col("clay_total").where(ok("clay")), "olm/clay_total", "unknown"),
+        common.long_rows(base, "ph", col("ph_h2o").where(ok("ph")), "olm/ph_h2o", "ph_h2o"),
+        common.long_rows(base, "ph", col("ph_cacl2").where(ok("ph")), "olm/ph_cacl2", "ph_cacl2"),
+        common.long_rows(base, "soc", col("organic_carbon").where(full & ok("soc") & (col("organic_carbon") > 0)),
+                         "olm/organic_carbon", "unknown"),
+        common.long_rows(base, "bd", col("bulk_density_oven_dry").where(full & ok("bd")), "olm/bulk_density_oven_dry", "bd_oven_dry"),
+        common.long_rows(base, "cec", col("cec_nh4_ph_7").where(full & ok("cec")), "olm/cec_nh4_ph_7", "cec_ph7"),
+        common.long_rows(base, "cec", col("sum_of_cations_cec_pH_8_2").where(full & ok("cec")), "olm/cec_ph8.2", "cec_sum_cations_ph82"),
+        *[common.long_rows(base, el, (col(f"{el}_ext") / f).where(full & ok(el) & (col(f"{el}_ext") > 0)), f"olm/{el}_ext", "unknown")
           for el, f in MG_PER_CMOL.items()],
     ]
     vals = pd.concat(parts, ignore_index=True)

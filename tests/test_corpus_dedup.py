@@ -76,3 +76,21 @@ def test_native_source_outranks_the_compilation_copy():
     labels = _df(_rows("w:1", "wosis_2023", 52.0), _rows("npdb:1", "canada_npdb", 52.0))
     kept, log = dedup.drop_cross_source(labels)
     assert kept.site_id.tolist() == ["npdb:1"] and log.iloc[0].site_id == "w:1"
+
+
+def test_gap_fill_sources_keep_only_targets_the_keeper_lacks():
+    from geosoil.corpus import dedup
+    rows = []
+    for t, v in (("soc", 10.0), ("ph", 6.0)):                      # WoSIS copy: SOC and pH, no bases
+        rows.append(dict(site_id="wosis:1", source="wosis_2023", lon=10.0, lat=10.0, depth_top=0.0, depth_bot=20.0,
+                         target=t, value=v))
+    for t, v in (("soc", 11.0), ("k", 0.4), ("ca", 5.0)):          # compendium copy 30 m away: SOC plus bases
+        rows.append(dict(site_id="olm:1", source="olm_compendium", lon=10.00027, lat=10.0, depth_top=0.0,
+                         depth_bot=20.0, target=t, value=v))
+    out, log = dedup.drop_cross_source(pd.DataFrame(rows).astype({"site_id": "string", "target": "string", "source": "string"}))
+    kept = set(zip(out["site_id"], out["target"]))
+    assert ("olm:1", "soc") not in kept and {("olm:1", "k"), ("olm:1", "ca")} <= kept
+    assert log.loc[log["site_id"] == "olm:1", "action"].item() == "gap_fill"
+    # a non-gap-fill republisher is still dropped whole
+    out2, _ = dedup.drop_cross_source(pd.DataFrame(rows).replace({"olm_compendium": "ossl_v1_2"}))
+    assert "olm:1" not in set(out2["site_id"])

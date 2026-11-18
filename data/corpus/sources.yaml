@@ -333,7 +333,7 @@ sources:
     license: "CC-BY-4.0 for the compilation; per source upstream, several unclear (train-only, never committed)"
     status: ingested
     checked: 2026-11-18
-    status_detail: "geosoil/corpus/olm_compendium.py. Only sources we lack: Netherlands BIS (SOC), Quebec forest texture, China SOCS (texture/pH), USGS NGS, Mexico SAGARPA (CEC, K/Ca/Mg), Portugal INFOSOLO (CEC, bases), Croatia, Slovenia, Iran, Guatemala, Canada forest/subarctic, Alaska. Excluded: LandPKS (hand texture), GLanCE (pseudo-samples), LUCAS, Russia EGRPR, China SOTER (WoSIS copy). +66,851 training sites after dedup."
+    status_detail: "geosoil/corpus/olm_compendium.py. Sources we lack loaded in full (Quebec texture, China SOCS texture/pH, Mexico SAGARPA, Portugal, CSIRO NatSoil, Croatia, Slovenia, Iran, Guatemala, Canada forest/subarctic, Alaska ...); AfSP, WISE and INEGI for CEC and K/Ca/Mg only, as gap fill at WoSIS sites (dedup.GAP_FILL). Excluded: LandPKS hand texture, GLanCE pseudo-samples, LUCAS, Russia EGRPR, China SOTER (WoSIS copy), Netherlands BIS (OC from a LOI regression), USGS NGS (= DS-801). Fixed mislabels: Croatian AL-K, Slovenian sum-of-bases CEC, humus-derived OC. Topsoil K 85k, Ca 81k, Mg 81k, CEC 129k after it (2026-11-18)."
 
   - id: sodes
     name: SODES, Spanish soil profile database

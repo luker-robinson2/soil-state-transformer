@@ -4,20 +4,20 @@
   "test_every": 10,
   "temporal_holdout_year": 2024,
   "sites_by_split": {
-    "train": 264186,
-    "test": 21897,
+    "train": 278390,
+    "test": 22376,
     "holdout": 6367
   },
   "sites_by_fold": {
-    "0": 43208,
-    "1": 46273,
-    "2": 64966,
-    "3": 46723,
-    "4": 63016
+    "0": 49374,
+    "1": 52443,
+    "2": 60110,
+    "3": 52622,
+    "4": 63841
   },
   "blocks_by_split": {
-    "train": 7187,
-    "test": 763,
+    "train": 7319,
+    "test": 780,
     "holdout": 1
   }
 }

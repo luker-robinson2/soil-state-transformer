@@ -1,14 +1,14 @@
 {
   "sites": {
-    "train": 286083,
+    "train": 300766,
     "holdout": 6367,
-    "train_conus": 75752,
-    "near_holdout": 226
+    "train_conus": 74012,
+    "near_holdout": 211
   },
-  "values": 5410367,
+  "values": 5911456,
   "train_sites_by_source": {
     "wosis_2023": 120785,
-    "olm_compendium": 66851,
+    "olm_compendium": 81534,
     "kssl_ldm": 47489,
     "sislac": 28288,
     "brazil_soildata": 9127,
@@ -18,19 +18,19 @@
     "napeshm": 92
   },
   "train_topsoil_sites_by_target": {
-    "bd": 37215,
-    "ca": 58355,
-    "cec": 113250,
-    "clay": 202297,
-    "k": 60935,
-    "mg": 59001,
+    "bd": 40649,
+    "ca": 81460,
+    "cec": 129283,
+    "clay": 205006,
+    "k": 84725,
+    "mg": 81335,
     "om": 3548,
-    "ph": 168206,
-    "sand": 170300,
-    "soc": 196704
+    "ph": 179478,
+    "sand": 180433,
+    "soc": 181101
   },
   "license_values": {
-    "open": 4500971,
+    "open": 5002060,
     "noncommercial": 794179
   },
   "dedup": [
@@ -57,12 +57,17 @@
     {
       "source": "olm_compendium",
       "action": "dropped",
-      "sites": 15199
+      "sites": 3521
+    },
+    {
+      "source": "olm_compendium",
+      "action": "gap_fill",
+      "sites": 34117
     },
     {
       "source": "olm_compendium",
       "action": "merged",
-      "sites": 2307
+      "sites": 5214
     },
     {
       "source": "ossl_v1_2",
@@ -93,18 +98,23 @@
   "dropped_cross_source_by_keeper": [
     {
       "source": "olm_compendium",
+      "keeper_source": "brazil_soildata",
+      "sites": 1
+    },
+    {
+      "source": "olm_compendium",
       "keeper_source": "canada_npdb",
-      "sites": 2348
+      "sites": 31
     },
     {
       "source": "olm_compendium",
       "keeper_source": "kssl_ldm",
-      "sites": 105
+      "sites": 764
     },
     {
       "source": "olm_compendium",
       "keeper_source": "wosis_2023",
-      "sites": 12746
+      "sites": 2725
     },
     {
       "source": "ossl_v1_2",
@@ -182,11 +192,11 @@
       "input_values": 424504
     },
     "olm_compendium": {
-      "bad_depth": 29628,
-      "out_of_range": 2258,
+      "bad_depth": 29578,
+      "out_of_range": 2305,
       "no_coordinates": 0,
-      "kept": 704469,
-      "input_values": 736355
+      "kept": 1261955,
+      "input_values": 1293838
     },
     "ossl_v1_2": {
       "bad_depth": 1775,
