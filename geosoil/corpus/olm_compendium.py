@@ -47,7 +47,9 @@ SOURCES = {   # source_db -> licence text
 GAP_ONLY = {"AfSPDB", "ISRIC_WISE", "MexicoINEGI"}
 # per-source exclusions found on checking (2026-11-18 data scout pass 2): Croatian "k" is AL-extractable K, not
 # exchangeable; Slovenian "CEC" is a sum of bases; Croatian/Slovenian OC is converted from humus
-DROP = {"Croatian_Soil_Pedon": {"k", "soc"}, "Slovenia.SPDB": {"cec", "soc"}}
+# NatSoil: sand is 2.3x WoSIS AU-CSIRO at the same 233 sites (ISSS > 20 um or summed fractions), and K differs from
+# QLD SALI at 138 shared sites by ratios 0.06-6.7 (mixed units); both dropped until the method is known.
+DROP = {"Croatian_Soil_Pedon": {"k", "soc"}, "Slovenia.SPDB": {"cec", "soc"}, "CSIRO_NatSoil": {"sand", "k"}}
 TEXTURE_PH_ONLY = {"CNSOCS"}
 MG_PER_CMOL = {"k": 391.0, "ca": 200.4, "mg": 121.5}
 

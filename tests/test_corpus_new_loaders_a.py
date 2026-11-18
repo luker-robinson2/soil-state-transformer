@@ -49,7 +49,7 @@ def test_sali_units_methods_and_filters():
     assert soc.loc["sali/6B2", "method_family"] == "dry_combustion"
     sand = _vals(lab, "sand")
     assert len(sand) == 1 and sand["value"].iloc[0] == 35 and sand["method_id"].iloc[0] == "sali/2Z2_CS+FS_isss"
-    assert sand["method_family"].iloc[0] == "unknown"
+    assert sand["method_family"].iloc[0] == "sand_isss"            # ISSS limits: kept in the corpus, dropped by harmonize
     fam = dict(zip(l31["method_id"], l31["method_family"]))
     assert fam["sali/4A1"] == "ph_h2o" and fam["sali/4B1"] == "ph_cacl2" and fam["sali/15C1_CEC"] == "cec_ph7"
     assert fam["sali/15C1_K"] == "nh4oac_ph7" and fam["sali/15A1_K"] == "unknown" and fam["sali/503.01a"] == "bd_oven_dry"

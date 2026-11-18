@@ -171,7 +171,7 @@ def build(samples: pd.DataFrame, results: pd.DataFrame) -> tuple[pd.DataFrame, d
         tot = (wide["2Z2_CS"] + wide["2Z2_FS"]).dropna().rename("value").reset_index()
         g = tot.merge(r.drop_duplicates("layer_key")[["layer_key", "site_key", "depth_top", "depth_bot"]],
                       on="layer_key")
-        parts.append(common.long_rows(g, "sand", g["value"], SAND_METHOD, "unknown"))
+        parts.append(common.long_rows(g, "sand", g["value"], SAND_METHOD, "sand_isss"))   # not USDA sand: harmonize drops it
     vals = pd.concat(parts, ignore_index=True)
 
     site_year = r.groupby("site_key")["year"].min()
