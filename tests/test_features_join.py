@@ -47,3 +47,12 @@ def test_build_merges_any_static_source():
     df = join.build(labels, splits, pd.DataFrame(), pd.DataFrame(),
                     {"climate": pd.DataFrame({"site_id": ["a"], "clim_map": [500.0]})})
     assert df.loc[0, "clim_map"] == 500.0
+
+
+def test_topup_finds_only_unfeatured_sites():
+    from geosoil.features import topup
+    labels = pd.DataFrame({"site_id": ["a", "a", "b", "c"], "lon": [0, 0, 1, 2], "lat": [0, 0, 1, 2],
+                           "coord_precision_m": [None] * 4})
+    out = topup.new_sites(labels, pd.DataFrame({"site_id": ["a", "c"]}))
+    assert out["site_id"].tolist() == ["b"]
+    assert topup.new_sites(labels, pd.DataFrame())["site_id"].tolist() == ["a", "b", "c"]

@@ -19,4 +19,4 @@ module load miniforge
 cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
 python -m geosoil.features.alphaearth extract --task "$SLURM_ARRAY_TASK_ID" --ntasks "${NTASKS:-64}" \
-  --threads "${THREADS:-16}" --neighbors "${NEIGHBORS:-64}" --years "${YEARS:-2020}"
+  --threads "${THREADS:-16}" --neighbors "${NEIGHBORS:-64}" --years "${YEARS:-2020}" --plan "${PLAN:-data/processed/features/alphaearth/plan.parquet}"

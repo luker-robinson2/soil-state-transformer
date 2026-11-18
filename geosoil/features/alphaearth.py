@@ -199,6 +199,7 @@ def main(argv: list[str] | None = None) -> None:
     pp = sub.add_parser("plan")
     pp.add_argument("--years", default="2017-2025")
     pp.add_argument("--labels", type=Path, default=C.DATA_PROC / "labels_c1.parquet")
+    pp.add_argument("--out", type=Path, default=OUT / "plan.parquet", help="plan file (top-ups use their own)")
     pe = sub.add_parser("extract")
     pe.add_argument("--task", type=int, default=0)
     pe.add_argument("--ntasks", type=int, default=1)
@@ -206,6 +207,8 @@ def main(argv: list[str] | None = None) -> None:
     pe.add_argument("--neighbors", type=int, default=0, help="unlabelled pixels kept per block (Phase 3 seed)")
     pe.add_argument("--limit-blocks", type=int, default=0, help="for smoke tests")
     pe.add_argument("--years", default="", help="restrict to these years, e.g. 2020 or 2017-2025")
+    pe.add_argument("--plan", type=Path, default=OUT / "plan.parquet",
+                    help="plan file; a top-up plan with its own --ntasks writes non-colliding shards")
     ps = sub.add_parser("status")
     ps.add_argument("--ntasks", type=int, required=True)
     ps.add_argument("--years", default="")
@@ -214,7 +217,7 @@ def main(argv: list[str] | None = None) -> None:
     if a.cmd == "status":
         print(json.dumps(status(a.ntasks, run_dir), indent=2))
         return
-    plan_path = OUT / "plan.parquet"
+    plan_path = a.out if a.cmd == "plan" else a.plan
     if a.cmd == "plan":
         cols = ["site_id", "lon", "lat", "coord_precision_m"]
         s = pd.read_parquet(a.labels, columns=cols).drop_duplicates("site_id")
@@ -225,7 +228,7 @@ def main(argv: list[str] | None = None) -> None:
             idx_path.parent.mkdir(parents=True, exist_ok=True)
             urllib.request.urlretrieve(INDEX_URL, idx_path)
         p = plan(s, pd.read_parquet(idx_path), _years(a.years))
-        OUT.mkdir(parents=True, exist_ok=True)
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
         p.to_parquet(plan_path, index=False)
         nb = p.groupby(["path", "bx", "by"]).ngroups
         print(json.dumps({"sites": int(s["site_id"].nunique()), "site_years": len(p), "blocks": nb,

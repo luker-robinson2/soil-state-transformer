@@ -17,5 +17,5 @@ module load miniforge R
 cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
 python -m geosoil.corpus.build_c1
-python -m geosoil.features.alphaearth plan --years "${YEARS:-2017-2025}"
+[ -n "${SKIP_PLAN:-}" ] || python -m geosoil.features.alphaearth plan --years "${YEARS:-2017-2025}"
 echo "CORPUS OK"
