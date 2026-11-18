@@ -257,7 +257,7 @@ def collect(part: str, out_root: Path) -> dict:
     return {"part": part, **counts, "errors": errors[:3]}
 
 
-def interactive(sites: pd.DataFrame, part: str, out_root: Path, workers: int = 10, sub: int = 250) -> dict:
+def interactive(sites: pd.DataFrame, part: str, out_root: Path, workers: int = 3, sub: int = 250) -> dict:
     """Fill missing shards of the existing plans with direct requests instead of batch exports.
 
     Only for parts light enough to finish inside the interactive time limit (alphaearth_context:
@@ -276,16 +276,17 @@ def interactive(sites: pd.DataFrame, part: str, out_root: Path, workers: int = 1
         chunk = coords.reindex(ids).dropna().reset_index()
         parts = []
         for i in range(0, len(chunk), sub):
-            for attempt in range(4):
+            for attempt in range(8):                   # restricted-mode projects hit 429s often
                 try:
                     fc = chunk_image(ee, part, images, chunk.iloc[i:i + sub])
                     parts.append(pd.DataFrame([f["properties"] for f in fc.getInfo()["features"]]))
                     break
                 except Exception:
-                    if attempt == 3:
+                    if attempt == 7:
                         raise
+                    import random
                     import time
-                    time.sleep(10 * 2 ** attempt)
+                    time.sleep(min(300, 15 * 2 ** attempt) * random.uniform(0.5, 1.5))
         df = to_frame(part, pd.concat(parts, ignore_index=True))
         shards.write(df, out, t, n, {
             "source": part, "project": PROJECT, "mode": "interactive",
@@ -316,13 +317,15 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--out-root", type=Path, default=C.DATA_PROC / "features")
     ap.add_argument("--chunk", type=int, default=CHUNK)
     ap.add_argument("--limit", type=int, default=0, help="submit only this many chunks (trial runs)")
+    ap.add_argument("--workers", type=int, default=3,
+                    help="interactive concurrency; keep low for projects in Earth Engine restricted mode")
     a = ap.parse_args(argv)
     if a.action == "submit":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
         res = submit(sites, a.part, a.out_root, a.chunk, a.limit)
     elif a.action == "interactive":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
-        res = interactive(sites, a.part, a.out_root)
+        res = interactive(sites, a.part, a.out_root, workers=a.workers)
     else:
         res = collect(a.part, a.out_root)
     print(json.dumps(res, indent=2, default=str))
