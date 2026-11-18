@@ -12,6 +12,10 @@ tiers below share the same features, labels and code. They differ in **which dat
 | **T2 Edaphic zones** | sites grouped into zones of similar soil-forming conditions; one head per zone, distilled from T0 | "Does a model per pedo-climatic zone beat one model for everything?" | zone-blocked CV; skill per zone |
 | **T3 Local** | a site's own neighbourhood (≤ 5 km): neighbouring labels, residual interpolation | "How much do labels a few km away add?" | 0.05° block CV (~5 km); skill by distance |
 
+**Serving rule:** a more specific tier is used only where it beats its parent on held-out data in that place
+(regional over global, zone over regional, local over zone). Otherwise the parent's prediction stands. Every
+tier reports a predictive interval with its measured coverage, not just a point value.
+
 ## Why the evaluation changes per tier
 
 Spatial CV with large blocks (1°) puts validation sites tens of kilometres from any training label. That is
@@ -31,6 +35,16 @@ et al. 2017 (Ecography 40:913) on block CV for spatially structured data.
   - `distance`: out-of-fold R² by distance to training
   - `regional`: radius models per 2° anchor cell, scored beside the global model and a 50/50 blend on the same rows
 - `scripts/slurm/local_eval.sbatch` runs all three on Alpine.
+
+## Metrics every tier reports
+
+- R², RMSE and RPIQ, as now.
+- **Interval coverage:** the share of held-out labels inside the stated 90% interval (split-conformal on spatial
+  folds; Vovk et al. 2005).
+- **Class agreement:** the share of predictions in the same class as the lab value, using public class bands:
+  USDA pH reaction classes, SOC classes, and texture class from sand and clay. A prediction is useful when it lands
+  in the right class, which R² alone does not show.
+- **Held-out axes:** by block scale (above), leave-one-zone-out once zones exist, and leave-one-region-out.
 
 ## Plan
 
