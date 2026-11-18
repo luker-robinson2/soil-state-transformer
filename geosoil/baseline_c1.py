@@ -101,8 +101,12 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--max-rows", type=int, default=0, help="subsample rows per target (speed)")
     ap.add_argument("--neighbours", action="store_true", help="also score fold-built neighbouring-label features")
+    ap.add_argument("--canonical-only", default="", help="comma list of targets restricted to CANONICAL families")
+    ap.add_argument("--groups", default="", help="comma list of groups to score (default: every group)")
+    ap.add_argument("--targets", default="", help="comma list of targets (default: all)")
+    ap.add_argument("--table", default=None, help="training table (default data/processed/train_c1.parquet)")
     a = ap.parse_args(argv)
-    df = load_topsoil()
+    df = load_topsoil(a.table)
     df["depth_mid"] = (df["depth_top"] + df["depth_bot"]) / 2
     floor = json.loads((C.RESULTS / "noise_floor.json").read_text())["targets"]
     res = {}
@@ -136,8 +140,8 @@ def main(argv: list[str] | None = None) -> None:
                 o = d[[c for c in OOF_COLS if c in d]].copy()
                 o["target"], o["y"], o["pred"] = t, y, pred
                 o.to_parquet(oof_dir / f"{t}.parquet", index=False)
-                continue
-            res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
+            else:
+                res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
             r = res[t][g]
             print(f"{t:5s} {g:20s} R2 {r['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {r['n']}  "
                   f"90% cover {r['coverage']:.2f}  class {r['class_exact']:.2f}/{r['class_within_one']:.2f}", flush=True)
