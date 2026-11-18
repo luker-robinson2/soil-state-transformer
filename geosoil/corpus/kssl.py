@@ -96,6 +96,19 @@ def layer_values(layers: pd.DataFrame) -> pd.DataFrame:
                        "third_bar:" + L["bulk_density_third_bar_method"].astype("string").fillna("NA"), "bd_third_bar"))
     parts.append(_rows(L, "bd", L["bulk_density_oven_dry"],
                        "oven_dry:" + L["bulk_density_oven_dry_method"].astype("string").fillna("NA"), "bd_oven_dry"))
+    # CEC and exchangeable bases (cmol(+)/kg). NH4OAc pH 7 is canonical; CEC at pH 8.2 (sum of cations) and
+    # ECEC are kept as their own families so harmonize.py can fit conversions on layers measured both ways.
+    if "cec_nh4_ph_7" in L:
+        parts.append(_rows(L, "cec", L["cec_nh4_ph_7"],
+                           "nh4oac7:" + L["cec_nh4_ph_7_method"].astype("string").fillna("NA"), "cec_ph7"))
+        code = lambda c: pd.Series(c, index=L.index, dtype="string")
+        parts.append(_rows(L, "cec", L["sum_of_cations_cec_pH_8_2"], code("sum_cations_8.2"), "cec_sum_cations_ph82"))
+        parts.append(_rows(L, "cec", L["ecec_base_plus_aluminum"], code("ecec"), "ecec"))
+        for el in ("ca", "mg", "k"):
+            parts.append(_rows(L, el, L[f"{el}_nh4_ph_7"],
+                               "nh4oac7:" + L[f"{el}_nh4_ph_7_method"].astype("string").fillna("NA"), "nh4oac_ph7"))
+        # Mehlich-3 K (mg/kg) -> cmol(+)/kg
+        parts.append(_rows(L, "k", L["potassium_mehlich3_extractable"] / 391.0, code("mehlich3"), "mehlich3"))
     return pd.concat(parts, ignore_index=True)
 
 
@@ -110,7 +123,9 @@ MIRROR = "https://github.com/brownag/labtaxa/releases/download/2026.07/cached-LD
 
 def load(raw: Path = common.RAW / "kssl") -> tuple[pd.DataFrame, dict]:
     """Read the exported CSVs, creating them from the labtaxa mirror if needed (needs Rscript)."""
-    if not (raw / "kssl_layers.csv.gz").exists():
+    stale = (raw / "kssl_layers.csv.gz").exists() and "cec_nh4_ph_7" not in \
+        pd.read_csv(raw / "kssl_layers.csv.gz", nrows=0).columns       # exported before CEC/bases were added
+    if stale or not (raw / "kssl_layers.csv.gz").exists():
         import subprocess
         rds = common.fetch(MIRROR, raw / "cached-LDM-SPC.rds")
         subprocess.run(["Rscript", str(C.REPO / "data" / "extraction" / "kssl_export.R"), str(rds), str(raw)],

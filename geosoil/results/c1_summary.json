@@ -1,31 +1,36 @@
 {
   "sites": {
-    "train": 218757,
+    "train": 219232,
     "holdout": 6367,
-    "train_conus": 58388,
-    "near_holdout": 210
+    "train_conus": 58546,
+    "near_holdout": 211
   },
-  "values": 3344479,
+  "values": 4999761,
   "train_sites_by_source": {
-    "wosis_2023": 120668,
-    "kssl_ldm": 47347,
-    "sislac": 28190,
-    "brazil_soildata": 9123,
-    "canada_npdb": 8061,
+    "wosis_2023": 120785,
+    "kssl_ldm": 47489,
+    "sislac": 28288,
+    "brazil_soildata": 9127,
+    "canada_npdb": 8175,
     "usgs_ds801": 4782,
     "ossl_v1_2": 494,
     "napeshm": 92
   },
   "train_topsoil_sites_by_target": {
     "bd": 31866,
+    "ca": 52095,
+    "cec": 104515,
     "clay": 169265,
+    "k": 52623,
+    "mg": 52643,
+    "om": 3548,
     "ph": 149309,
     "sand": 137268,
-    "soc": 154042
+    "soc": 154041
   },
   "license_values": {
-    "open": 2550840,
-    "noncommercial": 678422
+    "open": 4090365,
+    "noncommercial": 794179
   },
   "dedup": [
     {
@@ -41,7 +46,7 @@
     {
       "source": "kssl_ldm",
       "action": "merged",
-      "sites": 4993
+      "sites": 4995
     },
     {
       "source": "napeshm",
@@ -66,12 +71,12 @@
     {
       "source": "wosis_2023",
       "action": "dropped",
-      "sites": 8300
+      "sites": 8302
     },
     {
       "source": "wosis_2023",
       "action": "merged",
-      "sites": 23748
+      "sites": 23891
     }
   ],
   "dropped_cross_source_by_keeper": [
@@ -103,7 +108,7 @@
     {
       "source": "wosis_2023",
       "keeper_source": "canada_npdb",
-      "sites": 4508
+      "sites": 4510
     },
     {
       "source": "wosis_2023",
@@ -113,49 +118,49 @@
   ],
   "per_source_qa_drops": {
     "kssl_ldm": {
-      "bad_depth": 17056,
-      "out_of_range": 1808,
-      "no_coordinates": 229253,
-      "kept": 1510202,
-      "input_values": 1758319
+      "bad_depth": 30467,
+      "out_of_range": 2987,
+      "no_coordinates": 399735,
+      "kept": 2739958,
+      "input_values": 3173147
     },
     "wosis_2023": {
       "bad_depth": 0,
       "out_of_range": 4042,
       "no_coordinates": 0,
-      "kept": 1325631,
-      "input_values": 1329673,
+      "kept": 1525140,
+      "input_values": 1529182,
       "excluded_datasets": {
-        "US-NCSS": 1257056
+        "US-NCSS": 1563154
       }
     },
     "canada_npdb": {
-      "bad_depth": 6294,
-      "out_of_range": 158,
+      "bad_depth": 8971,
+      "out_of_range": 242,
       "no_coordinates": 0,
-      "kept": 113584,
-      "input_values": 120036
+      "kept": 187623,
+      "input_values": 196836
     },
     "brazil_soildata": {
       "bad_depth": 0,
-      "out_of_range": 1,
-      "no_coordinates": 36122,
-      "kept": 119521,
-      "input_values": 214596
+      "out_of_range": 5,
+      "no_coordinates": 43892,
+      "kept": 146323,
+      "input_values": 262411
     },
     "sislac": {
-      "bad_depth": 196,
-      "out_of_range": 4067,
+      "bad_depth": 278,
+      "out_of_range": 4116,
       "no_coordinates": 0,
-      "kept": 274880,
-      "input_values": 279143
+      "kept": 420110,
+      "input_values": 424504
     },
     "ossl_v1_2": {
-      "bad_depth": 1061,
-      "out_of_range": 0,
-      "no_coordinates": 256,
-      "kept": 26152,
-      "input_values": 27469
+      "bad_depth": 1775,
+      "out_of_range": 5,
+      "no_coordinates": 477,
+      "kept": 47340,
+      "input_values": 49597
     },
     "napeshm": {
       "bad_depth": 0,

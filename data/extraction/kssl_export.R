@@ -24,7 +24,10 @@ layer_cols <- c("pedon_key", "layer_key", "labsampnum", "hzn_top", "hzn_bot", "p
                 "organic_carbon_walkley_black", "oc_walkley_black_method",
                 "ph_h2o", "ph_h2o_method", "ph_cacl2", "ph_cacl2_method",
                 "bulk_density_third_bar", "bulk_density_third_bar_method",
-                "bulk_density_oven_dry", "bulk_density_oven_dry_method")
+                "bulk_density_oven_dry", "bulk_density_oven_dry_method",
+                "cec_nh4_ph_7", "cec_nh4_ph_7_method", "sum_of_cations_cec_pH_8_2", "ecec_base_plus_aluminum",
+                "ca_nh4_ph_7", "ca_nh4_ph_7_method", "mg_nh4_ph_7", "mg_nh4_ph_7_method",
+                "k_nh4_ph_7", "k_nh4_ph_7_method", "potassium_mehlich3_extractable")
 
 if (grepl("\\.rds$", src)) {
   # A SoilProfileCollection; read its slots as attributes so aqp isn't required.

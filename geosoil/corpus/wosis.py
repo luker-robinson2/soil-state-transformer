@@ -5,7 +5,8 @@ coordinates, dataset_id, date, positional uncertainty and the per-profile licenc
 Values come from `value_avg` (the `value` column is a Postgres array like "{36.8}").
 
 US-NCSS rows are dropped here: they are the KSSL Lab Data Mart, ingested directly.
-Units: orgc g/kg, sand/clay %, bulk density kg/dm3 (= g/cm3), phaq pH.
+Units: orgc g/kg, sand/clay %, bulk density kg/dm3 (= g/cm3), phaq pH, CEC cmol(+)/kg, orgm g/kg.
+WoSIS 2023 has no exchangeable-cation (K/Ca/Mg) property files.
 
     python -m geosoil.corpus.wosis
 """
@@ -34,6 +35,12 @@ PROPERTIES = {
     "clay": ("clay", None),
     "bdfiod": ("bd", "bd_oven_dry"),
     "bdfi33": ("bd", "bd_third_bar"),
+    # CEC in cmol(+)/kg: at pH 7 (NH4OAc or another pH-7 index cation) is canonical; pH 8.2 and effective CEC
+    # are separate families, converted in harmonize.py only where a good fit exists. orgm is measured OM, g/kg.
+    "cecph7": ("cec", "cec_ph7"),
+    "cecph8": ("cec", "cec_sum_cations_ph82"),
+    "ecec": ("cec", "ecec"),
+    "orgm": ("om", "measured"),
 }
 # positional_uncertainty is categorical; use each class's upper bound in metres
 UNCERTAINTY_M = {"Circa 100 m": 100.0, "100 m - 1 km": 1_000.0, "1 km - 10 km": 10_000.0, "Over 10 km": 100_000.0}

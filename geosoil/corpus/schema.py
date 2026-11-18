@@ -36,6 +36,11 @@ VALID_RANGE = {
     "sand": (0.0, 100.0),
     "clay": (0.0, 100.0),
     "bd": (0.1, 2.65),     # g/cm3
+    "om": (0.0, 1000.0),   # g/kg
+    "cec": (0.0, 250.0),   # cmol(+)/kg; organic soils reach ~200
+    "k": (0.0, 25.0),      # cmol(+)/kg exchangeable
+    "ca": (0.0, 150.0),    # NH4OAc dissolves some carbonate, so calcareous soils read high
+    "mg": (0.0, 80.0),
 }
 
 

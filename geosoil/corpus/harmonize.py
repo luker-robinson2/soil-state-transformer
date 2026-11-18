@@ -32,13 +32,26 @@ PRIORITY = {
     "bd": ("bd_third_bar", "bd_fine_earth", "bd_oven_dry", "unknown"),
     "sand": ("pipette", "hydrometer", "laser_diffraction", "unknown"),
     "clay": ("pipette", "hydrometer", "laser_diffraction", "unknown"),
+    "cec": ("cec_ph7", "cec_sum_cations_ph82", "ecec", "unknown"),
+    "k": ("nh4oac_ph7", "mehlich3", "unknown"),
+    "ca": ("nh4oac_ph7", "unknown"),       # Mehlich-3 Ca/Mg have no paired layers to fit a conversion: dropped
+    "mg": ("nh4oac_ph7", "unknown"),
+    "om": ("measured",),                   # derived OM (from harmonized SOC) is added after method choice
 }
 # (target, from_family) -> (to_family, kind); kind "linear" fits y = a + b x, "ratio" fits y = r x
 CONVERTIBLE = {
     ("ph", "ph_cacl2"): ("ph_h2o", "linear"),
     ("soc", "walkley_black"): ("dry_combustion", "ratio"),
     ("bd", "bd_oven_dry"): ("bd_third_bar", "linear"),
+    ("cec", "cec_sum_cations_ph82"): ("cec_ph7", "linear"),
+    ("cec", "ecec"): ("cec_ph7", "linear"),
+    ("k", "mehlich3"): ("nh4oac_ph7", "linear"),
 }
+# These families can diverge from the canonical one by soil type (ECEC vs CEC at pH 7 in acid soils, where
+# aluminium dominates), so their conversion is used only when the fit explains most of the variance; otherwise
+# the rows are dropped rather than mixed in unconverted.
+GATED = {("cec", "cec_sum_cations_ph82"), ("cec", "ecec"), ("k", "mehlich3")}
+MIN_CONVERSION_R2 = 0.8
 SITE_COLS = ["site_id", "source", "lon", "lat", "coord_precision_m", "year", "license"]
 
 
@@ -87,6 +100,11 @@ def to_intervals(labels: pd.DataFrame, intervals=INTERVALS, min_coverage: float 
 def choose_method(iv: pd.DataFrame, conversions: dict, priority=PRIORITY) -> pd.DataFrame:
     """Keep the preferred family per (site, target, interval), converting where fitted."""
     rank = {(t, f): i for t, fams in priority.items() for i, f in enumerate(fams)}
+    good = {(c["target"], c["src"]) for c in conversions.values() if c.get("r2", 1.0) >= MIN_CONVERSION_R2}
+    for t, f in GATED - good:                       # no fit, or a poor one: drop instead of mixing methods
+        rank.pop((t, f), None)
+    conversions = {k: c for k, c in conversions.items() if (c["target"], c["src"]) not in GATED or
+                   (c["target"], c["src"]) in good}
     iv = iv.copy()
     iv["rank"] = [rank.get(k, np.nan) for k in zip(iv["target"], iv["method_family"])]
     iv = iv.dropna(subset=["rank"]).sort_values("rank")
@@ -99,10 +117,24 @@ def choose_method(iv: pd.DataFrame, conversions: dict, priority=PRIORITY) -> pd.
     return best.drop(columns="rank")
 
 
+def add_derived_om(best: pd.DataFrame, factor: float = C.OM_PER_SOC) -> pd.DataFrame:
+    """Organic matter from harmonized SOC (x factor, van Bemmelen), so OM and SOC never disagree.
+
+    A measured OM value is kept only where the site and interval have no SOC.
+    """
+    soc = best[best["target"] == "soc"].copy()
+    soc["target"], soc["value"], soc["method_family"] = "om", soc["value"] * factor, "converted_from_soc"
+    soc["converted"] = True
+    measured = best[best["target"] == "om"]
+    have = set(zip(soc["site_id"], soc["depth_top"]))
+    measured = measured[[k not in have for k in zip(measured["site_id"], measured["depth_top"])]]
+    return pd.concat([best[best["target"] != "om"], soc, measured], ignore_index=True)
+
+
 def harmonize(c1: pd.DataFrame, conversions: dict | None = None) -> tuple[pd.DataFrame, dict]:
     if conversions is None:
         conversions = fit_conversions(c1[c1["source"] == "kssl_ldm"])
-    best = choose_method(to_intervals(c1), conversions)
+    best = add_derived_om(choose_method(to_intervals(c1), conversions))
     site_cols = [c for c in SITE_COLS + ["role", "near_holdout"] if c in c1]
     sites = c1[site_cols].drop_duplicates("site_id")
     out = best.merge(sites, on="site_id", how="left")

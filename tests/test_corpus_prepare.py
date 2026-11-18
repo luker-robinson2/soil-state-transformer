@@ -83,3 +83,21 @@ def test_noise_floor_recovers_known_nugget():
 def test_crowded_placeholder_coordinates_are_skipped():
     sites = pd.DataFrame({"site_id": list("abcde"), "lon": [-100.0] * 5, "lat": [40.0] * 5})
     assert noise_floor.colocated_pairs(sites, max_sites_per_point=3).empty
+
+
+def test_new_targets_derived_om_and_gated_conversions():
+    import numpy as np
+    from geosoil.corpus import harmonize as H
+    iv = pd.DataFrame({
+        "site_id": ["a", "a", "b", "b", "c"], "target": ["soc", "cec", "cec", "om", "om"],
+        "method_family": ["dry_combustion", "ecec", "cec_ph7", "measured", "measured"],
+        "value": [10.0, 5.0, 20.0, 99.0, 40.0], "coverage": 1.0, "depth_top": 0.0, "depth_bot": 5.0})
+    good = {"cec:ecec->cec_ph7": dict(target="cec", src="ecec", dst="cec_ph7", kind="linear", a=1.0, b=2.0, r2=0.9)}
+    out = H.add_derived_om(H.choose_method(iv, good))
+    om = out[out["target"] == "om"].set_index("site_id")["value"]
+    assert om["a"] == pytest.approx(17.24) and om["c"] == 40.0 and om["b"] == 99.0   # measured OM only where no SOC
+    cec = out[out["target"] == "cec"].set_index("site_id")["value"]
+    assert cec["a"] == pytest.approx(11.0) and cec["b"] == 20.0                      # ecec converted (r2 0.9)
+    bad = {"cec:ecec->cec_ph7": dict(good["cec:ecec->cec_ph7"], r2=0.5)}
+    out2 = H.choose_method(iv, bad)
+    assert "a" not in set(out2.loc[out2["target"] == "cec", "site_id"])             # poor fit: dropped, not mixed

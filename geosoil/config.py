@@ -18,11 +18,16 @@ DATA_PROC = REPO / "data" / "processed"
 RESULTS = Path(__file__).resolve().parent / "results"
 
 # --- Canonical schema --------------------------------------------------------
-# The 5 harmonized soil targets, in canonical units, used everywhere downstream.
-TARGETS: Tuple[str, ...] = ("soc", "ph", "sand", "clay", "bd")
-TARGET_UNITS = {"soc": "g/kg", "ph": "pH(H2O)", "sand": "%", "clay": "%", "bd": "g/cm3"}
+# The harmonized soil targets, in canonical units, used everywhere downstream.
+# om is derived from harmonized SOC (x 1.724, van Bemmelen) except where a source measured it and SOC is absent.
+# cec and the exchangeable bases are in cmol(+)/kg, the lab-standard unit; ppm = cmol(+)/kg x 391 (K), 200.4 (Ca),
+# 121.5 (Mg). Farm labs often report Mehlich-3 ppm instead; that family is converted where a fit exists.
+TARGETS: Tuple[str, ...] = ("soc", "ph", "sand", "clay", "bd", "om", "cec", "k", "ca", "mg")
+TARGET_UNITS = {"soc": "g/kg", "ph": "pH(H2O)", "sand": "%", "clay": "%", "bd": "g/cm3", "om": "g/kg",
+                "cec": "cmol(+)/kg", "k": "cmol(+)/kg", "ca": "cmol(+)/kg", "mg": "cmol(+)/kg"}
 # log1p transform applied to these targets before modeling (right-skewed).
-LOG_TARGETS: Tuple[str, ...] = ("soc",)
+LOG_TARGETS: Tuple[str, ...] = ("soc", "om", "cec", "k", "ca", "mg")
+OM_PER_SOC = 1.724
 
 # AlphaEarth embedding columns A00..A63 (always present).
 AE_COLS: Tuple[str, ...] = tuple(f"A{i:02d}" for i in range(64))

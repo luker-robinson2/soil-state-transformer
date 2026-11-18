@@ -37,6 +37,7 @@ SKIP_SOURCES = {"WoSIS July 2016 Snapshot", "CHLSOC: the Chilean Soil Organic Ca
                 "México Serie-1", "México Serie-2", "sisINTA (sisinta.inta.gob.ar)",
                 "reservatório do DNOS-CORSAN"}
 PLACEHOLDER_YEARS = {1900, 1905}
+BAD_CEC = {"ECOSUR-VT-2016", "SIAP"}
 
 
 def texture_ok(clay: pd.Series, silt: pd.Series, sand: pd.Series) -> pd.Series:
@@ -55,12 +56,18 @@ def build(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     clay, silt, sand = common.num(df["clay"]), common.num(df["silt"]), common.num(df["sand"])
     tex = texture_ok(clay, silt, sand)
     soc = common.num(df["organic_carbon"])
+    col = lambda c: common.num(df[c]) if c in df else pd.Series(np.nan, index=df.index)
     parts = [
         common.long_rows(base, "soc", (soc * 10.0).where(soc > 0), "sislac/organic_carbon", "unknown"),
         common.long_rows(base, "ph", common.num(df["ph"]), "sislac/ph", "unknown"),
         common.long_rows(base, "sand", sand.where(tex), "sislac/sand", "unknown"),
         common.long_rows(base, "clay", clay.where(tex), "sislac/clay", "unknown"),
         common.long_rows(base, "bd", common.num(df["bulk_density"]), "sislac/bulk_density", "unknown"),
+        # the "ecec" column mixes CEC methods across national sources (Argentina's medians look like pH-7 CEC), so
+        # it goes in as unknown-method CEC; ECOSUR and SIAP report zeros or ~0.04 and are skipped
+        common.long_rows(base, "cec", col("ecec").where(~df["source"].isin(BAD_CEC) & (col("ecec") > 0)),
+                         "sislac/ecec", "unknown"),
+        *[common.long_rows(base, el, col(el).where(col(el) > 0), f"sislac/{el}", "unknown") for el in ("k", "ca", "mg")],
     ]
     vals = pd.concat(parts, ignore_index=True)
     year = pd.to_numeric(df["fecha"].astype(str).str[-4:], errors="coerce")

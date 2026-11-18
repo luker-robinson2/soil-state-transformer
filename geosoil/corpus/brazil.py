@@ -1,6 +1,6 @@
 """Brazilian Soil Dataset 2024 (SoilData / MapBiomas) → canonical label table.
 
-Units in the source: carbono g/kg, areia/argila g/kg (÷10 → %), ph (water), dsi g/cm3.
+Units in the source: carbono g/kg, areia/argila g/kg (÷10 → %), ph (water), dsi g/cm3, ctc cmolc (per dm3).
 No per-value method codes are published, so methods are recorded as unspecified.
 Licence is per dataset (CC BY 4.0 or CC BY-NC 4.0) and kept per row.
 
@@ -32,6 +32,8 @@ def build(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         common.long_rows(base, "sand", common.num(df["areia"]) / 10.0, "brazil/areia", "unknown"),
         common.long_rows(base, "clay", common.num(df["argila"]) / 10.0, "brazil/argila", "unknown"),
         common.long_rows(base, "bd", common.num(df["dsi"]), "brazil/dsi", "unknown"),
+        # CTC (cmolc, usually per dm3 of soil, not per kg): kept as an unknown-method CEC
+        *([common.long_rows(base, "cec", common.num(df["ctc"]), "brazil/ctc", "unknown")] if "ctc" in df else []),
     ]
     vals = pd.concat(parts, ignore_index=True)
     sites = pd.DataFrame({
