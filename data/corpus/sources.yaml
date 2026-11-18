@@ -340,27 +340,27 @@ sources:
     role: label
     access: "https://zenodo.org/api/records/5094759/files/SODES_v1_Final.accdb/content"
     license: CC-BY-4.0
-    status: verified
-    checked: 2026-11-17
-    status_detail: "anonymous; MS Access (access-parser reads it); UTM ETRS coordinates with the zone per province; ~1,700 profiles with clay, 617 with sand; low WoSIS overlap"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/sodes.py. EPSG:25830 coordinates; sand = coarse + fine; BD skipped (rounded); CEC equal to the sum of bases kept with its own method id. 1,683 new sites"
 
   - id: qld_sali
     name: Queensland SALI Soil Chemistry API
     role: label
     access: "https://soil-chem.information.qld.gov.au/odata/SiteLabMethodResults (OData, 1,000-row pages, sequential only)"
     license: CC-BY-4.0
-    status: verified
-    checked: 2026-11-17
-    status_detail: "anonymous; 8,112 sites / 26k samples with lab texture (2Z2 methods), plus OC (6A1) and pH (4A1); ~46% of sites within 50 m of WoSIS NatSoil, so ~4k new"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/qld_sali.py, paged OData API cached under data/raw/qld_sali. Depths in metres; invalid-flag rows dropped; sand on international limits (own method id). 14.2k sites, 67% at WoSIS NatSoil sites (gap fill: CEC and bases)"
 
-  - id: gsbddb_bze_lw
+  - id: bze_lw
     name: German agricultural soil inventory (BZE-LW) rows of GSBDDB
     role: label
     access: "https://zenodo.org/api/records/7075158/files/GSBDDB.csv/content"
     license: "CC-BY-4.0 on Zenodo; original Thünen licence not verifiable by script"
-    status: verified
-    checked: 2026-11-17
-    status_detail: "2,857 German farmland sites, 15.5k samples with texture, SOC and BD; BZE-LW is not in WoSIS. Use only the BZE-LW rows (the rest of GSBDDB repeats AfSP, WISE, NatSoil, NCSS)"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/bze_lw.py, BZE-LW rows of GSBDDB (Latin-1). 2,878 German farmland sites, texture/SOC/BD; independent survey"
 
   - id: nl_bro_bhrp
     name: Netherlands BRO soil borehole lab data (BHR-P)
@@ -377,3 +377,57 @@ sources:
     status: not_pullable
     checked: 2026-11-17
     status_detail: "DAP data endpoint is CSIRO-only; ANSIS 2.0 needs an account. NatSoil is in WoSIS (AU-CSIRO)"
+
+  - id: fia
+    name: USFS Forest Inventory and Analysis, Phase-3 soils lab
+    role: label
+    access: "https://apps.fs.usda.gov/fia/datamart/CSV/ENTIRE_SOILS_LAB.csv + per-state PLOTGEOM files"
+    license: public domain
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/fia.py. Public coordinates fuzzed (precision 1,600 m); NH4Cl bases mg/kg -> cmol(+)/kg, family unknown; ECEC skipped (sum of bases). 6.4k forest locations, K/Ca/Mg 15.7k values"
+
+  - id: nwca
+    name: EPA National Wetland Condition Assessment 2011 + 2016 soils
+    role: label
+    access: "epa.gov NWCA soil chemistry and horizon CSVs (URLs in geosoil/corpus/nwca.py)"
+    license: public domain
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/nwca.py. Analysed by KSSL (dedup against kssl_ldm); top depths from horizon files; below-MDL zeros dropped. 1.9k wetland sites, CEC 7.6k values"
+
+  - id: chspd
+    name: Chilean Soil Profile Database ChSPD v3
+    role: label
+    access: "https://zenodo.org/records/22648780"
+    license: CC-BY-4.0
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/chspd.py. CHLSOC and WoSIS rows dropped; SOC (mixed units) and pH skipped; texture kept where fractions sum to 90-110. 2.2k sites"
+
+  - id: icraf_afsis
+    name: ICRAF AfSIS Phase-I wet chemistry
+    role: label
+    access: "doi:10.34725/DVN/66BFOB"
+    license: CC-BY-4.0
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/icraf_afsis.py. Cohex bases (family unknown) at WoSIS AfSIS sites, which have none (gap fill). 1,445 plots"
+
+  - id: nspd
+    name: Namibia Soil Profile Database NSPD2025
+    role: label
+    access: "https://zenodo.org/api/records/17618737/files/Nam_Prof_Nov2025.xlsx/content"
+    license: CC-BY-4.0
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/nspd.py. Hor_lab sheet, LandPKS skipped; Schwarzeck coordinates unshifted (match the WoSIS/NAMSOTER copies); CEC Effective skipped. 2,659 sites, 50% gap fill"
+
+  - id: wosis_latest
+    name: WoSIS latest (ISRIC live WFS), datasets not in the 2023 snapshot
+    role: label
+    access: "https://maps.isric.org/mapserv?map=/map/wosis_latest.map (WFS, whole-layer CSV)"
+    license: "per row (currently CC-BY 4.0)"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/wosis_latest.py. Burundi, Rwanda, Uganda IFDC topsoils: 2,620 sites, pH, CEC (Burundi). Picks up new datasets automatically. Older snapshots (2016, 2019) add <1k profiles: skipped"

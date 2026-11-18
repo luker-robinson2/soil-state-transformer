@@ -30,5 +30,7 @@ dependencies:
       - geopandas>=1.0          # lithology polygon lookups
       - pyogrio>=0.9
       - zipfile-deflate64       # HYDE land-use archive
+      - access-parser           # SODES (MS Access)
+      - openpyxl                # NSPD (xlsx)
       - pytest>=8
       # mamba-ssm + causal-conv1d installed AFTER env create (need nvcc), see header.

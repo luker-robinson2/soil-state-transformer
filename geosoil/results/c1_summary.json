@@ -1,36 +1,45 @@
 {
   "sites": {
-    "train": 300766,
+    "train": 330199,
     "holdout": 6367,
-    "train_conus": 74012,
-    "near_holdout": 211
+    "train_conus": 82214,
+    "near_holdout": 231
   },
-  "values": 5911456,
+  "values": 6375003,
   "train_sites_by_source": {
     "wosis_2023": 120785,
     "olm_compendium": 81534,
     "kssl_ldm": 47489,
     "sislac": 28288,
     "brazil_soildata": 9127,
+    "qld_sali": 8311,
     "canada_npdb": 8175,
+    "fia": 6430,
     "usgs_ds801": 4782,
+    "bze_lw": 2878,
+    "wosis_latest": 2611,
+    "chspd": 2173,
+    "nspd": 2122,
+    "nwca": 1798,
+    "sodes": 1665,
+    "icraf_afsis": 1445,
     "ossl_v1_2": 494,
     "napeshm": 92
   },
   "train_topsoil_sites_by_target": {
-    "bd": 40649,
-    "ca": 81460,
-    "cec": 129283,
-    "clay": 205006,
-    "k": 84725,
-    "mg": 81335,
+    "bd": 52499,
+    "ca": 99275,
+    "cec": 136651,
+    "clay": 215605,
+    "k": 102489,
+    "mg": 99038,
     "om": 3548,
-    "ph": 179478,
-    "sand": 180433,
-    "soc": 181101
+    "ph": 196344,
+    "sand": 192888,
+    "soc": 197707
   },
   "license_values": {
-    "open": 5002060,
+    "open": 5465607,
     "noncommercial": 794179
   },
   "dedup": [
@@ -45,6 +54,26 @@
       "sites": 75
     },
     {
+      "source": "chspd",
+      "action": "gap_fill",
+      "sites": 660
+    },
+    {
+      "source": "chspd",
+      "action": "merged",
+      "sites": 47
+    },
+    {
+      "source": "fia",
+      "action": "merged",
+      "sites": 1688
+    },
+    {
+      "source": "icraf_afsis",
+      "action": "gap_fill",
+      "sites": 250
+    },
+    {
       "source": "kssl_ldm",
       "action": "merged",
       "sites": 4995
@@ -53,6 +82,31 @@
       "source": "napeshm",
       "action": "merged",
       "sites": 1360
+    },
+    {
+      "source": "nspd",
+      "action": "dropped",
+      "sites": 456
+    },
+    {
+      "source": "nspd",
+      "action": "gap_fill",
+      "sites": 871
+    },
+    {
+      "source": "nspd",
+      "action": "merged",
+      "sites": 81
+    },
+    {
+      "source": "nwca",
+      "action": "dropped",
+      "sites": 71
+    },
+    {
+      "source": "nwca",
+      "action": "merged",
+      "sites": 390
     },
     {
       "source": "olm_compendium",
@@ -75,6 +129,21 @@
       "sites": 1589
     },
     {
+      "source": "qld_sali",
+      "action": "dropped",
+      "sites": 3531
+    },
+    {
+      "source": "qld_sali",
+      "action": "gap_fill",
+      "sites": 4835
+    },
+    {
+      "source": "qld_sali",
+      "action": "merged",
+      "sites": 2371
+    },
+    {
       "source": "sislac",
       "action": "dropped",
       "sites": 6
@@ -85,6 +154,11 @@
       "sites": 3285
     },
     {
+      "source": "sodes",
+      "action": "merged",
+      "sites": 18
+    },
+    {
       "source": "wosis_2023",
       "action": "dropped",
       "sites": 8302
@@ -93,9 +167,29 @@
       "source": "wosis_2023",
       "action": "merged",
       "sites": 23891
+    },
+    {
+      "source": "wosis_latest",
+      "action": "merged",
+      "sites": 9
     }
   ],
   "dropped_cross_source_by_keeper": [
+    {
+      "source": "nspd",
+      "keeper_source": "olm_compendium",
+      "sites": 4
+    },
+    {
+      "source": "nspd",
+      "keeper_source": "wosis_2023",
+      "sites": 452
+    },
+    {
+      "source": "nwca",
+      "keeper_source": "kssl_ldm",
+      "sites": 71
+    },
     {
       "source": "olm_compendium",
       "keeper_source": "brazil_soildata",
@@ -130,6 +224,11 @@
       "source": "ossl_v1_2",
       "keeper_source": "wosis_2023",
       "sites": 1563
+    },
+    {
+      "source": "qld_sali",
+      "keeper_source": "wosis_2023",
+      "sites": 3531
     },
     {
       "source": "sislac",
@@ -218,6 +317,84 @@
       "no_coordinates": 0,
       "kept": 4782,
       "input_values": 4789
+    },
+    "fia": {
+      "bad_depth": 0,
+      "out_of_range": 122,
+      "no_coordinates": 0,
+      "kept": 102688,
+      "input_values": 102810
+    },
+    "nwca": {
+      "bad_depth": 211,
+      "out_of_range": 203,
+      "no_coordinates": 0,
+      "kept": 66448,
+      "input_values": 66862
+    },
+    "sodes": {
+      "bad_depth": 4175,
+      "out_of_range": 5,
+      "no_coordinates": 0,
+      "kept": 38995,
+      "input_values": 43175
+    },
+    "bze_lw": {
+      "other_gsbddb_rows": 146805,
+      "bad_depth": 0,
+      "out_of_range": 0,
+      "no_coordinates": 0,
+      "kept": 62268,
+      "input_values": 62268
+    },
+    "chspd": {
+      "bad_depth": 0,
+      "out_of_range": 9,
+      "no_coordinates": 0,
+      "kept": 16584,
+      "input_values": 16593
+    },
+    "icraf_afsis": {
+      "bad_depth": 0,
+      "out_of_range": 0,
+      "no_coordinates": 626,
+      "kept": 9245,
+      "input_values": 9871
+    },
+    "qld_sali": {
+      "input_results": 329294,
+      "invalid_flag": 66875,
+      "below_quantification": 2379,
+      "no_sample": 0,
+      "deeper_than_300cm": 6761,
+      "bad_depth": 7,
+      "out_of_range": 22,
+      "no_coordinates": 0,
+      "kept": 234100,
+      "input_values": 234129
+    },
+    "nspd": {
+      "skipped_dataset_rows": 2726,
+      "bad_depth": 515,
+      "out_of_range": 2,
+      "no_coordinates": 0,
+      "kept": 22889,
+      "input_values": 23583
+    },
+    "wosis_latest": {
+      "bad_depth": 0,
+      "out_of_range": 0,
+      "no_coordinates": 0,
+      "kept": 3649,
+      "input_values": 3649,
+      "excluded_datasets": {
+        "US-NCSS": 0
+      },
+      "datasets": [
+        "BI-IFDC",
+        "RW-IFDC",
+        "UG-IFDC"
+      ]
     },
     "raca": {
       "bad_depth": 27,

@@ -19,7 +19,8 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import BallTree
 
-PRIORITY = ("kssl_ldm", "canada_npdb", "brazil_soildata", "wosis_2023", "sislac", "olm_compendium", "ossl_v1_2", "napeshm", "usgs_ds801")
+PRIORITY = ("kssl_ldm", "canada_npdb", "brazil_soildata", "wosis_2023", "sislac", "olm_compendium", "ossl_v1_2", "napeshm",
+            "usgs_ds801", "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest")
 # source -> higher-priority sources whose records it may contain
 REPUBLISHES = {
     "wosis_2023": {"kssl_ldm", "canada_npdb", "brazil_soildata"},
@@ -27,11 +28,17 @@ REPUBLISHES = {
     "sislac": {"wosis_2023", "brazil_soildata"},    # WoSIS holds some of the same national surveys
     # a compilation: only sources we lack are loaded, but some of them also reached WoSIS (e.g. SOTER China/Iran)
     "olm_compendium": {"kssl_ldm", "wosis_2023", "brazil_soildata", "canada_npdb", "sislac"},
+    "nwca": {"kssl_ldm"},                           # KSSL ran the NWCA analyses
+    "chspd": {"wosis_2023"},
+    "icraf_afsis": {"wosis_2023"},
+    "qld_sali": {"wosis_2023", "olm_compendium"},  # NatSoil (via WoSIS and the compendium) holds Queensland profiles
+    "nspd": {"wosis_2023", "olm_compendium"},
+    "wosis_latest": {"wosis_2023"},
 }
 # Gap-fill sources: a duplicate site keeps the targets its keeper lacks instead of being dropped whole. The
 # compendium carries exchangeable K/Ca/Mg and CEC at ~30k sites whose WoSIS copy has neither (2026-11-18).
 # A kept remainder is co-located with its keeper, so both always fall in the same 1° block and fold.
-GAP_FILL = {"olm_compendium"}
+GAP_FILL = {"olm_compendium", "chspd", "icraf_afsis", "qld_sali", "nspd"}
 HOLDOUT = ("raca",)
 RADIUS_M = 100.0
 HOLDOUT_RADIUS_M = 1000.0

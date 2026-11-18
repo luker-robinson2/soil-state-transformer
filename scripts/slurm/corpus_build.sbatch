@@ -16,6 +16,7 @@ module purge
 module load miniforge R
 cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
+python -c 'import access_parser, openpyxl' 2>/dev/null || pip install -q access-parser openpyxl   # SODES (Access db), NSPD (xlsx)
 python -m geosoil.corpus.build_c1
 [ -n "${SKIP_PLAN:-}" ] || python -m geosoil.features.alphaearth plan --years "${YEARS:-2017-2025}"
 echo "CORPUS OK"

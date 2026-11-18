@@ -176,3 +176,14 @@ def test_flanders_coordinates_are_reprojected_with_epsg_31370():
     from geosoil.corpus import geofix
     lon, lat = geofix.flanders_31300_to_31370(np.array([4.477618]), np.array([51.473316]))
     assert lon[0] == pytest.approx(4.48817, abs=2e-5) and lat[0] == pytest.approx(51.47332, abs=2e-5)
+
+
+def test_wosis_latest_keeps_only_datasets_missing_from_the_snapshot():
+    from geosoil.corpus import wosis_latest as W
+    row = dict(profile_id=1, layer_id=10, upper_depth=0, lower_depth=20, value_avg=5.8, method_options="{}",
+               longitude=29.9, latitude=-3.4, positional_uncertainty="Circa 100 m", date="????-??-??",
+               licence="Attribution 4.0 International (CC BY 4.0)")
+    phaq = pd.DataFrame([dict(row, dataset_id="BI-IFDC"), dict(row, profile_id=2, layer_id=11, dataset_id="AF-AfSIS-I")])
+    labels, drops = W.build({"phaq": phaq}, known={"AF-AfSIS-I"})
+    assert labels["site_id"].nunique() == 1 and labels["site_id"].iloc[0].startswith("wosisl:")
+    assert drops["datasets"] == ["BI-IFDC"]

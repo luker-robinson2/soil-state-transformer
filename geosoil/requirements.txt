@@ -25,3 +25,5 @@ geopandas>=1.0
 pyogrio>=0.9
 zipfile-deflate64
 pytest>=8
+access-parser
+openpyxl

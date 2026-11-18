@@ -89,7 +89,7 @@ def property_rows(df: pd.DataFrame, prop: str) -> pd.DataFrame:
     return vals
 
 
-def build(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, dict]:
+def build(tables: dict[str, pd.DataFrame], source: str = SOURCE, prefix: str = "wosis") -> tuple[pd.DataFrame, dict]:
     vals = pd.concat([property_rows(df, p) for p, df in tables.items()], ignore_index=True)
     allrows = pd.concat([df[~df["dataset_id"].isin(EXCLUDE_DATASETS)] for df in tables.values()])
     lon, lat = common.num(allrows["longitude"]), common.num(allrows["latitude"])
@@ -106,7 +106,7 @@ def build(tables: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, dict]:
         "coord_precision_m": allrows["positional_uncertainty"].map(UNCERTAINTY_M),
         "year": pd.to_datetime(allrows["date"], errors="coerce").dt.year,
     }).drop_duplicates("site_key")
-    labels, drops = common.finalize(vals, sites, source=SOURCE, prefix="wosis", license="see row")
+    labels, drops = common.finalize(vals, sites, source=source, prefix=prefix, license="see row")
     drops["excluded_datasets"] = {d: int(sum((t["dataset_id"] == d).sum() for t in tables.values()))
                                   for d in EXCLUDE_DATASETS}
     return labels, drops
