@@ -20,7 +20,7 @@ from .. import config as C
 from . import common, dedup, harmonize, noise_floor, splits
 
 MODULES = ("kssl", "wosis", "npdb", "brazil", "sislac", "olm_compendium", "ossl", "napeshm", "usgs_ds801",
-           "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "rmqs", "lucas_bd2018", "raca")
+           "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "rmqs", "lucas_bd2018", "icrisat_karnataka", "raca")
 
 
 def summarize(c1: pd.DataFrame, log: pd.DataFrame, drops: dict) -> dict:

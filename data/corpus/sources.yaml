@@ -441,6 +441,15 @@ sources:
     checked: 2026-11-18
     status_detail: "geosoil/corpus/lucas_bd2018.py. 5,163 measured 0-20 cm BD sites (13,782 model-predicted rows dropped)"
 
+  - id: icrisat_karnataka
+    name: ICRISAT Karnataka soil health samples (village level)
+    role: label
+    access: "https://dataverse.icrisat.org/api/access/datafile/1171 (doi:10.21421/D2/QYCEGR)"
+    license: "CC0 (labels); village locations from DataMeet Census 2001 village boundaries (ODbL), never redistributed"
+    status: ingested
+    checked: 2026-11-18
+    status_detail: "geosoil/corpus/icrisat_karnataka.py. 3,532 villages (70.9k of 92.8k samples matched), village medians; pH + Walkley-Black OC everywhere, K (main lab, unit unconfirmed, family unknown) at 1,682; coord precision 2-18.5 km (median 3 km); 0-15 cm assumed. Fills the largest area-of-applicability gap (India 42% outside)"
+
   - id: wosis_latest
     name: WoSIS latest (ISRIC live WFS), datasets not in the 2023 snapshot
     role: label

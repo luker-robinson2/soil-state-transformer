@@ -20,7 +20,7 @@ import pandas as pd
 from sklearn.neighbors import BallTree
 
 PRIORITY = ("kssl_ldm", "canada_npdb", "brazil_soildata", "rmqs", "wosis_2023", "sislac", "olm_compendium", "ossl_v1_2", "napeshm",
-            "usgs_ds801", "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "lucas_bd2018")
+            "usgs_ds801", "fia", "nwca", "sodes", "bze_lw", "chspd", "icraf_afsis", "qld_sali", "nspd", "wosis_latest", "lucas_bd2018", "icrisat_karnataka")
 # source -> higher-priority sources whose records it may contain
 REPUBLISHES = {
     "wosis_2023": {"kssl_ldm", "canada_npdb", "brazil_soildata", "rmqs"},   # WoSIS holds RMQS1 without its bases
