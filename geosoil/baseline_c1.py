@@ -31,7 +31,7 @@ TOPSOIL = ("0-5", "5-15", "15-30")
 # --canonical-only restricts labels to these, to test whether mixed extraction methods are hurting a target.
 CANONICAL = {"cec": {"cec_ph7", "cec_sum_cations_ph82"}, "k": {"nh4oac_ph7", "mehlich3"},
              "ca": {"nh4oac_ph7"}, "mg": {"nh4oac_ph7"}}
-OOF_COLS = ["site_id", "block", "fold", "interval", "source", "method_family"]
+OOF_COLS = ["site_id", "lon", "lat", "block", "fold", "interval", "source", "method_family"]
 BASE = ["depth_mid", "lon", "lat"]
 
 

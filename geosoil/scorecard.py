@@ -42,6 +42,21 @@ def _nugget(target: str) -> float | None:
     return v
 
 
+# Coarse regions (lon/lat boxes, first match wins). The test set is mostly CONUS and Europe, so a global score hides
+# gains and losses elsewhere; every scorecard reports these too.
+REGIONS = (("CONUS", -125, -66, 24, 50), ("Canada/Alaska", -170, -52, 50, 84), ("Mexico/C.America", -118, -77, 7, 33),
+           ("South America", -82, -34, -56, 13), ("Europe", -25, 45, 35, 72), ("Russia/N.Asia", 45, 180, 50, 82),
+           ("MENA/C.Asia", -18, 75, 12, 50), ("Sub-Saharan Africa", -18, 52, -35, 12), ("South Asia", 60, 98, 5, 37),
+           ("East/SE Asia", 98, 150, -11, 50), ("Oceania", 110, 180, -48, -11))
+
+
+def region_of(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    out = np.full(len(lon), "Other", dtype=object)
+    for name, x0, x1, y0, y1 in reversed(REGIONS):
+        out[(lon >= x0) & (lon <= x1) & (lat >= y0) & (lat <= y1)] = name
+    return out
+
+
 def conformal_intervals(y: np.ndarray, p: np.ndarray, folds: np.ndarray, level: float = 0.9):
     """Per-row split-conformal bounds: half-width from the other folds' absolute residuals."""
     lo, hi = np.full(len(y), np.nan), np.full(len(y), np.nan)
@@ -81,7 +96,9 @@ def score(o: pd.DataFrame, n_boot: int = 500) -> dict:
         yc, pc = y, p
     out["classes"] = {**M.class_agreement(t, yc, pc), "weighted_kappa": M.weighted_kappa(t, yc, pc)}
     by = {}
-    for col in ("source", "method_family"):
+    if {"lon", "lat"} <= set(o.columns):
+        o = o.assign(region=region_of(o["lon"].to_numpy(float), o["lat"].to_numpy(float)))
+    for col in ("region", "source", "method_family"):
         if col in o:
             g = o.assign(e2=(p - y) ** 2, e=p - y).groupby(col)
             by[col] = {k: {"n": int(len(v)), "rmse": float(np.sqrt(v["e2"].mean())), "me": float(v["e"].mean()),
@@ -111,6 +128,9 @@ def main(argv: list[str] | None = None) -> None:
     res = {}
     for t in targets:
         o = pd.read_parquet(a.run / f"{t}.parquet")
+        if "lon" not in o and (C.DATA_PROC / "labels_c1.parquet").exists():   # older OOF files: join coordinates
+            xy = pd.read_parquet(C.DATA_PROC / "labels_c1.parquet", columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
+            o = o.merge(xy, on="site_id", how="left")
         res[t] = score(o, a.n_boot)
         if a.vs and (a.vs / f"{t}.parquet").exists():
             res[t]["vs"] = compare(o, pd.read_parquet(a.vs / f"{t}.parquet"), max(a.n_boot, 1000))

@@ -69,3 +69,9 @@ def test_scorecard_end_to_end(tmp_path):
     better = o.assign(pred=y + rng.normal(0, 0.1, n))           # closer to the truth
     c = S.compare(o, better, n_boot=300)
     assert c["delta_mse"] > 0 and c["p_signflip"] < 0.01
+
+
+def test_regions_cover_known_places():
+    from geosoil.scorecard import region_of
+    r = region_of(np.array([-105.0, 2.3, 37.6, 151.2, 77.2, -47.9]), np.array([40.0, 48.9, -1.3, -33.9, 28.6, -15.8]))
+    assert list(r) == ["CONUS", "Europe", "Sub-Saharan Africa", "Oceania", "South Asia", "South America"]
