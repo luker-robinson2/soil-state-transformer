@@ -175,6 +175,44 @@ def _plans(out: Path) -> dict[int, pd.DataFrame]:
     return {int(f.stem.rsplit("_", 1)[1]): pd.read_parquet(f) for f in sorted(out.glob("ee_plan_*.parquet"))}
 
 
+def spatial_tasks(sites: pd.DataFrame, n: int) -> np.ndarray:
+    """Task per site, grouping nearby sites (Morton order of a ~1 km grid) into the same task.
+
+    Earth Engine bills per image tile read; scattered sites share nothing, nearby ones share scene tiles, so spatial
+    chunks cut cost. (The first plans hashed sites at random: ~40 EECU-hours per 2,500-site bare-soil task.)
+    """
+    gx = ((sites["lon"].to_numpy(float) + 180) / 0.01).astype(np.int64)
+    gy = ((sites["lat"].to_numpy(float) + 90) / 0.01).astype(np.int64)
+    key = np.zeros(len(sites), dtype=np.int64)
+    for b in range(16):                                # interleave 16 bits of each: Morton (Z-order) code
+        key |= ((gx >> b) & 1) << (2 * b) | ((gy >> b) & 1) << (2 * b + 1)
+    order = np.argsort(key, kind="stable")
+    task = np.empty(len(sites), dtype=np.int64)
+    task[order] = np.arange(len(sites)) * n // max(1, len(sites))
+    return task
+
+
+def fill_from_keepers(part: str, out_root: Path = C.DATA_PROC / "features",
+                      log_path: Path = C.DATA_PROC / "dedup_log.parquet") -> dict:
+    """Give gap-fill sites (co-located within 100 m of a kept site, dedup.GAP_FILL) their keeper's features.
+
+    Their value would differ only by the <=100 m offset, the same order as most sources' coordinate precision, and
+    computing them again costs ~56 EECU-seconds each for bare soil. Written as one shard (task 0 of 1); rerun after
+    more keepers are collected.
+    """
+    from .join import read_shards
+    out = out_root / part
+    log = pd.read_parquet(log_path)
+    gap = log[log["action"] == "gap_fill"][["site_id", "keeper_site_id"]].astype(str)
+    have = read_shards(out)
+    have = have[~have["site_id"].isin(gap["site_id"])] if len(have) else have
+    filled = gap.merge(have.rename(columns={"site_id": "keeper_site_id"}), on="keeper_site_id", how="inner")
+    df = filled.drop(columns="keeper_site_id")
+    shards.write(df, out, 0, 1, {"source": part, "copied_from": "co-located keeper (dedup gap_fill, <=100 m)",
+                                 "sites": int(len(df)), "of_gap_sites": int(len(gap)), "failed_blocks": []})
+    return {"part": part, "filled": int(len(df)), "gap_sites": int(len(gap))}
+
+
 def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: int = 0, plan_only: bool = False) -> dict:
     """Start Earth Engine batch exports: retry failed tasks of earlier plans, then plan any new sites.
 
@@ -193,13 +231,16 @@ def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: in
             pass                                       # exists
     sites = sites.assign(site_id=sites["site_id"].astype(str))
     covered = set().union(*(set(p["site_id"]) for p in plans.values())) if plans else set()
+    log_path = C.DATA_PROC / "dedup_log.parquet"
+    if log_path.exists():                              # gap-fill sites get their keeper's features (fill_from_keepers)
+        lg = pd.read_parquet(log_path, columns=["site_id", "action"])
+        covered |= set(lg.loc[lg["action"] == "gap_fill", "site_id"].astype(str))
     new = sites[~sites["site_id"].isin(covered)]
     if len(new):
         n = max(1, int(np.ceil(len(new) / chunk)))
-        while n in plans:                              # distinct ntasks -> distinct shard names
+        while n in plans or (out / f".reserved-of-{n:04d}").exists():   # distinct ntasks -> distinct shard names
             n += 1
-        plan = pd.DataFrame({"site_id": new["site_id"].to_numpy(),
-                             "task": new["site_id"].map(lambda k: shards.shard_of(k, n)).to_numpy()})
+        plan = pd.DataFrame({"site_id": new["site_id"].to_numpy(), "task": spatial_tasks(new, n)})
         plan.to_parquet(out / f"ee_plan_{n}.parquet", index=False)
         plans[n] = plan
     if plan_only:                                      # the interactive action fills the new plan's shards
@@ -314,7 +355,7 @@ def interactive(sites: pd.DataFrame, part: str, out_root: Path, workers: int = 3
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--part", choices=PARTS, required=True)
-    ap.add_argument("action", choices=("submit", "collect", "interactive"))
+    ap.add_argument("action", choices=("submit", "collect", "interactive", "fill"))
     ap.add_argument("--labels", type=Path, default=C.DATA_PROC / "labels_c1.parquet")
     ap.add_argument("--out-root", type=Path, default=C.DATA_PROC / "features")
     ap.add_argument("--chunk", type=int, default=CHUNK)
@@ -326,6 +367,8 @@ def main(argv: list[str] | None = None) -> None:
     if a.action == "submit":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
         res = submit(sites, a.part, a.out_root, a.chunk, a.limit, plan_only=a.plan_only)
+    elif a.action == "fill":
+        res = fill_from_keepers(a.part, a.out_root)
     elif a.action == "interactive":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
         res = interactive(sites, a.part, a.out_root, workers=a.workers)

@@ -37,3 +37,25 @@ def test_state_keys_migrate_and_plans_are_found(tmp_path):
     st = G._load_state(tmp_path)
     assert set(st) == {"79:3", "12:0"}
     assert list(G._plans(tmp_path)) == [12]
+
+
+def test_spatial_tasks_keep_neighbours_together():
+    import numpy as np
+    rng = np.random.default_rng(0)
+    a = pd.DataFrame({"lon": rng.uniform(-100.01, -100.0, 50), "lat": rng.uniform(40.0, 40.01, 50)})
+    b = pd.DataFrame({"lon": rng.uniform(10.0, 10.01, 50), "lat": rng.uniform(-5.0, -4.99, 50)})
+    t = G.spatial_tasks(pd.concat([a, b], ignore_index=True), 2)
+    assert len(set(t[:50])) == 1 and len(set(t[50:])) == 1 and t[0] != t[50]
+    assert sorted(np.bincount(t)) == [50, 50]
+
+
+def test_gap_fill_sites_copy_their_keepers_features(tmp_path, monkeypatch):
+    from geosoil.features import shards
+    out = tmp_path / "bare_soil"
+    shards.write(pd.DataFrame({"site_id": ["wosis:1"], "bs_b4": [0.21]}), out, 0, 3, {"failed_blocks": []})
+    log = tmp_path / "log.parquet"
+    pd.DataFrame({"site_id": ["olm:9"], "keeper_site_id": ["wosis:1"], "action": ["gap_fill"]}).to_parquet(log)
+    r = G.fill_from_keepers("bare_soil", tmp_path, log)
+    assert r["filled"] == 1
+    got = pd.read_parquet(out / "sites-0000-of-0001.parquet")
+    assert got.loc[0, "site_id"] == "olm:9" and got.loc[0, "bs_b4"] == 0.21
