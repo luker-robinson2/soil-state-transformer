@@ -175,7 +175,7 @@ def _plans(out: Path) -> dict[int, pd.DataFrame]:
     return {int(f.stem.rsplit("_", 1)[1]): pd.read_parquet(f) for f in sorted(out.glob("ee_plan_*.parquet"))}
 
 
-def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: int = 0) -> dict:
+def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: int = 0, plan_only: bool = False) -> dict:
     """Start Earth Engine batch exports: retry failed tasks of earlier plans, then plan any new sites.
 
     Each plan records which sites each task covers (ee_plan_<ntasks>.parquet), so adding labels later
@@ -202,6 +202,8 @@ def submit(sites: pd.DataFrame, part: str, out_root: Path, chunk: int, limit: in
                              "task": new["site_id"].map(lambda k: shards.shard_of(k, n)).to_numpy()})
         plan.to_parquet(out / f"ee_plan_{n}.parquet", index=False)
         plans[n] = plan
+    if plan_only:                                      # the interactive action fills the new plan's shards
+        return {"part": part, "new_sites": int(len(new)), "submitted": 0, "plans": sorted(plans)}
     live = {t["id"]: t["state"] for t in ee.data.getTaskList()} if state else {}
     todo = [(n, t) for n, plan in plans.items() for t in sorted(plan["task"].unique())
             if not shards.shard_path(out, int(t), n).exists()
@@ -317,12 +319,13 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--out-root", type=Path, default=C.DATA_PROC / "features")
     ap.add_argument("--chunk", type=int, default=CHUNK)
     ap.add_argument("--limit", type=int, default=0, help="submit only this many chunks (trial runs)")
+    ap.add_argument("--plan-only", action="store_true", help="submit: record a plan for new sites, start no exports")
     ap.add_argument("--workers", type=int, default=3,
                     help="interactive concurrency; keep low for projects in Earth Engine restricted mode")
     a = ap.parse_args(argv)
     if a.action == "submit":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
-        res = submit(sites, a.part, a.out_root, a.chunk, a.limit)
+        res = submit(sites, a.part, a.out_root, a.chunk, a.limit, plan_only=a.plan_only)
     elif a.action == "interactive":
         sites = pd.read_parquet(a.labels, columns=["site_id", "lon", "lat"]).drop_duplicates("site_id")
         res = interactive(sites, a.part, a.out_root, workers=a.workers)
