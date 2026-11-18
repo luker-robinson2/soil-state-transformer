@@ -24,7 +24,7 @@ import pandas as pd
 
 from . import config as C
 from .features import terrain
-from .metrics import metrics
+from .metrics import class_agreement, conformal_coverage, metrics
 
 TOPSOIL = ("0-5", "5-15", "15-30")
 BASE = ["depth_mid", "lon", "lat"]
@@ -71,6 +71,10 @@ def cv_scores(df: pd.DataFrame, target: str, cols: list[str], seed: int = 0, nei
         pred[va] = m.predict(Xva)
     out = metrics(y, pred)
     out["n"], out["sites"] = int(len(d)), int(d["site_id"].nunique())
+    # uncertainty and class skill (metrics.py): interval coverage in model space, classes in physical units
+    out.update(conformal_coverage(y, pred, d[fold_col].to_numpy()))
+    phys = (lambda v: np.expm1(v)) if target in C.LOG_TARGETS else (lambda v: v)
+    out.update(class_agreement(target, phys(y), phys(pred)))
     return (out, d, y, pred) if return_pred else out
 
 
@@ -103,7 +107,9 @@ def main(argv: list[str] | None = None) -> None:
             runs_ += [("neighbours", [], True), ("all+neighbours", gs["all"], True)]
         for g, cols, nb in runs_:
             res[t][g] = cv_scores(dt, t, cols, neighbours=nb)
-            print(f"{t:5s} {g:20s} R2 {res[t][g]['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {res[t][g]['n']}", flush=True)
+            r = res[t][g]
+            print(f"{t:5s} {g:20s} R2 {r['r2']:.3f}  (ceiling {res[t]['r2_ceiling']})  n {r['n']}  "
+                  f"90% cover {r['coverage']:.2f}  class {r['class_exact']:.2f}/{r['class_within_one']:.2f}", flush=True)
         out.write_text(json.dumps(res, indent=2))   # after every target: a walltime kill keeps what finished
     print(f"wrote {out}")
 

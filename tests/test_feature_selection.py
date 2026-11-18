@@ -27,3 +27,15 @@ def test_informative_group_outranks_noise_group():
     assert t["shap_share"] > 0.8
     assert r["top_columns"][0]["column"] == "elevation" and r["top_columns"][0]["group"] == "terrain"
     assert "| terrain |" in FS.markdown({"x": {**r, "r2_ceiling": 0.9}})
+
+
+def test_class_agreement_and_conformal_coverage():
+    import numpy as np
+    from geosoil.metrics import class_agreement, conformal_coverage
+    a = class_agreement("ph", np.array([5.0, 6.8, 8.0]), np.array([5.2, 6.9, 7.0]))
+    assert a["class_exact"] == pytest.approx(1 / 3) and a["class_within_one"] == pytest.approx(2 / 3)  # 5.0 vs 5.2 straddle 5.05
+    rng = np.random.default_rng(0)
+    y = rng.normal(size=5000)
+    pred = y + rng.normal(scale=0.5, size=5000)
+    c = conformal_coverage(y, pred, rng.integers(0, 5, 5000), level=0.9)
+    assert abs(c["coverage"] - 0.9) < 0.02 and c["half_width"] == pytest.approx(1.645 * 0.5, rel=0.08)
