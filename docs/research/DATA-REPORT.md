@@ -6,12 +6,19 @@ being computed are marked **(pending)** and get filled in when their job finishe
 
 ## 1. The model's job
 
-Predict five lab-measured topsoil properties at a location:
+Predict lab-measured topsoil properties at a location:
 - **SOC** (g/kg, modelled as log1p)
 - **pH** (in water)
 - **sand** (%)
 - **clay** (%)
 - **bulk density** (BD, g/cm³)
+- **organic matter** (g/kg; derived from harmonized SOC × 1.724, measured OM only where SOC is missing)
+- **CEC** (cmol(+)/kg at pH 7; pH 8.2 sum-of-cations converted, r² 0.82; effective CEC dropped, r² 0.41)
+- **exchangeable K, Ca, Mg** (cmol(+)/kg, NH4OAc pH 7; Mehlich-3 K converted, r² 0.91). Multiply by 391, 200.4
+  and 121.5 for mg/kg (ppm).
+
+Topsoil training sites (added 2026-11-17): OM 160.7k, CEC 96.9k, K 52.3k, Ca 51.8k, Mg 52.3k. Their
+noise-floor R² ceilings (log scale) are 0.83 (K) to 0.91 (Ca).
 
 Inputs are what can be known about that place from public data. Evaluation is always against lab
 measurements, using spatially blocked cross-validation.
