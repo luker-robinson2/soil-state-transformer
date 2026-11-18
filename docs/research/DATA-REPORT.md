@@ -345,3 +345,31 @@ spatial folds would favour location proxies.
 7. **Cultivation history (HYDE 3.3) + NPP.** Targets SOC. Medium effort.
 
 Each addition is accepted only if drop-group ablation shows it beats fold-to-fold noise on at least one target.
+
+## Which new data is worth most (2026-11-18)
+
+Single-fold LightGBM experiments on round-7 data (AlphaEarth context + depth only, so levels run 0.02–0.05 below
+the full model; read the differences). Full analysis: `geosoil/results` round 8 once rerun on Alpine.
+
+- **More of the same barely helps.** Gap-to-ceiling falls as a power law in labels with exponent b = 0.04–0.11;
+  doubling the current distribution would add about +0.014 to +0.031 R². Round 5 → 7 (new places, not more rows)
+  moved sand and BD 3–4× faster than that curve.
+- **New environments are worth 2–10× more where the model is weak.** On sparse-region test sites, +5,000 labels
+  from Africa/Asia/Russia/Canada vs +5,000 from CONUS/Europe: K +0.081 vs +0.019, Mg +0.033 vs +0.005,
+  clay +0.027 vs −0.006, CEC +0.019 vs +0.007. A global R² hides this because the test set is mostly CONUS and
+  Europe, so every scorecard now reports per region (`geosoil/scorecard.py`).
+- **Coverage gaps** (label share ÷ land share): Russia 0.01–0.04 on every target; East and South Asia 0.03–0.05
+  for bases and CEC; Middle East/Central Asia about 0.05 for BD, CEC and bases; Africa 0.23 for BD. CONUS is 4–7×.
+- **Method purity.** On standard-method test rows, training on standard-method rows alone beats training on
+  everything. One standard-method label is worth about 7 mixed ones for BD, 4 for Ca, 3.6 for K, 2.5 for Mg and
+  1.8 for CEC. This is the round-7 CEC/K regression. NH4OAc bases barely exist outside the US (K sites: CONUS
+  36.7k, Africa 204, Europe 124).
+- **Defects found by co-located comparison and fixed:** NatSoil sand 2.3× WoSIS at the same 233 sites, plus
+  Queensland ISSS-limit sand (both now excluded from USDA sand); NatSoil K inconsistent with Queensland SALI
+  (dropped).
+
+Priority per target: exchangeable bases > BD > CEC > clay (new regions only) > sand > pH > SOC/OM. OM is derived
+from SOC almost everywhere and needs nothing of its own. Next sources: France RMQS (standard-method bases and
+CEC), LUCAS 2018 measured BD, LUCAS K (train-only), China forest profiles (BD), ICRISAT Karnataka, Tellus
+Ireland; then an ANSIS account (Australia); then requests to Sweden, Germany (forests), South Africa, Morocco
+and Nepal.
