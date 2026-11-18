@@ -51,3 +51,22 @@ def test_regional_models_score_only_cells_with_enough_local_data(monkeypatch):
     r = L.regional(d, y, global_pred, ["A00"], "fold_025", radii=(60,))
     assert r["60km"]["models"] > 0 and r["60km"]["rows_scored"] > 0
     assert r["60km"]["regional"]["r2"] > r["60km"]["global"]["r2"]
+
+
+def test_regional_correction_learns_a_regional_offset(monkeypatch):
+    pytest.importorskip("lightgbm")
+    from geosoil import local_eval as L
+    monkeypatch.setattr(L, "MIN_LOCAL_ROWS", 100)
+    monkeypatch.setattr(L, "MIN_CELL_ROWS", 20)
+    rng = np.random.default_rng(2)
+    n = 1500
+    d = pd.DataFrame({"site_id": [f"s{i}" for i in range(n)], "lon": rng.uniform(-100, -96, n),
+                      "lat": rng.uniform(40, 42, n), "depth_mid": 2.5, "A00": rng.normal(size=n)})
+    d["fold_025"] = rng.integers(0, 5, n)
+    # a smooth global relation plus an offset only east of -98, which a coordinate-free global model misses
+    y = d["A00"].to_numpy() + np.where(d["lon"] > -98, 1.5, 0.0) + rng.normal(0, 0.2, n)
+    global_pred = d["A00"].to_numpy() + 0.75                            # right on average, wrong regionally
+    r = L.regional_correction(d.drop(columns=["lon", "lat"]).assign(lon=d["lon"], lat=d["lat"]), y, global_pred,
+                              ["A00"], "fold_025", radii=(80,))
+    assert r["80km"]["rows_scored"] > 0
+    assert r["80km"]["corrected"]["r2"] > r["80km"]["global"]["r2"]

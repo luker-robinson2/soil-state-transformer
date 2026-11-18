@@ -18,7 +18,7 @@ module load miniforge
 cd "$SLURM_SUBMIT_DIR"
 set +u; eval "$(conda shell.bash hook)"; conda activate geosoil; set -u
 export OMP_NUM_THREADS=16
-python -m geosoil.corpus.splits
+[ -n "${SKIP_SPLITS:-}" ] || python -m geosoil.corpus.splits   # the corpus build already writes the fine folds
 python -m geosoil.features.join --out data/processed/train_c1_local.parquet
-python -m geosoil.local_eval --table data/processed/train_c1_local.parquet --parts "${PARTS:-scales,distance,regional}"
+python -m geosoil.local_eval --table data/processed/train_c1_local.parquet --parts "${PARTS:-scales,distance,regional}" ${TARGETS:+--targets $TARGETS}
 echo "LOCAL_EVAL OK"
