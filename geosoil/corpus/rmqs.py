@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import io
 import time
+import urllib.request
 from pathlib import Path
 
 import pandas as pd
@@ -105,7 +106,17 @@ def build(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
 
 def download(attempts: int = 5, wait_s: float = 30.0) -> Path:
-    """The host often times out: retry with a growing pause between rounds of common.fetch."""
+    """The host often times out: retry with a growing pause between rounds of common.fetch.
+
+    A cached file is used as is; otherwise a 15 s probe fails fast when the host is down, so a corpus build does not
+    spend an hour in fetch's own long-timeout retries (2026-11-18).
+    """
+    cached = sorted(RAW.glob("*")) if RAW.exists() else []
+    if not any(p.suffix != ".json" for p in cached):
+        try:
+            urllib.request.urlopen(urllib.request.Request(URL, method="HEAD"), timeout=15).close()
+        except (OSError, IOError) as e:
+            raise OSError(f"rmqs host unreachable: {e}") from e
     for i in range(attempts):
         try:
             return common.fetch(URL, RAW)
