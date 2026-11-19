@@ -180,3 +180,30 @@ Serving rule:
 - Global model everywhere else.
 - Sand may use 400 km.
 - Never the residual correction or per-zone models, both of which lost.
+
+## Few-shot local adaptation (round 8, `geosoil/fewshot.py`)
+
+Question: if a place has k lab samples, how much better does the rest of that place get? The global model's
+predictions come from 1° blocks held out entirely, so they are an honest prior with no nearby labels. The k
+samples update them through a random-effects model: residual = cell offset + noise. The offset estimate is the
+samples' mean residual shrunk by k τ² / (k τ² + σ²), with τ² and σ² from one-way ANOVA on the other folds.
+
+Farm scale (0.05°, about 5 km). Error is relative to the global model on the same sites; lower is better.
+
+| k samples | SOC | pH | Sand | Clay | BD | CEC | K | Ca | Mg |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 0.88 | 0.89 | 0.80 | 0.81 | 0.83 | 0.77 | 0.89 | 0.90 | 0.86 |
+| 5 | 0.76 | 0.76 | 0.67 | 0.66 | 0.71 | 0.62 | 0.82 | 0.80 | 0.73 |
+| 10 | 0.75 | — | 0.63 | 0.62 | 0.69 | 0.58 | 0.82 | 0.77 | 0.67 |
+
+- **The prior is worth the most at small k.** The samples alone, with no model, are 9–50% worse than the global
+  model with one sample, and still worse for SOC, pH and bases at five. Updating the global model always beats
+  the samples alone, at every k and for every target.
+- **Most of the gain comes from the first five samples.** After that, with shrinkage weight 0.75–0.8, the curve
+  flattens. That is the textbook diminishing return of averaging a cell offset.
+- **Texture and CEC adapt most (error cut 34–42% at k = 10); K adapts least (18%).** K varies more within short
+  distances than the offset model captures.
+- **At district scale (0.25°) the gains are smaller.** For SOC, 14% at k = 20, because one offset fits 25 km
+  less well than 5 km.
+- **Caveats.** Scored cells are ones with at least k + 5 labels, so they come from dense surveys. The offset also
+  absorbs lab and survey differences, which is useful in practice: a farm's own lab calibrates the prior.

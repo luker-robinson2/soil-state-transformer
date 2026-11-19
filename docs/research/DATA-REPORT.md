@@ -388,3 +388,22 @@ Myanmar 65%, Indonesia 69%, Papua New Guinea 77%), the Sahel and Sahara margins 
 Arabia and Pakistan, Madagascar, and the Andes (Peru 35%, Chile 44%). For agricultural soils the priorities are
 India, Southeast Asia, the Sahel and Madagascar. ICRISAT Karnataka (open, about 93k village-level samples) is the
 cheapest step into the largest gap.
+
+## Round 8 (2026-11-18 night)
+
+341,969 sites. New: LUCAS 2018 measured BD and ICRISAT Karnataka. Removed: non-USDA sand and NatSoil K. Added:
+the bare-soil Sentinel-2 composite at about 80% of sites. Paired against round 7 on the rows both predicted, with
+a 1° block bootstrap and sign-flip test, round 8 has lower error on **all ten targets** (p ≤ 0.011). All-groups R²:
+- SOC 0.564 (was 0.553)
+- pH 0.621 (was 0.618)
+- sand 0.470 (was 0.469)
+- clay 0.409 (was 0.398)
+- BD 0.525 (was 0.505)
+- OM 0.567 (was 0.557)
+- CEC 0.391 (was 0.385)
+- K 0.452 (was 0.436)
+
+Clay's training rows are unchanged, so its gain is the bare-soil composite alone.
+
+Standard-method training still wins for CEC, Ca and Mg (p ≤ 0.002). K's gain is no longer significant (p = 0.16)
+now that the inconsistent NatSoil K is gone.
