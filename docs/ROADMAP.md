@@ -16,29 +16,79 @@ delivers, and **what has to be true before the next phase is worth starting**. T
 | [DATA-REPORT.md](research/DATA-REPORT.md) | What data goes into the model, where it comes from, and what has proven useful |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Ground rules: public data, lab truth, licences, scrub check |
 
-## Where things stand (2026-11-16)
+## Where things stand (2026-11-19, round 8)
 
-**Done:**
-- **Targets.** SOC, pH, sand, clay, bulk density, and since 2026-11-17 organic matter, CEC and exchangeable
-  K/Ca/Mg (see DATA-REPORT §1).
-- **Labels (C1).** 286,083 training sites since the OpenLandMap compendium (2026-11-18; 219,232 after SISLAC); originally 190,567 deduplicated lab-measured training sites (58k CONUS) plus 6,367 RaCA hold-out
-  sites, from 8 sources pulled without accounts. They are harmonized to standard depths, split into fixed
-  spatial folds, and have a measured noise floor (topsoil R² ceilings 0.82–0.92).
-  Rebuild: `python -m geosoil.corpus.build_c1`.
-- **Alpine.**
-  - Access works through the OnDemand Jupyter terminal; SSH is still broken.
-  - The conda env is built (`ENV OK`) and the GPU smoke test passed on an H200 MIG slice (11-17). GPU caps
-    are per type: when one pool shows QOSGrpGRES, submit to another (`--partition=ah200 --gres=gpu:h200_3g.71gb:1`).
-  - Compute nodes have internet.
-  - AlphaEarth reads come straight from S3 (66 MB/s).
-- **Measured design constraint.** AlphaEarth must be read a whole 1024² block at a time (37 B per pixel),
-  never as scattered points (38 MB per point). Every corpus tier is built from blocks.
+Saved state for resuming; the detailed record is in DATA-REPORT, LOCAL-MODELS and METRICS.
 
-**C1 baseline** (LightGBM, spatial CV, lab labels; all feature groups incl. multi-scale terrain, lithology, LST, HAND, land-use history): SOC R² 0.55, pH 0.60, sand 0.45, clay 0.39, BD 0.52. Ceilings are 0.82–0.92. This is the bar R1 must beat (`geosoil/results/baseline_c1.json`).
+**Model.** LightGBM on every feature group, 1° spatial-block CV, topsoil 0–30 cm, 341,969 training sites
+from 26 sources plus 6,367 RaCA hold-out sites. Round-8 all-groups R²:
 
-**In progress:**
-- Phase 2 features. Done: AlphaEarth 2017–2025 and terrain for all sites. Built and ready to run: climate normals and radiometrics (`bash scripts/slurm/run_phase2_static.sh <topic>` from the Alpine terminal). Next: the feature-selection report, then the R1 neural bake-off on GPU.
-- Data requests sent 2026-11-16 to iSDA, BSSL (Demattê), ISRIC, CanSIS and ESDAC.
+| Target | SOC | pH | Sand | Clay | BD | OM | CEC | K | Ca | Mg |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R² | 0.564 | 0.621 | 0.470 | 0.409 | 0.525 | 0.567 | 0.391 | 0.452 | — | — |
+
+(Ca and Mg were scored with the paired test only; round 7 was Ca 0.529, Mg 0.469.)
+
+- **Round 8 vs round 7:** paired on shared rows, round 8 has lower error on all ten targets (p ≤ 0.011).
+- **Bare soil is worth it:** the Sentinel-2 composite added clay +0.011 on unchanged rows.
+- **Standard-method labels win:** training CEC, Ca and Mg on standard methods only lowers error further
+  (p ≤ 0.002).
+- Numbers are in `geosoil/results/round8_summary.json` and `scorecard_round7.json`.
+
+**Findings that set direction:**
+- **Evaluation.** R² only ranks models on identical rows. Use paired block tests, RMSE with block-bootstrap CIs,
+  floor skill and kappa (METRICS.md, `geosoil/scorecard.py`).
+- **Errors.** No bias, calibration slope about 1. All error is missing signal. Floor skill is 0.44–0.68.
+- **Few-shot.** k lab samples in a ~5 km cell, used to update the global prior (empirical-Bayes offset):
+  - k = 1 cuts error 10–23%; k = 5 cuts it 18–38%.
+  - The samples alone never beat prior plus samples.
+  - Code: `geosoil/fewshot.py`.
+- **Local tier.** A 150 km regional blend lowers error 2–8% where a regional model can be fitted, and locality
+  is confirmed against a random-subset control. Use global elsewhere (`geosoil/tiers.py`).
+- **Coverage.** 18% of land is outside the area of applicability: India, Southeast Asia, Sahel, Arabia,
+  Madagascar, the Andes (`geosoil/coverage.py`).
+- **What data is worth.** New environments are worth 2–10× more than more of the same, and one standard-method
+  label is worth 2–7 mixed ones. Priority: bases > BD > CEC > clay > sand > pH > SOC.
+
+**Open items, in flight when saved:**
+- **Earth Engine bare soil.** 18 READY tasks were left in the queue. Restart the collector on the laptop:
+  `nohup scripts/bare_soil_collect_loop.sh > ~/.cache/geosoil-bare-soil-loop.log 2>&1 &`. Re-auth first if
+  needed with `earthengine authenticate`. Then Globus the `bare_soil` directory to Alpine, using absolute
+  laptop paths.
+- **France RMQS.** Wired in, but the host was down. It is skipped automatically until reachable.
+- **Data requests.**
+  - CanSIS declined the full NPDB for now; a new release is coming and they invite gap reports.
+  - ISRIC was re-sent to soils@isric.org.
+  - ESDAC, iSDA and BSSL have not answered.
+- **Restricted mode.** Earth Engine is in restricted mode (Community tier). Reopening a billing account for the
+  Contributor tier is the biggest speedup.
+
+## Next steps (ordered)
+
+1. **Head-to-head with SoilGrids on RaCA.** RaCA is the probability-sample hold-out; use design-weighted RMSE.
+   This settles the claim against the state of the art. SoilGrids is an evaluation baseline only, never a
+   feature or label.
+2. **Finish bare soil** for the last ~20% of sites, then rerun the round-8 scorecard.
+3. **Standard-method heads for CEC/K/Ca/Mg.** Train on standard-method labels, with mixed-method labels as an
+   auxiliary input or head. This has already been proven better by paired tests.
+4. **Serving rule in code.** Use the 150 km blend wherever there are enough labels within the radius,
+   otherwise global. Add the few-shot offset when a user supplies samples.
+5. **Phase 3 pretraining.** A masked spatio-temporal encoder on the 39.7M unlabelled pixel-years, then
+   multi-task fine-tuning. Gate: beat LightGBM on the few-shot curve at k = 1–3 and in the regions outside the
+   area of applicability, not on the dense-CONUS average.
+6. **Spectroscopy modality.** OSSL MIR/vis-NIR spectra paired with lab values, sharing one embedding with the
+   remote-sensing encoder.
+7. **Soil state over time.** Make year an explicit input and test whether the model captures change
+   (SOC under management, pH after liming).
+8. **Data, by coverage.**
+   - LUCAS K via OSSL v1.3 (train-only).
+   - China forest profiles (BD).
+   - Tellus Ireland.
+   - An ANSIS account (Australia).
+   - Request drafts for SLU, Thünen, South Africa ARC, Morocco and Nepal.
+   - A CanSIS gap report.
+   - India and Southeast Asia collaborations once a v0.1 exists.
+9. **Phosphorus** as an eleventh target (WoSIS has it).
 
 ## Improvement track (added 2026-11-17)
 
